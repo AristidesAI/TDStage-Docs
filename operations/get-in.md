@@ -43,6 +43,17 @@ Work out which case you are in before the get-in, not during it:
 Decide the address plan in advance and write it on the case. A rig discovered
 to need static addressing at 9am on a show day costs an hour.
 
+The receiving machine can answer this for you. Run:
+
+```
+python3 WebConsole/doctor.py
+```
+
+On a switches-only rig with no static plan it fails with `no LAN address:
+every interface is link-local, virtual or Tailscale`. With a single phone on
+a cable it warns `USB link only, no LAN address`, which is fine on a desk and
+wrong at a venue.
+
 ### Confirming the link
 
 A phone should reach the console without anyone typing its address. If you
@@ -58,6 +69,18 @@ Per phone:
 3. Confirm its device id is unique. Two phones sharing an id overwrite each
    other's frames, and the symptom looks like a dropout rather than a clash.
 4. Confirm it reports charging and a nominal thermal state.
+
+### The firewall trap
+
+The console learns a phone's address from the health messages the phone
+sends, and those arrive on a port TouchDesigner owns on the show machine. If
+the firewall has no rule for TouchDesigner, the result is a specific and
+confusing state: **phones show as online from their point data, but with no
+battery, no temperature and no frame rate**, and control messages cannot
+reach a phone whose address was never typed in.
+
+The Windows setup script adds the rule. The doctor check confirms it. Run
+both before deciding the network is fine.
 
 ## 3. Stands and aiming
 
@@ -89,6 +112,11 @@ about 2.5 per cent, and nothing warns you, because a wrong scale solves
 perfectly well. It just solves to the wrong answer.
 
 Measure one printed marker with a ruler and set the console to that number.
+
+**Loading a stage layout does not fix this.** The console's plan import
+copies positions and labels only. It leaves every device at the 200 mm
+default, whatever size the layout itself specifies. Set the size explicitly
+after loading a plan, not before.
 
 ### Placing markers
 

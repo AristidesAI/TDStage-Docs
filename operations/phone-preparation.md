@@ -46,9 +46,19 @@ waiting for the update.
 1. Set the **device id**. Every phone on a rig needs a different one.
 2. Set the **host address** to the machine that will receive the stream.
 
-Both are also settable from the console once a phone is on the network, but
-setting them early means a phone that joins the rig is already correct rather
-than needing attention.
+**The device id is not optional.** A phone whose id was never set
+deliberately refuses to start, with `START refused: Device ID N was never set
+on this phone`. A fresh install will not stream at all until someone confirms
+the id, on the phone or from the console. Do it before the phone ships.
+
+The host address can also be set from the console once a phone is on the
+network, but setting it early means a phone that joins the rig is already
+correct rather than needing attention.
+
+If two phones do end up sharing an id, the receiver now names it rather than
+letting the frames quietly overwrite each other: the console reports two
+senders on one device id, identified by their addresses and by the name and
+model each phone sends.
 
 > A note on the setting named `stage.tcpHost`. Despite the name it is the
 > destination IP address, not a transport. Everything in this system runs over
@@ -58,8 +68,8 @@ than needing attention.
 
 | Setting | Set to | What happens otherwise |
 |---|---|---|
-| Auto-Lock | Never | The screen sleeps and capture is interrupted. |
-| Passcode | Off | A locked phone cannot be recovered without a person at the stand. |
+| Auto-Lock | Never | Belt and braces. The app holds the screen awake while it is in front, so this is not what interrupts capture. It matters if the app is ever backgrounded or drops to the home screen: an unlocked phone is still reachable, a locked one needs a person. |
+| Passcode | Off | A locked phone cannot be recovered without someone walking to the stand. |
 | Automatic updates | Off | iOS or the app changes between rehearsal and show. |
 | Do Not Disturb | On | Notifications draw over the capture view. |
 | Low Power Mode | Off | Throttles the frame rate. |
