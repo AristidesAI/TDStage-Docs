@@ -172,30 +172,40 @@ showing them printed markers at known positions.
 
 ### The marker size trap
 
-**The size in the console must match the size you actually printed.** Not the
-paper size, the printed black square.
+**The size in the console must match the size you actually printed**, and the
+thing you measure is not the obvious one.
 
-| Printed on | Marker square |
-|---|---|
-| A4 | 195 mm |
-| A3 | 280 mm |
+{: .warning }
+Measure the **whole marker image**, white margin included, between the centres
+of the four crop marks. Not the black square: that is about 89 % of the image,
+so ruling it and typing what you read sets every phone 11 % small.
 
-A fresh roster now defaults to **195 mm**, which is A4 printed at true size.
-So printing A4 and leaving it alone is correct.
+| Printed on | Between the crop marks | The black square alone |
+|---|---|---|
+| A4 at true size | **195 mm** | about 174 mm |
+| A3 at true size | **280 mm** | about 249 mm |
 
-**Printing A3 and leaving it alone is not.** The scale is then out by about
-30 per cent, and nothing warns you, because a wrong marker size solves
-perfectly well. It just solves to the wrong answer: every distance the system
-reports is wrong by the same ratio, consistently, which is exactly the kind of
-error that survives a casual look at the output.
+A fresh roster defaults to **195 mm**, which is A4 printed at true size. So
+printing A4 and leaving it alone is correct. **Printing A3 and leaving it alone
+is not**, and nothing warns you, because a wrong size solves perfectly well. It
+just solves to the wrong answer.
 
-Measure one printed marker with a ruler and set the console to that number.
+What that wrong answer looks like is worth knowing, because the obvious guess
+is wrong twice over. Depth is metric LiDAR, so nothing is rescaled and the
+floor does not tilt. The phone simply believes it stands nearer its marker than
+it does, and slides its **whole cloud** away from itself along that sight line
+by that fraction of its distance to the marker — about 0.66 m for a phone 6 m
+out at 11 % small. Each phone slides its own way, so the rig stops agreeing
+with itself. The full working is in
+[the console walkthrough](../console/guide.html#markers-and-the-mistake-that-does-not-announce-itself).
 
-**Loading a stage layout now sets the size for you.** The plan import reads
-each marker's sheet size from the layout and applies one rig-wide marker size
-derived from it. If you loaded a plan, the size should already be right.
-Confirm it anyway: the number has to match the paper that came out of the
-printer, not the paper the plan assumed.
+**A loaded stage layout does not reach the phones.** The plan import reads each
+marker's sheet size and applies one rig-wide size to the console's **roster**,
+and sends nothing. Until you press **Apply to all phones**, every phone still
+holds whatever it was last told — so the console can read `every phone 280 mm`
+while the phones calibrate on 195. Press it after every layout load, and
+confirm the number against the paper that came out of your printer rather than
+the paper the plan assumed.
 
 ### Placing markers
 
@@ -213,13 +223,38 @@ Do not call a rig built until all of these pass:
 - [ ] Every phone is charging and nominal thermally.
 - [ ] The marker size in the console matches the printed markers.
 - [ ] Calibration has solved for every phone.
+- [ ] **One person stands in the middle and the rig sees one person.**
 - [ ] A person walking the playing area stays tracked as they cross between
       the areas each phone covers.
 - [ ] The output reaches whatever is consuming it.
 
-The walking test is the one that catches real problems. A rig can pass every
-other check and still have a gap in coverage that only shows when someone
-walks through it.
+### The one-person test
+
+Put somebody in the centre of the stage, where two phones on opposite sides
+can both see them, and have calibrated on **different** markers. Then look at
+the cloud.
+
+| What you see | What it means |
+|---|---|
+| One body, in the right place | Those two phones agree. Move on. |
+| **Two bodies**, separated along the line between the two stands | A marker size is wrong. The gap is roughly 11 % of the two phones' distances to their markers added together, so about 1.3 m for two phones 6 m out. |
+| One body, in the wrong place | Both phones are off the same way. Check the size, then check the marker positions in the plan. |
+
+What it does not catch, which matters as much as what it does:
+
+- **Shifts that happen to cancel.** If every phone's marker lies in roughly the
+  same direction from it, every cloud slides the same way: they still agree
+  with each other, and the whole stage is simply in the wrong place. Two bodies
+  prove an error; one body does not prove correctness.
+- **Small errors.** A 1 % size error at 6 m is 6 cm, which you will not see by
+  eye.
+
+So run it a second time with a pair of phones at ninety degrees to the first,
+which covers the other axis and breaks the cancelling case.
+
+The walking test is still the one that catches coverage problems. A rig can
+pass every other check and still have a gap that only shows when someone walks
+through it.
 
 ## What to record before you leave
 
