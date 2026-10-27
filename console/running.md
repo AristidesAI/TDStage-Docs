@@ -145,9 +145,9 @@ console running but half useful.
 ```mermaid
 flowchart TD
   A["server.py starts"] --> B["Load config.json, or the newest<br/>backup that passes the shape check"]
-  B --> C["Start the worker threads:<br/>TD link, health, recovery,<br/>bridge reader, motion engine"]
-  C --> D["Bind TCP :9001 for the field stream,<br/>unless --f1-port 0"]
-  D --> E{"Is --tdp4-port<br/>non zero and free?"}
+  B --> D["Bind TCP :9001 for the field stream,<br/>unless --f1-port 0"]
+  D --> C["Start the worker threads:<br/>TD link, health, recovery,<br/>bridge reader, motion engine"]
+  C --> E{"Is --tdp4-port<br/>non zero and free?"}
   E -- "0, or TouchDesigner holds it" --> F["No phone facing socket.<br/>Frames arrive from the bridge file"]
   E -- "free" --> G["Bind UDP :9003"]
   F --> H["Bind UDP :9013 always:<br/>console owned, the simulator's target"]

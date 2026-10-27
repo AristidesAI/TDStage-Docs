@@ -267,14 +267,17 @@ curl -s http://localhost:9080/api/live | python3 -m json.tool | grep -A3 bridge
 2. **A device arriving over the TouchDesigner mirror has no confidence, ever.**
    The TDL3 mirror record the tox forwards carries the extrinsic, the
    intrinsics, the floor offset and an optional RGB image, and **no confidence
-   plane**. Nothing downstream of the mirror can show it. This is a property of
-   that record, not a fault. To see confidence, the console needs the phone's
-   own TDP4 frames: the bridge path, the console's own port, or a direct
-   `--tdp4-port`.
-3. **The AVFoundation capture path has no confidence map at all.** Only the
-   ARKit path produces real per cell confidence. A phone on
-   `stage.capture = avfoundation` has nothing to send. The phone's Capture path
-   row says which it is on.
+   plane**. This mattered when the console read frames relayed by
+   TouchDesigner. It no longer applies: the console reads the bridge file
+   directly and TDP4 is its only frame source, so the planes a phone sends are
+   the planes the console sees.
+3. **The confidence plane on this app is synthetic, so an empty-looking map
+   usually means empty depth.** The capture path sends no measured confidence;
+   the packer writes 2 where the depth value is finite and positive and 0
+   where it is not. The plane therefore carries nothing the depth plane does
+   not already carry as a non-value. If the map looks empty, check whether
+   points are arriving at all before looking at confidence. The sibling ARKit
+   app does supply a real per-cell confidence.
 
 A related trap worth knowing: `latency.confMin` zeroes out depth cells below a
 confidence level before unprojecting. It defaults to 0, which keeps everything.

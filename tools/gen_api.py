@@ -34,10 +34,10 @@ WHAT = {
     "/api/rgb": "Which devices have a camera image, and how old each one is.",
     "/api/settings": "Read the tunables (GET) or change them (POST).",
     "/api/hands": "Read hand detections (GET) or change the detector's settings (POST).",
-    "/api/hands/diag": "Why hand detection is or is not producing results.",
+    "/api/hands/diag": "Why hand detection is or is not producing results, as checks rather than counters. This is the per-problem list. Read-only.",
     "/api/vision": "State of the vision services.",
     "/api/vision/restart": "Restart a vision service. Clears counters; it does NOT reload code.",
-    "/api/rig": "Rig health: one row per problem, each with its fix.",
+    "/api/rig": "The facts that span phone, console, relay and TouchDesigner in one place: relay status, cable link, this machine's address, the listener and hands. A facts dump, not a problem list.",
     "/api/stalls": "Recorded stalls, for diagnosing a stuttering stream.",
     "/api/track": "Read or configure the tracking output. Body: `enabled`, `host`, `port`.",
     "/api/track/record": "Start or stop recording the tracking output. Body: `{\"on\": true}`. Writes `logs/track-<timestamp>.jsonl`.",
@@ -54,7 +54,7 @@ WHAT = {
     "/api/count": "Set how many devices the roster holds.",
     "/api/markers": "Marker definitions.",
     "/api/markers/size": "Set the printed marker size. Must match the markers you actually printed.",
-    "/api/venue/layout": "Load a stage layout. Copies positions and labels only; it does NOT set the marker size.",
+    "/api/venue/layout": "Load a stage layout. Sets positions, labels, and one rig-wide marker size derived from the smallest sheet in the layout. It writes the roster; it does NOT push the size to the phones, so Apply to all phones is still needed.",
     "/api/align/rig": "Solve the rig alignment.",
     "/api/range": "Working range.",
     "/api/scene": "Scene settings.",
@@ -121,7 +121,8 @@ clear counters and bring a service back up. A code change needs the console
 itself restarted.
 
 **Configuration restore is not yet proven.** The console keeps rotating
-backups and falls back to the newest one that parses. Treat the snapshot
+backups and falls back to the newest one that both parses and passes its
+shape check. Treat the snapshot
 tooling as a snapshot: restoring from one is being verified, not demonstrated.
 A configuration file that parses but holds the wrong values is still accepted.
 """
@@ -158,10 +159,13 @@ def render(found):
         verbs = " and ".join(sorted(seen[path]))
         what = WHAT.get(path, "_Not described yet._")
         rows.append(f"| `{path}` | {verbs} | {what} |")
-    counts = {}
-    for method, _p, _l in found:
-        counts[method] = counts.get(method, 0) + 1
-    summary = ", ".join(f"{v} {k}" for k, v in sorted(counts.items()))
+    # Count DISTINCT paths per verb. Counting matched lines double-counts a
+    # route written as two tests, and the inflated number then reads as an API
+    # bigger than it is.
+    distinct = {}
+    for method, path, _l in found:
+        distinct.setdefault(method, set()).add(path)
+    summary = ", ".join(f"{len(v)} {k}" for k, v in sorted(distinct.items()))
     return (HEADER + f"Routes found in the source: {summary}.\n\n"
             + "\n".join(rows) + "\n" + FOOTER)
 

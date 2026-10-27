@@ -31,7 +31,7 @@ with JSON.
 on its own port, 9001 by default. The tracking output is OSC over UDP on port
 7000, configured through `POST /api/track`.
 
-Routes found in the source: 22 GET, 34 POST.
+Routes found in the source: 21 GET, 32 POST.
 
 | Path | Verb | What it is for |
 |---|---|---|
@@ -51,7 +51,7 @@ Routes found in the source: 22 GET, 34 POST.
 | `/api/events` | GET | Server-sent event stream the interface subscribes to. |
 | `/api/fanout` | POST | The legacy relay. Not the show path. |
 | `/api/hands` | GET and POST | Read hand detections (GET) or change the detector's settings (POST). |
-| `/api/hands/diag` | GET | Why hand detection is or is not producing results. |
+| `/api/hands/diag` | GET | Why hand detection is or is not producing results, as checks rather than counters. This is the per-problem list. Read-only. |
 | `/api/listen` | POST | Change the telemetry listening port. |
 | `/api/live` | GET | Live summary: which ingest paths are receiving and at what rate. |
 | `/api/markers` | POST | Marker definitions. |
@@ -68,7 +68,7 @@ Routes found in the source: 22 GET, 34 POST.
 | `/api/recovery` | POST | Recovery policy. |
 | `/api/redo` | POST | Redo it. |
 | `/api/rgb` | GET | Which devices have a camera image, and how old each one is. |
-| `/api/rig` | GET | Rig health: one row per problem, each with its fix. |
+| `/api/rig` | GET | The facts that span phone, console, relay and TouchDesigner in one place: relay status, cable link, this machine's address, the listener and hands. A facts dump, not a problem list. |
 | `/api/scene` | POST | Scene settings. |
 | `/api/settings` | GET and POST | Read the tunables (GET) or change them (POST). |
 | `/api/sim` | POST | Start or stop simulated phones. |
@@ -81,7 +81,7 @@ Routes found in the source: 22 GET, 34 POST.
 | `/api/track/trace` | GET | Per-frame trace of the tracking output, for offline analysis. |
 | `/api/undo` | POST | Undo the last roster change. |
 | `/api/usb/link` | POST | Find a phone attached by cable. POST only. |
-| `/api/venue/layout` | POST | Load a stage layout. Copies positions and labels only; it does NOT set the marker size. |
+| `/api/venue/layout` | POST | Load a stage layout. Sets positions, labels, and one rig-wide marker size derived from the smallest sheet in the layout. It writes the roster; it does NOT push the size to the phones, so Apply to all phones is still needed. |
 | `/api/vision` | GET | State of the vision services. |
 | `/api/vision/restart` | POST | Restart a vision service. Clears counters; it does NOT reload code. |
 | `/healthz` | GET | Liveness check. Returns without touching any device. |
@@ -93,6 +93,7 @@ clear counters and bring a service back up. A code change needs the console
 itself restarted.
 
 **Configuration restore is not yet proven.** The console keeps rotating
-backups and falls back to the newest one that parses. Treat the snapshot
+backups and falls back to the newest one that both parses and passes its
+shape check. Treat the snapshot
 tooling as a snapshot: restoring from one is being verified, not demonstrated.
 A configuration file that parses but holds the wrong values is still accepted.

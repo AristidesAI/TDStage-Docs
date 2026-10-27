@@ -301,10 +301,11 @@ Rates, polls and freshness windows across the ingest and camera view paths.
 
 {: .warning }
 **Consensus can be chosen but not saved.** The console offers a Consensus
-mode and applies it, but the saved settings cannot hold the value, so any
-restart puts the rig back on whatever was saved, silently. The console
+mode and applies it, but the saved settings cannot hold the value, so it is dropped after every console start AND after any change to a
+latency setting, because the whole group is re-applied on an edit. The console
 restarts itself after a crash, so this can happen without anyone touching
-it. Re-select Consensus after any restart until this is fixed.
+it. Re-select Consensus after a restart and after touching anything in the
+latency group, until this is fixed.
 
 ---
 
@@ -357,7 +358,7 @@ rings still show.
 In the `settings` section of `WebConsole/config.json`. A config file with no
 `settings` section behaves exactly as the shipped defaults.
 
-If that section is malformed, the console logs `saved settings ignored`, runs on
+If that section is malformed, the console logs `saved settings ignored` (which fires only if the loader itself raises, not on bad content: a non-dict block is skipped and a bad key is rejected per key, both silently), runs on
 defaults, and tells you to fix or delete the block and restart. Settings are not
 undoable: the undo stack covers poses, markers, the person figures and the
 roster, not these.
