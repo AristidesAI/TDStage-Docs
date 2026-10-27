@@ -157,6 +157,27 @@ product: positions without appearance, and bodies separated by shape instead of
 by who they look like. Worth knowing before the link budget decides it for
 you.
 
+### The fact that makes the trade cheaper than it looks
+
+The person model has a **total** budget of inferences per second shared across
+every phone — 70 by default. Each phone therefore runs at the budget divided by
+the phone count, so **at eight phones each one is already being looked at about
+nine times a second**, not thirty.
+
+Two consequences follow, and they turn an apparently brutal choice into a mild
+one:
+
+- **Colour at a reduced frame rate costs the person model nothing**, because it
+  was only sampling at about that rate anyway. What it costs is colour in the
+  point cloud lagging a fast-moving arm.
+- **Colour on a subset of phones** costs masks and hands from the phones that
+  do not send it, and nothing from the ones that do.
+
+The options, with their link loads and what each gives up, are in
+[#42](https://github.com/AristidesAI/TDStage/issues/42). The decision is
+Ari's; this page's job is to make sure it is taken knowing that the model's
+appetite for colour is smaller than the wire's.
+
 {: .note }
 Those bridge figures were measured over loopback. That is the right way to find
 the software's own ceiling, and it skips a real network card's receive path and
