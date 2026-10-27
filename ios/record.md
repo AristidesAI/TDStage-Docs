@@ -129,7 +129,7 @@ not being written.
 It is the LIVE page's line with the packet count left out:
 
 ```
-TDP4/UDP → 192.168.0.23:9003 · 256×192 · 41203 frm · 0 drop
+TDP4/UDP → 192.168.1.10:9003 · 256×192 · 41203 frm · 0 drop
 ```
 
 Host, port, grid, frames and drops. LIVE adds `· N pkt` between the frame and
