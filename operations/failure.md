@@ -386,11 +386,19 @@ decides what your next click publishes.
 
 | What you do | What it releases |
 |---|---|
-| Save an edit that **moves or turns** one phone — its position or its yaw | That phone only. The others stay held |
-| Edit a phone's pitch, roll or field of view | Nothing. Those are not part of what TouchDesigner stores |
+| Save an edit that **moves or turns** one phone — its position, its yaw, or its **tilt** | That phone only. The others stay held |
+| Edit a phone's **plan aim** pitch or roll, or its field of view | Nothing. Those only draw the frustum in the plan; they do not move anything |
 | Click a phone in the stage view without dragging it | Nothing. The value has not changed |
 | **Push poses** | Every phone |
 | A rig align, or a venue layout that places phones | The phones it placed |
+
+{: .warning }
+**There are two pitch-and-roll pairs and they do opposite amounts of work.**
+The *plan aim* is a drawing: it points the frustum in the plan view and changes
+nothing about the cloud. The *tilt* is a real correction, up to 30 degrees,
+applied to that phone's points on every merge path. One is annotation, the
+other is geometry. The console labels the plan aim as drawing-only for exactly
+this reason.
 
 Rig health names the phones still held, and the held set is saved with the
 configuration, so a restart does not quietly release them.

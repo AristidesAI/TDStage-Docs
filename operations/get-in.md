@@ -323,6 +323,30 @@ away: **the walk was too short**. A walk of less than a metre across gives it
 nothing to fit a heading to, and the fix is to walk a proper loop rather than
 to re-run the solve.
 
+### Correcting a phone that is not quite level
+
+A phone on a stand is levelled by its own gravity sensor, which is right about
+down and says nothing about where the stand has settled, how the clamp has
+crept, or a floor that is not flat. For that there is a **tilt** correction per
+phone: up to 30 degrees of pitch and roll, applied to that phone's points on
+every merge path.
+
+Pitch and roll here are taken **about the phone's own camera**, not about the
+stage: `+pitch` tips what that phone sees upwards and `+roll` lifts its right
+side, whichever way the phone is facing. So the control means the same thing on
+a phone pointing upstage as on one pointing across, which is the property that
+makes it usable while standing behind the phone.
+
+{: .warning }
+**Two pitch-and-roll pairs exist and they do different jobs.** The **plan aim**
+is a drawing — it points the frustum in the plan view and moves nothing. The
+**Tilt** row is geometry, and it moves that phone's cloud. The console labels
+the plan aim as drawing-only; if a cloud is leaning and the plan aim did not
+fix it, that is why.
+
+A tilt edit also counts as checking that phone's pose, so it releases a held
+phone to TouchDesigner the same way a move or a turn does.
+
 ### Using both on one rig
 
 They compose, and this is the arrangement worth knowing, because neither
