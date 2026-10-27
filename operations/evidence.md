@@ -86,7 +86,12 @@ and position error against marks. Useful options:
 | `--json` | Machine-readable output. |
 
 `--gap` sets how soon a new identity after a lost one counts as the same
-person reappearing. The default is 0.75 seconds.
+person reappearing rather than as a fresh loss.
+
+The options above are the ones that matter, not the full set, and their
+defaults are the tool's to change. Run `python3 Tools/track_score.py --help`
+for the current list rather than trusting this page for a default, and quote
+the value you actually ran with when you report a score.
 
 ### The distinction that matters in the room
 
