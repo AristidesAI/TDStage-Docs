@@ -136,10 +136,16 @@ the phone places *itself* at the wrong distance along its own line of sight.
 Depth is measured by the LiDAR and stays metric, so inside one phone's cloud
 every distance is still correct.
 
-The result is therefore not a stage that is uniformly too small. It is a set of
-clouds that are each shifted, by `(declared ÷ true − 1)` times that phone's
-distance to its marker, and therefore **by different amounts in different
-directions**. The symptom is phones disagreeing with each other: a performer
+The direction is predictable. ARKit works out how far away the marker is from
+how big you said it is against how big it looks, so **declaring it too small
+makes the phone believe it is standing closer to its marker than it is**.
+Everything that phone contributes is then placed too close to that marker,
+shifted along its own line of sight by `(1 − declared ÷ true)` times its
+distance to the marker: about 11 % of 6 m is two thirds of a metre.
+
+So the result is not a stage that is uniformly too small. It is a set of clouds
+each pulled toward its own marker by a different amount, in a different
+direction. The symptom is phones disagreeing with each other: a performer
 smeared into two bodies, or a floor that will not sit flat.
 
 Order of work: set the size (1), **Apply to all phones** (2) so every phone
