@@ -158,18 +158,49 @@ Say which one you are showing.
 | `python3 WebConsole/doctor.py` | The machine's setup. A USB-only warning means the phone is tethered rather than on the show network, which is fine on a desk and wrong at a venue. |
 | `python3 TD/newtox/tox_drift.py` | The saved TouchDesigner project against the repository, so the code in the project is the code in version control. |
 
-## An evidence pack
+## Running a session, and the pack that comes out of it
 
-When a deliverable is "show what it does and does not do", the pack should
-contain:
+A measurement session is the place where good intentions turn into a notebook
+nobody can read three weeks later. So it is scripted end to end, and the
+scripting matters more than it sounds: **the numbers are read out of the
+console rather than typed in by whoever is holding the phone.**
 
-- The conformance table, freshly generated, with its date.
-- Recordings, with the scores produced from them and the command used.
-- The phone count and the network for every figure.
-- A plain list of what is **not** demonstrated and why.
+```mermaid
+flowchart LR
+  A["phone_session.py<br/>the runbook, step by step"] --> B[("a JSON file<br/>of every reading")]
+  B --> C["evidence_pack.py"]
+  C --> D["Evidence-Pack-&lt;date&gt;.md<br/>ready to send"]
+```
 
-That last item is the one that builds trust. A pack with no limitations
-section reads as a pack that has not been looked at hard.
+`Tools/phone_session.py` walks the runbook a step at a time: it prints what to
+do, waits for you, then records everything the console can tell it about that
+step — telemetry, clock offsets, capture age and its split, frame rates. It
+calls the specialised tools where a step needs one, and it can be listed,
+narrowed to a few steps, or resumed into the same file if the session is
+interrupted.
+
+`Tools/evidence_pack.py` then turns that file into the pack, with the build
+facts read off disk rather than remembered: which commits, which project
+version. What a person still has to supply is the judgement — the venue, and
+the limitations.
+
+| Tool | The measurement it is for |
+|---|---|
+| `phone_session.py` | The whole runbook, recording as it goes |
+| `evidence_pack.py` | The pack, from that session's file |
+| `f1_probe.py` | Density and latency of the field stream, decoded with the client's own decoder so the numbers are what they would see |
+| `range_walk.py` | How far from a phone a body is still usable, by walking away from it |
+| `rig_coverage.py` | How many phones see each part of the stage, on a grid |
+| `heat_test.py` | One change at a time against a hot phone, restoring the state afterwards |
+| `imu_sync.py`, `limb_test.py`, `hand_truth_score.py` | Clock alignment, limb fidelity, hand accuracy |
+| `track_score.py` | A recorded tracking output, scored |
+
+The pack's sections are what the agreement asks for: what was tested and on
+what, a table per scenario, the limits stated plainly, and the recordings.
+
+**The limits section is the one that builds trust.** A pack with no limitations
+reads as a pack nobody looked at hard, and the tools cannot write it for you —
+they know what was measured, not what the measurement failed to cover.
 
 ## What never to claim
 

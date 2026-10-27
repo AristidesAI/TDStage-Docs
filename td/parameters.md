@@ -21,7 +21,7 @@ it is read, which is often the thing you actually want to know:
 paths side by side, and where each parameter bites.
 
 One caveat on the generated list: `tox_params_live.md` was generated at v63 and
-the working copy has moved on since (v82 at the time of writing). A multi-component parameter is printed there as its X
+the working copy has moved on since (v84 at the time of writing). A multi-component parameter is printed there as its X
 component alone. The operator or shader that **reads** a parameter is the real
 contract, and that is what the tables below were checked against.
 
@@ -116,7 +116,7 @@ Learned-background segmentation, and the shared cleanup thresholds.
 | `Learnframes` | Learn Frames | Int | 300 | Get-in | both | Frames to average into the learned background. Saved working copy: 450. |
 | `Fusevox` | Fine Voxel (m) | Float | 0.025 | Get-in | both | Fusion voxel size. Read by the CPU fusion and by the GPU fusion shader. The GPU hysteresis cell is four times this value. |
 | `Floormargin` | Floor Margin (m) | Float | 0.03 | Get-in | CPU | Tolerance on the learned floor height map. Saved working copy: 0.033. |
-| `Densitymin` | Min Pts / 10cm Cell | Int | 4 | Get-in | both | A 10 cm cell with fewer points than this is noise. Read by the CPU cleanup and by the GPU cleanup shader. |
+| `Densitymin` | Min Pts / 10cm Cell | Int | 2 | Get-in | both | A 10 cm cell with fewer points than this is noise. Read by the CPU cleanup and by the GPU cleanup shader. **Was 4 until v84**, where it was measured: against exact limb truth from six simulated phones, 4 kept 0.985 of the limb points the phones delivered and 0.967 of hand points; 2 keeps 0.995 and 0.984. What it was discarding was limb tips clipping the corner of a 10 cm cell. |
 | `Minclusterpts` | Min Person Points | Int | 150 | Get-in | both | A cluster with fewer points than this is not a person. Read by both cleanup paths. |
 | `Autoalign` | Measure Alignment | Pulse | - | Get-in | both | Collects 30 frames, then solves a four-degree-of-freedom alignment per device against a reference, on a worker thread. It only measures. **Worked on the CPU path only until v82**: both collection points sat after the GPU path's early return, so on the show default (`Mergegpu` on) the snapshot never started and the pulse reported nothing, ever. |
 | `Alignref` | Reference Device | Int | 1 | Get-in | CPU | The device the alignment solve measures the others against. |
