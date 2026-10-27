@@ -72,6 +72,7 @@ Run the checks before pushing:
 python3 tools/check_diagrams.py
 python3 tools/check_links.py
 python3 tools/check_tox_version.py
+python3 tools/check_constants.py
 ```
 
 The link checker resolves every internal link, image and heading anchor. A
@@ -114,6 +115,19 @@ Run the checks after any session where the console changed:
 python3 tools/gen_api.py --check --repo ../TDStage
 python3 tools/gen_troubleshooting.py --check --repo ../TDStage
 ```
+
+`tools/check_constants.py` ties numbers written in prose to the constants they
+were copied from: how long an id is held before reuse, how long auto-recover
+waits, how many backups are kept. Those read as facts and get planned against,
+and the same drift has already happened twice by accident. Each entry names a
+page, a sentence pattern and a constant; prose spells numbers out, so "twelve"
+and `12.0` compare equal.
+
+An entry whose pattern stops matching is an **error, not a pass**. If it passed,
+rewording a sentence would switch its check off silently, which is exactly the
+failure the file exists to prevent — re-point the entry at the new wording
+instead. Like the generators, it reads the committed code unless you pass
+`--working-tree`.
 
 `tools/check_tox_version.py` covers the one number no generator owns: the
 TouchDesigner project's version. Several pages quote it, and a new saved version
