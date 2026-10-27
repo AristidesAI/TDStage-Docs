@@ -13,11 +13,16 @@ it is sending it, and what is wrong with the link.
 ![The LIVE page: stream stats, network and link diagnostics](../assets/screens/live-network.webp)
 
 The phone above is a useful example rather than a healthy one. It is streaming,
-the UDP pill reads LIVE, and the thermal state is fine. But **Link** reads
-`Wi-Fi (cable idle)` in amber with the Cable button greyed out, and the
-diagnostics below say why: a cable is plugged in and the phone has never been
-told the Mac's address on it. Two problems to fix, neither of which stops the
-stream, and both of which cost latency or health reporting.
+the UDP pill (1) reads LIVE, and the thermal state is fine. But **Link** (2)
+reads `Wi-Fi (cable idle)` in amber with the Cable button greyed out, even
+though **Prefer Ethernet** (3) is on. The amber line (4) and the diagnostics
+(5) say why: a cable is plugged in and the phone has never been told the Mac's
+address on it. Two problems to fix, neither of which stops the stream, and both
+of which cost latency or health reporting.
+
+The numbers are drawn on the screenshot rather than listed beside it, so the
+pairing survives being printed, pasted into a call sheet, or read on a phone
+where the caption has wrapped somewhere else.
 
 
 The app has three pages. A glass pill at the bottom of the screen switches
@@ -430,11 +435,12 @@ one.
 
 ![PROCESSING and CAPTURE PATH: Raw Streamer Mode, the three skipped stages, and the ARKit / AVFoundation picker](../assets/screens/live-processing.webp)
 
-Raw Streamer Mode is the master switch, and the three rows under it grey out
-when it is on because they are the things being skipped. **Apple depth
-filtering** is not greyed out, because it is not per-frame work: it is a
+Raw Streamer Mode (1) is the master switch, and the three rows under it (2)
+grey out when it is on because they are the things being skipped. **Apple depth
+filtering** (3) is not greyed out, because it is not per-frame work: it is a
 capture-format setting, outside the master switch, and changing it restarts the
-session.
+session. So do the capture picker (4) and the smoothed-depth A/B (5), which is
+why none of the three belongs in a cue.
 
 The phone is a pure streamer. This panel exists so each optional stage can be
 switched on for an A/B measurement, not because a show needs any of them.
