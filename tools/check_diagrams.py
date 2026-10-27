@@ -36,6 +36,14 @@ def main():
             for line in block.splitlines():
                 if "[" in line and '"' not in line and re.search(r"\[[^\]]*[(<>]", line):
                     problems.append(f"{rel}: unquoted label with punctuation: {line.strip()}")
+                # A label beginning "1. " or "- " is parsed as markdown and the
+                # node renders as "Unsupported markdown: list". The block still
+                # parses, so nothing else catches it.
+                for lbl in re.findall(r'"([^"]*)"', line):
+                    if re.match(r"^\s*(\d+\.\s|[-*+]\s)", lbl):
+                        problems.append(
+                            f"{rel}: label reads as a markdown list, so the node "
+                            f"renders as \"Unsupported markdown\": {lbl[:40]!r}")
 
     cfg = ROOT / "_includes" / "mermaid_config.js"
     if cfg.exists():

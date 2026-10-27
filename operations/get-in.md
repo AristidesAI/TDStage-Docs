@@ -18,11 +18,11 @@ be checked, so doing them out of order means doing them twice.
 
 ```mermaid
 flowchart TD
-  N["1. Network<br/>addressing settled"]
-  P["2. Phones on the network<br/>visible in the console"]
-  S["3. Stands and aiming"]
-  M["4. Markers and calibration"]
-  V["5. Verification"]
+  N["Step 1 Network<br/>addressing settled"]
+  P["Step 2 Phones on the network<br/>visible in the console"]
+  S["Step 3 Stands and aiming"]
+  M["Step 4 Markers and calibration"]
+  V["Step 5 Verification"]
 
   N -- "a phone cannot be seen<br/>until it has an address" --> P
   P -- "aiming needs the live view,<br/>which needs the phone visible" --> S

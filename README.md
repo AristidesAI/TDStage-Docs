@@ -55,16 +55,27 @@ initialises with `undefined` and every diagram on the site stops rendering.
 **Never set `securityLevel: "strict"` while using `<br/>` in labels.** Strict
 turns off HTML labels, which makes every `<br/>` a parse error.
 
+**Never start a label "1. " or "- ".** Mermaid parses the label as markdown,
+decides it is a list, and renders the node as the words "Unsupported markdown:
+list". The diagram still parses and the checker still passes, so this one is
+only visible by looking at the page. Write "Step 1 Network", not
+"1. Network".
+
 Then there is the one that is not your fault: the theme renders a diagram into
 a `display:inline` element, so a correct 1800px diagram collapses to one line
 height and looks like a failure. `_sass/custom/custom.scss` fixes that; do not
 remove it.
 
-Run the check before pushing:
+Run the checks before pushing:
 
 ```
 python3 tools/check_diagrams.py
+python3 tools/check_links.py
 ```
+
+The link checker resolves every internal link, image and heading anchor. A
+broken link fails silently: the build succeeds and the reader finds it at the
+moment they needed the page.
 
 It catches all three authoring traps. It cannot tell you a diagram is WRONG,
 only that it will render, so open the page afterwards. A Mermaid parse error
