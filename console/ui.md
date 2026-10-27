@@ -15,8 +15,10 @@ Pages are addressed by URL fragment, so you can bookmark one:
 
 Two query parameters affect the whole app:
 
-- `?venue=stroud` loads `static/stroud-model.json` instead of the default
-  `static/stage-model.json` (the Sottile massing model).
+- `?venue=<name>` loads `static/<name>-model.json` instead of the default
+  `static/stage-model.json`. This is how a specific venue's massing model is
+  swapped in for the generic stage. The model files themselves are not part of
+  this documentation.
 
 ---
 
