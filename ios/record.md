@@ -9,6 +9,18 @@ nav_order: 3
 RECORD turns the live stream into a file called a take. You set a take up once,
 before anyone is on the floor, then press one button.
 
+![The RECORD page: what gets recorded, planes, capture rate and disk headroom](../assets/screens/record-what-gets-recorded.webp)
+
+{: .note }
+This screenshot was taken on 2026-10-27, shortly before the **Depth grid**
+picker was removed. It is shown here because the rest of the page is current;
+ignore that one row. The reason it went is below.
+
+The blue line under the settings is the one to read before a session. It turns
+the choices above into bytes per second and minutes of headroom on the disk
+actually in the phone, so a plane you add is immediately priced.
+
+
 ## What a take is
 
 A take is the wire itself.
@@ -237,6 +249,14 @@ phones is separate, later work.
 ---
 
 ## STORAGE
+
+![The RECORD page's naming, compression, IMU and storage limits](../assets/screens/record-storage.webp)
+
+The three storage numbers are guard rails rather than preferences. A take is
+refused below the first, running takes stop at the second, and the third
+decides how many are kept. A phone that fills its disk mid-session loses the
+take it is writing, so these are set once and left alone.
+
 
 | Control | Default | Range |
 |---|---|---|

@@ -10,6 +10,15 @@ PLAYBACK is the library and the transport. It lists every take on the phone
 with its provenance, and controls everything about what goes down the wire when
 one is replayed.
 
+![The PLAYBACK page: transport, pose and plane overrides, and the replay destination](../assets/screens/playback.webp)
+
+The two **As recorded** pickers are what make a take useful beyond watching it
+again. Pose decides whether the replay claims the extrinsic it was recorded
+with, the phone's current pose, or identity. Planes can drop the colour plane
+out of each frame before sending, so a take recorded with colour can be
+replayed depth-only to compare link budgets without recording anything new.
+
+
 A replay re-enters the streamer one step after the packer, so a receiver cannot
 tell it from a live phone except by one string in the hello. That is why the
 details on this page matter: what you are about to send is whatever the take was

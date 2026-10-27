@@ -10,6 +10,16 @@ LIVE is the page you use when you mount a phone and when you need to know why
 a phone is not reaching the receiver. It shows what the phone is sending, where
 it is sending it, and what is wrong with the link.
 
+![The LIVE page: stream stats, network and link diagnostics](../assets/screens/live-network.webp)
+
+The phone above is a useful example rather than a healthy one. It is streaming,
+the UDP pill reads LIVE, and the thermal state is fine. But **Link** reads
+`Wi-Fi (cable idle)` in amber with the Cable button greyed out, and the
+diagnostics below say why: a cable is plugged in and the phone has never been
+told the Mac's address on it. Two problems to fix, neither of which stops the
+stream, and both of which cost latency or health reporting.
+
+
 The app has three pages. A glass pill at the bottom of the screen switches
 between LIVE, RECORD and PLAYBACK. The pill carries a coloured dot: red while a
 take is recording, green while a take is replaying, orange while a start is
@@ -261,6 +271,14 @@ one.
 ---
 
 ## PROCESSING (off = fastest)
+
+![PROCESSING and CAPTURE PATH: Raw Streamer Mode, the three skipped stages, and the ARKit / AVFoundation picker](../assets/screens/live-processing.webp)
+
+Raw Streamer Mode is the master switch, and the three rows under it grey out
+when it is on because they are the things being skipped. The depth
+conditioning further down the page still runs: the master switch removes
+stages that sit between capture and the wire, not the ones that decide which
+depth is believable.
 
 The phone is a pure streamer. This panel exists so each optional stage can be
 switched on for an A/B measurement, not because a show needs any of them.
