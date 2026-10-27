@@ -106,17 +106,22 @@ paper size, the printed black square.
 | A4 | 195 mm |
 | A3 | 280 mm |
 
-The console's default is **200 mm**, which matches neither exactly. If you
-print A4 and leave the default, every distance the system reports is out by
-about 2.5 per cent, and nothing warns you, because a wrong scale solves
-perfectly well. It just solves to the wrong answer.
+A fresh roster now defaults to **195 mm**, which is A4 printed at true size.
+So printing A4 and leaving it alone is correct.
+
+**Printing A3 and leaving it alone is not.** The scale is then out by about
+30 per cent, and nothing warns you, because a wrong marker size solves
+perfectly well. It just solves to the wrong answer: every distance the system
+reports is wrong by the same ratio, consistently, which is exactly the kind of
+error that survives a casual look at the output.
 
 Measure one printed marker with a ruler and set the console to that number.
 
-**Loading a stage layout does not fix this.** The console's plan import
-copies positions and labels only. It leaves every device at the 200 mm
-default, whatever size the layout itself specifies. Set the size explicitly
-after loading a plan, not before.
+**Loading a stage layout now sets the size for you.** The plan import reads
+each marker's sheet size from the layout and applies one rig-wide marker size
+derived from it. If you loaded a plan, the size should already be right.
+Confirm it anyway: the number has to match the paper that came out of the
+printer, not the paper the plan assumed.
 
 ### Placing markers
 
