@@ -370,9 +370,46 @@ slider does nothing useful over Tailscale), Frustum opacity, **Real RGB colour**
 colour), **Instance colours** (colour every point by the person it belongs to;
 with `/track` sending, the colour is the performer's `/track` id, so one person
 keeps one colour across phones and through crossings; white means a person no
-performer claims yet; this overrides Real RGB colour), **Live frustums**, **IMU
-heading** (rotate each cloud and frustum by the phone's IMU heading; marker
-calibrated phones are left alone), **Mirror upstage axis**.
+performer claims yet; this overrides Real RGB colour), **Consensus** (below),
+**Live frustums**, **IMU heading** (rotate each cloud and frustum by the
+phone's IMU heading; marker calibrated phones are left alone), **Mirror
+upstage axis**.
+
+### Consensus: why points survive
+
+A third colour mode, and the only one that shows you points that are **not
+there**. It colours every point by which test of the multi-view vote removed
+it, or by the fact that nothing did.
+
+| Colour | Category | What it means |
+|---|---|---|
+| dark | unseen | No phone with a fresh person mask saw that space |
+| dim khaki | outvoted | Phones saw it and did not agree it was a person |
+| **magenta** | **carved** | They agreed — and another phone could see *straight through* that space, so it was removed |
+| dark slate | background | The motion engine has learned it as the room |
+| dark | floor | Below the floor band |
+| **green** | **kept** | Survived every test |
+
+**Carved is the one worth the mode.** It is how mask bleed gets removed — the
+patch of wall a phone paints onto the body standing in front of it — and
+without this view it is invisible, because a carved point and a point nobody
+saw both simply are not drawn. Somebody watching a performer lose an arm cannot
+otherwise tell "the masks disagreed" from "free space carved it" from "the
+background ate it", and those three have three different fixes.
+
+Two things to know before reading it:
+
+- **This mode sends the whole room, not just the people**, because a removed
+  point has to arrive to be coloured. The points-per-phone budget therefore
+  bounds the room here, so a stage that looked fine in another mode can come
+  back sparse. Raise the budget rather than concluding points are missing.
+- **The colours are weighted by rarity, not importance.** On a measured room
+  the split was roughly: unseen 47 %, outvoted 31 %, background 16 %, carved
+  4 %, kept 1.4 %. The two bright colours are the two rare ones, so the room
+  reads as texture and the answers stand out of it.
+
+Each point reports the **first** test that removed it, in the order they run,
+so the colour names what actually killed it rather than what would have.
 
 ### Hand tracking
 

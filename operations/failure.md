@@ -199,12 +199,34 @@ one view.
 Automatic: the frame rate steps down as the phone gets hotter, and recovers
 after about forty five seconds of cooling.
 
-Operator: shade it or give it air. The console shows capture pressure per
-device.
+**A ninety-minute run on two real phones on 2026-10-28 changed what this entry
+should say**, and the finding is not what anyone expected:
 
-Status: the ladder is tested. **A real heat test has not been run.** The
-measured case that needs explaining is [#31](https://github.com/AristidesAI/TDStage/issues/31): thermal serious, 14 fps,
-capture age 77 ms.
+- Both phones reached **serious within seven to nine minutes** of launch and
+  **never left it** — not with the screen blacked out, not on the USB cable,
+  not on the cheaper capture path.
+- **Neither ever reached critical**, at 25 fps or at 30.
+- Capture pressure stayed "fair", and its one factor was system temperature.
+  The camera was never the limit; the whole phone was, and a phone plugged in
+  at 100 % is also running a charging circuit.
+
+So **serious is the normal working state of a phone on a stand**, not an
+alarm, and the question is not how to get back to nominal. It is what the
+phone still delivers while it sits there — which was 30 fps, indefinitely.
+
+{: .warning }
+Blackout made **no measurable thermal difference** over nineteen minutes at
+serious. Keep doing it: a lit screen is visible from the house and a dark one
+keeps the interface idle. But it will not bring a plugged-in phone back, and
+anyone treating it as the cooling fix will be disappointed by the numbers.
+
+Operator: shade it or give it air if you can. The console shows capture
+pressure per device, and the factor tells you *which* part is hot — worth
+reading before intervening, because shading helps a hot camera and does
+nothing for system temperature.
+
+Status: **measured on two phones over ninety minutes** ([#31](https://github.com/AristidesAI/TDStage/issues/31)). Not yet
+measured on a full rig, in a venue, or anywhere warm.
 
 ### The wired link routes nowhere
 

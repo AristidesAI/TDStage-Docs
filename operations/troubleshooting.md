@@ -76,6 +76,10 @@ here is what an operator sees at the desk.
 | send failed | Phone unreachable: check it is on the network and its IP has not changed (device page shows the last seen address). Ping it. |
 | fan-out stopped | Start the fan-out again (Live > Ingest) or run Tools/show_mac.sh; until then TD receives nothing on 9004. |
 | Coordinator stopped listening | Click Listen in Settings to resume receiving telemetry. |
+| colour shed for heat | The phone is hot: depth keeps its frame rate, colour stops. Blackout its screen, shade it or add airflow; it returns by itself when the phone cools. |
+| manual IP .* does not route | The phone's DHCP address changed. Commands now go to the address its telemetry comes from, so it keeps working, but correct or clear the IP on its device page so it does not depend on telemetry arriving first. |
+| background loop .* raised | A console background loop hit an error and was restarted; its feature carries on. Send logs/console.log (it has the traceback) so the cause gets fixed. |
+| Phones \d+ and \d+ disagree by | Re-run the align from the Live view's Align panel; if one phone was bumped, walk calibration with only that phone. |
 | rig align | The two phones need overlapping floor in view. Move the anchor phone or calibrate both on markers. |
 | F1 producer | Check the F1 settings (Live > Client output); the WebSocket port (9001/tcp) must be free. |
 | YOLO backend failed | A fault while starting the YOLO observer (the line names it, logs/console.log has the traceback): Apple Vision carries the person masks for this session. The backend is wired in when the console starts, so a console restart is what tries YOLO again; report the error if it repeats. |

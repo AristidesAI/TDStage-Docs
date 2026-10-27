@@ -51,23 +51,29 @@ the telemetry port first and the start reports become trustworthy.
 **Blackout all** (6) is not a stop. It turns the enabled phones' screens off
 while they keep streaming, which is what a phone on a stand should look like
 during a performance: dark, and working. A lit screen is visible from the
-audience and it adds heat, and heat is what costs frame rate: a phone that
-reaches **serious** is capped at 25 fps, and at **critical** it halves its
+audience, so blackout is worth doing for that reason alone. It is **not** a
+cooling measure: a ninety-minute run on two phones found no measurable thermal
+difference from blacking out a plugged-in phone.
+
+What heat does cost is frame rate, through the ladder: a phone at **serious**
+is capped at `stage.thermalSeriousFPS`, and at **critical** it halves its
 nominal rate with a floor of 10. The console asks for confirmation first.
 
 {: .note }
-That 25 is a setting rather than a ratio, and it was raised deliberately: the
-rung used to be a fraction of the nominal rate, which took a hot 30 fps phone
-down to 20 ([#31](https://github.com/AristidesAI/TDStage/issues/31)). An
-absolute floor keeps a hot phone useful instead of letting a thermal problem
-become a tracking problem.
+**That cap is now 30, which means a hot phone is not slowed down at all** at a
+30 fps target. It started as a fraction of the nominal rate, which took a hot
+phone to 20; then an absolute 25; and the heat run settled it at 30, because a
+phone held 30 fps at serious for half an hour without ever reaching critical,
+and its capture age went *down* rather than up ([#31](https://github.com/AristidesAI/TDStage/issues/31)). The rung still
+exists for a phone configured faster than 30, and for a machine that behaves
+worse than these two did.
 
-**A hot phone now sheds colour before it sheds frame rate.** By default the
-colour plane comes off the wire at *serious*, ahead of any rate cut, which is
-the right order: colour costs that phone half its bandwidth and is sampled by
-the person model about nine times a second anyway, while frame rate is what
-tracking is made of. It comes back when the phone cools, on the same hold as
-the rate.
+**Shedding colour when hot exists and is switched off.** The ladder can take
+the colour plane off the wire at fair or at serious, ahead of any rate cut. It
+was briefly the default, and Ari turned it off on 2026-10-28: the run showed
+that losing colour did not visibly change the thermal state either, so it was
+paying a real cost — no person masks, no hands from that phone — for no
+measured thermal gain.
 
 **Ping all** (3) asks every phone with a known IP for a reply, disabled ones
 included, and changes nothing on them. The reply comes back over the telemetry

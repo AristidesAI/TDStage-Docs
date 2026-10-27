@@ -192,9 +192,12 @@ were built because sending colour intermittently used to break something:
   phone on a stand this is invisible; it is worth knowing before anybody hand
   holds one.
 
-**A hot phone does this by itself.** The thermal ladder sheds the colour plane
-before it cuts frame rate, so a phone in trouble halves its own bandwidth and
-keeps its rate, and picks colour back up when it cools.
+**A hot phone can do this by itself, and currently does not.** The thermal
+ladder is able to shed the colour plane before it cuts frame rate, which would
+halve that phone's bandwidth while keeping its rate. It is switched off by
+default: the heat run of 2026-10-28 found that taking colour off the wire did
+not visibly change a phone's thermal state, so it cost the person masks and the
+hands from that phone and bought nothing measurable.
 
 {: .note }
 Those bridge figures were measured over loopback. That is the right way to find

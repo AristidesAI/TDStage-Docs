@@ -31,11 +31,12 @@ with JSON.
 on its own port, 9001 by default. The tracking output is OSC over UDP on port
 7000, configured through `POST /api/track`.
 
-Routes found in the source: 23 GET, 33 POST.
+Routes found in the source: 24 GET, 33 POST.
 
 | Path | Verb | What it is for |
 |---|---|---|
 | `/` | GET | The console's web interface. |
+| `/api/align/check` | GET | _Not described yet._ |
 | `/api/align/job` | GET | State, progress and result of the running (or last) alignment solve. Read only. One solve runs at a time, so starting another while one is running is refused rather than queued. |
 | `/api/align/rig` | POST | Solve where every phone is relative to an anchor phone, from the clouds alone, with no markers. Pass `job: true` to run it in the background and poll `/api/align/job`; eight phones is twenty-eight pairs and takes tens of seconds. Each answer is graded: a FAIL is refused and that phone is left where it was, a WARN is applied with its reason. |
 | `/api/align/walk` | POST | Walk calibration, which places phones from one person walking rather than from shared scenery, so it works for phones that face each other. `action`: `start`, then `stop` after about 20 seconds of walking where every phone sees you, then `solve`. A forgotten `start` stops itself after two minutes. `only` lists the phones to place, so a walk solve can finish what a cloud solve refused: every other checked phone stays where it is and is reported `FIXED`. |

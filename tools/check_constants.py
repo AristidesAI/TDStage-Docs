@@ -73,7 +73,7 @@ CHECKS = [
     ("console/resilience.md", r"given (\w+) seconds before it counts as failed",
      "WebConsole/yolo_seg.py", "START_TIMEOUT_S"),
 
-    ("console/guide.md", r"reaches \*\*serious\*\* is capped at (\d+) fps",
+    ("console/guide.md", r"\*\*That cap is now (\d+), which means",
      "TDStage/ShowSettings.swift", "stage.thermalSeriousFPS"),
 
     # Ports. A reader copies these into their own configuration, and a wrong
