@@ -323,6 +323,40 @@ away: **the walk was too short**. A walk of less than a metre across gives it
 nothing to fit a heading to, and the fix is to walk a proper loop rather than
 to re-run the solve.
 
+### A second opinion from Open3D
+
+There is a third solver, which runs the method TDStage's cloud matching took
+its principles from: Darien Brito's TDXDepthCamMerger, using Open3D's own
+feature matching and fine alignment rather than this project's plan-view
+correlation. It is available from the same align control, and runs in a
+separate Python — Open3D never loads inside the console or TouchDesigner, the
+same rule his component follows.
+
+The interesting part is what gets added to it, and why:
+
+**His method assumes a camera could be tipped any way. Ours cannot be.** Every
+phone levels itself on gravity, so pitch and roll are already known and only a
+heading and a position are in question. So the rough match is run eight times
+and the answers, flattened to heading and position, **vote** — fewer than three
+agreeing is a failure rather than an answer — and the fine alignment starts
+from the best three. The height comes from the floor sweep rather than from the
+match at all.
+
+That is the improvement: not a better algorithm, but an algorithm told
+something true about this rig that it could not assume in general. It is also
+why his own consensus warning fired on every run of the real pair — it was
+correctly reporting the ambiguity that gravity resolves for us.
+
+On a real pair of phones it repeated to **0.02 degrees of heading and 19 mm of
+height**, with a fit of 14.5 mm against 16.6 mm for the plan-view solve. The
+position repeated to 65 mm in one axis, and that number is honest rather than
+noise: it is the direction the shared surfaces do not pin down.
+
+{: .note }
+Not yet run on the live rig — the phones were offline when it was measured.
+Which solver to prefer is therefore still open, and the pair of them disagreeing
+on a real stage would itself be worth knowing.
+
 ### Correcting a phone that is not quite level
 
 A phone on a stand is levelled by its own gravity sensor, which is right about
