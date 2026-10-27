@@ -1,7 +1,7 @@
 ---
 title: HTTP API
 parent: Console
-nav_order: 5
+nav_order: 6
 ---
 
 # HTTP API

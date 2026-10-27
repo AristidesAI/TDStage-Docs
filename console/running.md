@@ -1,7 +1,7 @@
 ---
 title: Running the console
 parent: Console
-nav_order: 2
+nav_order: 3
 ---
 
 # Running the console

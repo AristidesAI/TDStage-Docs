@@ -19,8 +19,13 @@ back_to_top: true
 back_to_top_text: "Back to top"
 
 aux_links:
+  "Issues":
+    - "https://github.com/AristidesAI/TDStage/issues"
+  "Board":
+    - "https://github.com/users/AristidesAI/projects/1"
   "Source (private)":
     - "https://github.com/AristidesAI/TDStage"
+aux_links_new_tab: true
 
 footer_content: >-
   TDStage documentation. Operator and integrator reference.
