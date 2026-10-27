@@ -248,6 +248,16 @@ solver settled — not that the pose is right. A WARN is applied with its reason
 attached; a FAIL is refused and that phone is left alone rather than moved
 somewhere confident and wrong.
 
+{: .warning }
+**A finished solve is not proof that every phone moved.** A refused phone is
+left exactly where it was, and today it says so only in the Log and in the
+solve's own result — there is no row in Rig health and no red anywhere to catch
+your eye. So a solve can report itself finished with two phones still sitting
+at whatever positions they had before, which on a fresh roster means the
+defaults. **Read each phone's status**, in the result or in the Log, and treat
+"the align finished" as meaning nothing on its own. The Live view's alignment
+panel is where this is meant to end up, with a status for each phone.
+
 Three things the grading is looking for, each worth recognising on a get-in:
 
 - **Overlap.** How much of what one phone sees the other sees too. This is the
@@ -289,6 +299,8 @@ Do not call a rig built until all of these pass:
 - [ ] The marker size in the console matches the printed markers.
 - [ ] Calibration has solved for every phone.
 - [ ] **One person stands in the middle and the rig sees one person.**
+- [ ] If you used Rig align: **every phone's status read**, not just that the
+      solve finished.
 - [ ] A person walking the playing area stays tracked as they cross between
       the areas each phone covers.
 - [ ] The output reaches whatever is consuming it.
