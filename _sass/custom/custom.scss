@@ -26,3 +26,11 @@ pre:has(> code.language-mermaid) {
   padding: 0;
   overflow: visible;
 }
+
+// A note that belongs with _includes/mermaid_config.js but cannot live in it.
+//
+// Jekyll inlines that include onto a SINGLE line inside a <script> block, so a
+// `//` comment there swallows the rest of the line, which is the whole config
+// object. The result is `var config = ` followed by nothing, mermaid.initialize
+// receives undefined, and every diagram on the site silently stops rendering.
+// Keep that file to one line of JSON-ish object literal with no comments.
