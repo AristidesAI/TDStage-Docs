@@ -214,9 +214,19 @@ network that reaches the host**. The five seconds people remember is a
 different case: a link that is pinned to the wire and never becomes ready is
 abandoned after five seconds.
 
-Operator: re-seat the cable. A direct cable address can drift, in which case
-the console can re-teach the phone where to send. Detecting that drift rather
-than waiting for somebody to notice is [#19](https://github.com/AristidesAI/TDStage/issues/19).
+Operator: re-seat the cable.
+
+A direct cable address can also drift on its own, with nothing unplugged. The
+Mac re-picks its link-local address — measured drifting twice in two days on
+this rig — and the phone goes on streaming to the address it learned, which no
+longer exists. Nothing on either end reports an error; the stream simply stops.
+
+**The console watches for this and says so**, naming the old address and the
+new one, with the fix attached: press **Autofix** on that phone, which sends it
+a message over the cable so it learns the new address from where that message
+came from. The re-teaching is one click rather than automatic, which is
+deliberate — reaching for a phone unasked is what the recovery rules exist to
+prevent ([#19](https://github.com/AristidesAI/TDStage/issues/19)).
 
 Status: code review and unit tests. **Not verified on a rig.**
 
