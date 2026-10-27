@@ -1,0 +1,28 @@
+// Mermaid diagrams.
+//
+// The theme renders a diagram inside the <code> element it replaced, and that
+// element is display:inline. An inline box collapses to one line height, so a
+// correctly parsed 1800px diagram shows as a 14px sliver and reads as a
+// rendering failure. These three rules are the whole fix.
+code.language-mermaid {
+  display: block;
+  background: none;
+  padding: 0;
+  border: 0;
+}
+
+code.language-mermaid > svg {
+  display: block;
+  margin: 0 auto;
+  height: auto;
+  max-width: 100%;
+}
+
+// The wrapping <pre> keeps its code styling otherwise, which puts a box and a
+// scrollbar around a picture.
+pre:has(> code.language-mermaid) {
+  background: none;
+  border: 0;
+  padding: 0;
+  overflow: visible;
+}
