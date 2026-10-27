@@ -161,6 +161,20 @@ symptom to look for is one performer appearing twice, not a blur. A phone
 mounted high and looking down also drops its cloud, by 11 % of the height it
 has on the marker.
 
+### Checking it at a get-in, with one person
+
+The doubled performer is also the test, and it needs nothing but a body.
+
+Pick two phones that face each other across the stage and have somebody stand
+between them. If the size is right they produce **one** person. If it is wrong
+they produce **two**, separated along the line between the two stands by the
+sum of each phone's shift — which you can predict from how far each stand is
+from its marker, so you can tell "the size is wrong" from "something else is
+wrong" before you start changing settings.
+
+It costs thirty seconds and it is the only check here that does not depend on
+somebody having measured the right thing with a ruler.
+
 Order of work: set the size (1), **Apply to all phones** (2) so every phone
 is solving against the same number, then export (3) or print (4).
 
