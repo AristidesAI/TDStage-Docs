@@ -52,7 +52,7 @@ flowchart LR
   P1["iPhone 1<br/>LiDAR depth"]
   P2["iPhone 2"]
   PN["iPhone n"]
-  BR{{"tdp4_bridge.py<br/>binds :9003"}}
+  BR[["tdp4_bridge.py<br/>binds :9003"]]
   SHM[("shared memory<br/>read as port 9004")]
   TD["TouchDesigner<br/>merge, clean, fuse"]
   CO["Web console<br/>:9013"]

@@ -17,7 +17,7 @@ manages the devices and carries the tracking outputs to other systems.
 ```mermaid
 flowchart TD
   PH["iPhone Pros on tripods<br/>raw LiDAR depth grid"]
-  BR{{"Receiving bridge<br/>binds UDP :9003"}}
+  BR[["Receiving bridge<br/>binds UDP :9003"]]
   TD["TouchDesigner hub<br/>unproject, merge,<br/>clean, fuse"]
   CON["Web console<br/>roster, calibration,<br/>health, segmentation"]
   VIS["Visual output"]

@@ -39,7 +39,7 @@ reads the same file, as a second independent reader.
 ```mermaid
 flowchart LR
   PH["Phones<br/>TDP4 depth grids"]
-  BR{{"tdp4_bridge.py<br/>binds UDP :9003<br/>own process, own GIL"}}
+  BR[["tdp4_bridge.py<br/>binds UDP :9003<br/>own process, own GIL"]]
   SHM[("Memory-mapped file<br/>published as 9004<br/>16 device slots")]
   TD["TouchDesigner<br/>ShmReader on Udpport"]
   CON["Web console<br/>its own bridge loop"]

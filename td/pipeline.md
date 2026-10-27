@@ -24,7 +24,7 @@ per cooked frame, and it is deliberately short.
 ```mermaid
 flowchart TD
   PH["Phones<br/>TDP4 depth grids, UDP"]
-  BR{{"tdp4_bridge.py<br/>own process, own GIL"}}
+  BR[["tdp4_bridge.py<br/>own process, own GIL"]]
   SHM[("Memory-mapped file<br/>one slot per device")]
   CON["Web console<br/>second reader"]
   RX["tdp4_receiver<br/>reassembly, latest-wins"]
