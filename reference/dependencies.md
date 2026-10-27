@@ -36,14 +36,24 @@ flowchart TB
 ```
 
 The console picks the worker interpreter at import time in
-`WebConsole/yolo_seg.py`. The order is: the `TDSTAGE_YOLO_PYTHON` environment
-variable, then the console's own interpreter if it can see `ultralytics`, then
-a hard-coded legacy macOS virtualenv path that lives outside the repository,
-then the console's interpreter anyway so that the error names a real path. On
-the Windows show machine the installer puts everything in one virtualenv and
-the first two branches collapse into one. On a development Mac they frequently
-do not, and the console then runs segmentation in an interpreter nobody
-remembers creating. On the board as [#39](https://github.com/AristidesAI/TDStage/issues/39).
+`WebConsole/yolo_seg.py`, and the order is now short and honest:
+
+1. `TDSTAGE_YOLO_PYTHON`, taken as given. A wrong one fails with an error that
+   names it.
+2. The console's own interpreter, if it can see `ultralytics`. This is the
+   Windows show machine, where the installer puts everything in one virtualenv.
+3. Nothing. YOLO is off, one error is logged at boot, Rig health carries a row
+   saying so, and person masks come from Apple Vision where it exists.
+
+{: .note }
+That third branch used to be a hard-coded path to a virtualenv belonging to an
+unrelated project on one particular Mac, which meant segmentation quietly ran
+in an interpreter nobody remembered creating, and a machine rebuilt from the
+declared files behaved differently from that one. Fixed on 2026-10-27
+([#39](https://github.com/AristidesAI/TDStage/issues/39)): per-machine paths now live in `Tools/show_mac.local`, which is
+untracked and sourced by `Tools/show_mac.sh`. `doctor.py` prints which
+interpreter the worker actually resolved to, which is the question worth asking
+when masks are missing.
 
 TouchDesigner never participates. It loads its own Python 3.11 from inside the
 application bundle, so a package you install system wide, or into the console's
@@ -188,12 +198,16 @@ Probed on 2026-10-27, `WebConsole/.venv` is Python 3.14.7 and was created with
 `--system-site-packages`. Only `pip`, the pyobjc frameworks and `cyndilib` were
 installed into it. Everything else it can import, including `numpy` 2.4.6,
 `pillow`, `lz4` and `mcap`, comes from the Homebrew system interpreter that
-leaks through that flag. It cannot import `psutil`, `ultralytics` or `torch` at all. The consequence is specific: `_worker_python()` finds no
-`ultralytics`, falls through to the hard-coded legacy macOS path in
-`yolo_seg.py`, and segmentation runs in a Python 3.12 virtualenv belonging to
-an unrelated project, with its own `ultralytics` and `torch`. That works, and it is not reproducible on any other machine.
-A Mac rebuilt from the commands above will behave differently from this one
-unless the legacy path is also recreated or `TDSTAGE_YOLO_PYTHON` is set.
+leaks through that flag. It cannot import `psutil`, `ultralytics` or `torch` at all. The consequence is
+specific: `_worker_python()` finds no `ultralytics` here, so unless
+`TDSTAGE_YOLO_PYTHON` is set this Mac runs **without YOLO**, on Apple Vision
+masks alone, and says so once at boot and in Rig health.
+
+Until 2026-10-27 it instead fell through to a hard-coded path into another
+project's Python 3.12 virtualenv, which worked on this machine and on no other.
+Set `TDSTAGE_YOLO_PYTHON` in `Tools/show_mac.local` to point at a Python that
+has `ultralytics`, or install the vision requirements into the console's own
+interpreter.
 
 **Installed but not declared:** `cyndilib` 0.1.1, which is intentional and
 documented in the requirements file as the optional NDI output.
@@ -424,9 +438,11 @@ the tox's code.
    the cross-platform path are absent on any machine built from the installer,
    and nothing reports it as an error.
 2. There is no macOS installer, and the virtualenv in this repository is not
-   reproducible from the declared files. It was created with system site
-   packages and relies on a hard-coded legacy path for the heavy machine
-   learning dependencies.
+   reproducible from the declared files: it was created with system site
+   packages. It no longer relies on another project's path for the heavy
+   machine learning dependencies, but a Mac built from the declared files still
+   has no `ultralytics`, and therefore no YOLO, until somebody installs it or
+   points `TDSTAGE_YOLO_PYTHON` at a Python that has it.
 3. The requirements file is the environment's manifest, not the console's. Three
    packages in it belong to host-side tools rather than to the console, which is
    fine once you know, and confusing when auditing imports against declarations.

@@ -128,8 +128,11 @@ outage entirely.
 
 Automatic: the phone resumes streaming when the app relaunches. If the show
 was started with **Start show**, the console's auto-recover then sends start to
-a phone that is back online but idle, within a few seconds and at most once
-every thirty seconds per phone.
+a phone that is back online but idle — but only once it has stayed back for
+twelve seconds without dropping again, and at most once every thirty seconds
+per phone. A phone that flaps restarts that twelve second clock each time,
+which is the point: the console waits for a phone that is actually back rather
+than chasing one that is still coming and going.
 
 That qualifier matters. Auto-recover is off when the console boots, and
 **Start all does not arm it** — only Start show does, and Standby and Stop

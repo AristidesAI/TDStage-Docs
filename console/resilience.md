@@ -342,14 +342,22 @@ seeded a fresh six device session, and the next save wrote that seed over
 `config.json` and filed it as the newest backup.
 
 Because the console cannot tell a good file from a plausible one, it tells the
-operator instead. `BOOT_NOTE` persists the whole session and is the first row
-of Rig health, so the fact that this boot came from a backup does not scroll
-away with the log:
+operator instead. Boot problems are collected into a **list** that sits at the
+top of Rig health, so the fact that this boot came from a backup does not
+scroll away with the log, and a boot with three things wrong reports three
+rather than the first one:
 
 ```python
-BOOT_NOTE = {"title": "Console started from a backup" ...,
-             "fix": "Check the roster and markers on the All phones and Markers pages. ..."}
+BOOT_NOTES = []
+
+def _boot_note(title, detail, fix):
+    BOOT_NOTES.append({"title": title, "detail": detail, "fix": fix})
 ```
+
+They persist until the **first successful save**, which is the right moment to
+clear them: saving is the act that replaces whatever the console booted with,
+so the warning stops being true at exactly that point rather than after a
+timeout or a page refresh.
 
 There is a second note for the subtler case: a fresh seed **while** a valid
 roster exists in `backups/`. That is logged at error level and names the
@@ -651,12 +659,19 @@ TouchDesigner's cloud as a side effect of reconnecting.
 re deployment roughly every quarter or a different distribution method, and
 that decision has not been made.
 
-**`graceSeconds` is dead code.** `RECOVERY["graceSeconds"]` is documented as
-"how long a phone may be back before we act", is persisted, is loaded and is
-settable over the API, but `recovery_loop` never reads it. The loop acts on the
-next two second tick after a phone returns, gated only by `cooldown`. Where a
-comment and the code disagree, trust the code: there is no grace period. On
-the board as [#40](https://github.com/AristidesAI/TDStage/issues/40).
+**`graceSeconds` was dead code until 2026-10-27**, and the shape of the bug is
+worth keeping even though it is fixed ([#40](https://github.com/AristidesAI/TDStage/issues/40)). The value was documented,
+persisted, loaded and settable over the API, and `recovery_loop` never read it:
+the loop acted on the next two second tick after a phone returned, gated only
+by `cooldown`. Everything about it looked wired up except the one line that
+used it.
+
+It now does what it always said: a phone that comes back is acted on only after
+staying back for `graceSeconds` (12 s by default), and a drop inside the grace
+restarts its clock. One caveat worth knowing, because it moves the number: the
+console keeps a phone "online" for six to eight seconds after its last packet,
+so the grace counts from the first sighting of a return, not from the instant
+the phone actually came back.
 
 **Most of the fallbacks are verified in code, not on the rig.** The distinction
 is in the "Verified" column of `Notes/Fallbacks.md` and it is worth taking

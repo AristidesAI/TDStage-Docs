@@ -197,7 +197,24 @@ to remember and one firewall rule per direction.
 | `--sim-port PORT` | `9013` | A second TDP4 listener the console always owns. The built in simulator is aimed at it. A real phone can be pointed here when TD is not in the loop. | Rarely. Change it only to avoid a clash, and then set the fan out's second target to match. |
 | `--f1-port PORT` | `9001` | The F1 0.4 draft WebSocket (SMSF, SMSP, SMSS). **TCP**, so it coexists with a UDP `--listen 9001`. `0` turns it off. | `0` when no client machine is consuming it. |
 | `--f1-hz RATE` | `15.0` | Rate of the F1 field. | Only if the client asks for a different rate. |
-| `--config PATH` | `config.json` beside `server.py` | The config file to load and save. Phone profiles move with it, into a `profiles` folder beside it. | Always, when you run a second instance for a test or a measurement. |
+| `--config PATH` | `config.json` beside `server.py` | The config file to load and save. Phone profiles move with it, into a `profiles` folder beside it. **Also turns the TouchDesigner link off**, unless `--td-link` is given. | Always, when you run a second instance for a test or a measurement. |
+| `--td-link` | off for a `--config` instance, on otherwise | Lets a `--config` instance drive TouchDesigner: push poses, own the registration table. | Only when a second instance is deliberately taking over TD from the show console. |
+
+### A second instance will not drive TouchDesigner
+
+A console started with `--config` pointing anywhere but the default file comes
+up with the **TouchDesigner link off**, whatever its own saved configuration
+says, unless `--td-link` is also on the command line. It warns, and the warning
+carries the fix.
+
+The reason is a real incident rather than caution: on link-up a console pushes
+its own phone poses into TouchDesigner's registration table, so a scratch
+console started for a measurement moved phones 1 to 6 in the live tox. A test
+instance now has to ask before it can do that.
+
+The launchers pass no `--config`, so the show path is unchanged. If a
+`--config` instance *should* own TouchDesigner, start it again with
+`--td-link`, or turn the Dashboard's TD switch on for that run.
 
 ### What `--config` does to a fresh instance
 

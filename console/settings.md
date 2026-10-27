@@ -113,6 +113,10 @@ Per group, with the **Reset** button on the group's header. All groups, with
 **Reset all**, which asks first because the background relearns and the tracker
 may hand the client new performer ids.
 
+One key is deliberately exempt: `latency.personMode` survives both kinds of
+reset, because it says what the rig is doing rather than how well. The list is
+`KEEP_ON_RESET` in `WebConsole/settings.py`.
+
 A small number of defaults have been retuned after measurement. When that
 happens the console moves a saved value **only if it equals the old default**,
 on the grounds that nobody chose it; a value someone set differently is kept.
@@ -311,25 +315,30 @@ latency group, until this is fixed.
 
 ## Three things about this schema that will trip you up
 
-### 1. `latency.personMode` cannot select Consensus
+### 1. The person filter used to forget what you picked
 
-The schema's options are `off`, `motion`, `vision` and `combined`. The ingest
-module also accepts **`consensus`**, and the Live view's People only panel
-offers it, because that button uses `POST /api/person` rather than
-`POST /api/settings`.
+Fixed on 2026-10-27 ([#37](https://github.com/AristidesAI/TDStage/issues/37)), and kept here because the failure is a
+good example of how a setting can be half-wired.
 
-Consequences, both verified in the source:
+The Live view's People only panel offered **Consensus**, and the ingest module
+accepted it, but the settings schema's options were `off`, `motion`, `vision`
+and `combined` only. So the mode could be selected and applied, and could never
+be **saved**. Pressing the button worked; editing anything else in the same
+group, or restarting the console, silently put the rig back on the saved mode.
+It dropped Consensus in the middle of a demo.
 
-- `POST /api/settings {"latency": {"personMode": "consensus"}}` will be rejected
-  as an invalid enum value.
-- Selecting Consensus in the UI works, but the mode is held in the ingest module
-  rather than written back into the settings store, so **it does not survive a
-  console restart.** After a restart the persisted `personMode` is applied
-  instead, which is `off` unless someone set it.
+Three things were wrong at once, which is why it survived: the enum was missing
+a value the UI offered, the button wrote to a different route than the setting,
+and that route only set the live mode. All three are fixed. `consensus` is now
+a valid option, `POST /api/person` writes `latency.personMode` and persists it
+like any other setting, and ingest re-applies the mode only when it actually
+changes. An unknown mode is refused with a 400 naming the valid ones.
 
-If the show needs Consensus, set it from the UI after every console start, and
-check the People only panel before the house opens. This looks like an
-oversight rather than a decision, but that is unverified.
+**Reset keeps it.** A reset of the `latency` group, or Reset all, leaves
+`personMode` where you put it and returns everything else in the group to its
+default. It is in `KEEP_ON_RESET` because it is a choice about what the rig is
+doing, not a tuning value, and resetting tunables should not quietly change
+that.
 
 ### 2. Two camera view tunables are not reachable from the Tuning panel
 
