@@ -49,16 +49,27 @@ the left column: the simulator sends 256×192. A rig of iPhone 17 Pros sends
 320×240, so the show setting is about 38,000 packets per second and colour on
 eight phones is about 76,000.
 
+**The bridge is not the limit.** It was measured on 2026-10-27 at 114,500
+packets per second — twelve phones' worth of 320×240 with colour — with no
+incomplete frames, every phone still at 30.0 fps, and 55 per cent of one core.
+Eight colour phones offer 76,300, so there is about half as much again in hand.
+
+An earlier figure of 61,000 appears in this project's launcher comments and in
+older notes. **That was the highest load anyone had tried, not a ceiling**, and
+it is worth knowing the difference, because a number quoted as a limit tends to
+become one in people's planning.
+
 {: .warning }
-That matters against a measured ceiling. The receiving bridge was measured at
-about 61,000 packets per second, and the retired fan-out relay lost packets
-above about 30,000. So the show setting fits the bridge with room, and **colour
-on eight real phones is above what the bridge was measured to carry.** The
-arithmetic here is from the wire format and the measured grid; the ceilings are
-measurements. Nobody has yet run eight real phones with colour to see which
-gives first — the packet ceiling or the link, which that configuration also
-fills to 937 Mbit/s of framed traffic on a 1,000 Mbit/s line. Open as
-[#42](https://github.com/AristidesAI/TDStage/issues/42).
+The limit is the link. Eight phones with colour is 937 Mbit/s of framed traffic
+on a 1,000 Mbit/s line, which is the binding constraint and leaves nothing for
+a burst. The bridge figures were measured over loopback, which skips a real
+network card's receive path and the switch, so the bridge half is proven and
+the end-to-end path through the PoE switch is not. What to do about the link —
+a phone-side colour rate, colour on a subset of phones, or 2.5 GbE and a second
+card — is open as [#42](https://github.com/AristidesAI/TDStage/issues/42).
+
+The retired fan-out relay lost packets above about 30,000 per second, which is
+why it is retired.
 
 A receiver that does not drain on a dedicated thread with a raised socket
 buffer will lose packets as buffer overflow, which looks like network loss and

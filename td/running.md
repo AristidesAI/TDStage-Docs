@@ -149,7 +149,9 @@ remains only as an option for the CPU merge path with no bridge.
 Measured, simulation: the relay is bound by its three syscalls per datagram and
 tops out near 30,000 packets per second on an M-series Mac (no loss at 25,000,
 24 per cent loss at 40,000, 43 per cent at 50,000). The bridge alone took
-61,000 packets per second with no loss at twelve colour streams. Eight phones
+114,500 packets per second with no loss at twelve colour streams of 320×240,
+at 55 per cent of one core. An earlier figure of 61,000 was the highest load
+tried at the time, not a ceiling. Eight phones
 sending depth, confidence and colour would be about 49,000 packets per second
 **at the simulator's 256×192 grid**, and about 76,000 at the 320×240 a real
 iPhone 17 Pro sends. Both are arithmetic from the frame size, not measurements,

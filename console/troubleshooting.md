@@ -192,7 +192,9 @@ running with the wrong second target.
 **Do not reach for the fan out relay.** `udp_fanout.py` is legacy. It lost
 packets above about 30,000 datagrams per second, and eight phones with colour
 are 49,000 at the simulator's grid (about 76,000 at the grid real phones send).
-The bridge alone took 61,000 with no loss. The Start fan out button
+The bridge alone took 114,500 with no loss
+(measured 2026-10-27; the 61,000 in older notes was the highest load then
+tried, not a limit). The Start fan out button
 exists for a no bridge CPU path only.
 
 ---

@@ -128,13 +128,22 @@ taste; at 320×240 it is 937 Mbit/s of framed traffic on a 1,000 Mbit/s line,
 which is not a decision anyone should take during a show. **Colour is for three
 phones and for measurement, not for eight phones live.**
 
-Nobody has run eight real phones with colour. The bridge is measured lossless
-to 61,000 packets per second and that configuration offers about 76,000, so
-there are two ceilings in play and no evidence about which gives first. What to
-do about it — a phone-side colour rate with a receiver hold, colour on a subset
-of phones, or 2.5 GbE and a second network card — is open in
-[#42](https://github.com/AristidesAI/TDStage/issues/42). A load test at the
-real grid is ready and waiting for the show machine to be free.
+Which of the two ceilings binds is now settled, and it is the link. A load
+test on 2026-10-27 took the receiving bridge to 114,500 packets per second —
+twelve phones of 320×240 with colour — with no incomplete frames and every
+phone still at 30.0 fps, at 55 per cent of one core. Eight colour phones offer
+76,300, so the bridge has about half as much again in hand. The 61,000 figure
+in older notes was the highest load tested, not a limit.
+
+So the constraint is 937 Mbit/s of framed traffic on a 1,000 Mbit/s line, with
+nothing left for a burst. That is a cabling decision rather than a software
+one, which is why it is open as [#42](https://github.com/AristidesAI/TDStage/issues/42): a phone-side colour rate, colour
+on a subset of phones, or 2.5 GbE and a second card.
+
+{: .note }
+Those bridge figures were measured over loopback. That is the right way to find
+the software's own ceiling, and it skips a real network card's receive path and
+the switch, so the end-to-end path at this load has still not been measured.
 
 The work does not disappear, it moves. The receiver regenerates the points
 from the grid on the GPU, where unprojecting around 614,000 cells is
@@ -314,7 +323,7 @@ synthetic streams, not from phones.
 | GPU merge path, frame rate held | 60 fps at 8, 12 and 16 streams | Measured, simulation |
 | Transport loss up to 16 streams | 0 incomplete frames, at 573 Mbit/s | Measured, simulation |
 | Bridge to TouchDesigner delay | 9.5 ms median, 15.3 ms at the 95th percentile | Measured, simulation |
-| Bridge receive capacity | 61,000 packets per second with no drops | Measured, simulation |
+| Bridge receive capacity | 114,500 packets per second with no drops, 55 % of one core (twelve phones of 320×240 with colour). An earlier 61,000 was the highest load then tried, not a limit | Measured 2026-10-27, loopback |
 | Eight phones with colour, offered load | 49,000 packets per second at 256×192; about 76,000 at the 320×240 real phones send | Arithmetic from the frame size |
 
 Real-phone evidence is **one phone**. Nothing in this table was produced by

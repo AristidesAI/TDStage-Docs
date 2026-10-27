@@ -229,10 +229,13 @@ basis to use for a claim about fitting on a cable.
 
 Either way: eight phones on `depth+conf` is about 47 per cent of a gigabit
 link. **Eight phones on `+conf+rgb` is 94 per cent, which is not a show
-configuration** — it is also about 76,000 packets per second, above what the
-receiving bridge has been measured to carry. Colour is for three phones and for
-measurement. The options are open in
-[#42](https://github.com/AristidesAI/TDStage/issues/42).
+configuration.**
+
+The receiving software is not what stops you — the bridge has been measured to
+114,500 packets per second, and eight colour phones offer 76,300. It is the
+cable: 937 Mbit/s of framed traffic on a 1,000 Mbit/s line, with nothing spare
+for a burst. Colour is for three phones and for measurement until that is
+solved, and the options are open in [#42](https://github.com/AristidesAI/TDStage/issues/42).
 
 {: .note }
 Figures of 283 and 566 Mbit/s appear in older notes and in the system
