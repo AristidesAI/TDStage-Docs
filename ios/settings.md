@@ -151,6 +151,14 @@ the grid that is captured or sent. It is still stored, reported and carried in
 a profile. A change is refused while a take is recording, because a take is one
 file with one geometry in its header.
 
+So its default of `256x192` is **not** what the phone sends, and reading it as
+a statement about the wire is the mistake this key invites. The phone takes the
+smallest float depth format its camera offers, which is **320×240 on an iPhone
+17 Pro**. To know what a phone is really sending, read the grid on the LIVE
+page's stream line, or the frame header — not this key. Bandwidth and disk
+figures that assume 256×192 understate a real phone by about half again:
+[Wire and disk cost](record.html#disk-cost).
+
 ---
 
 ## Processing

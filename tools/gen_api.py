@@ -20,6 +20,36 @@ import pathlib
 import re
 import sys
 
+
+WORKING_TREE = False          # --working-tree flips this
+
+
+def source_state(repo: pathlib.Path, rel: str):
+    """(text, note) for a source file, reading the COMMITTED version by default.
+
+    These generators run against a working tree that other sessions are editing.
+    Reading the checkout means a half-finished change can be published as
+    documentation before it is even committed, and `--check` then reports the
+    page stale against code that may still be rewritten or dropped. It happened
+    on 2026-10-27: a regeneration picked up another session's uncommitted
+    rewrite of the fix hints.
+
+    So the default is `git show HEAD:<rel>`, which is a real, named state that
+    can be pointed at. `--working-tree` opts into the checkout, and says so in
+    the page's own provenance line.
+    """
+    import subprocess
+    if WORKING_TREE:
+        return (repo / rel).read_text(encoding="utf-8"), "working tree (--working-tree)"
+    try:
+        out = subprocess.run(["git", "-C", str(repo), "show", f"HEAD:{rel}"],
+                             capture_output=True, text=True, check=True).stdout
+        sha = subprocess.run(["git", "-C", str(repo), "rev-parse", "--short", "HEAD"],
+                             capture_output=True, text=True, check=True).stdout.strip()
+        return out, f"committed {sha}"
+    except Exception as e:
+        return (repo / rel).read_text(encoding="utf-8"), f"working tree (no git: {e})"
+
 OUT = pathlib.Path(__file__).resolve().parent.parent / "console" / "api.md"
 
 # What each route is for. Anything missing here is still listed, marked so it
@@ -134,7 +164,7 @@ def routes(repo: pathlib.Path):
     A route belongs to whichever `do_GET` / `do_POST` body it sits in, which
     is the only place the verb is actually decided.
     """
-    src = (repo / "WebConsole" / "server.py").read_text(encoding="utf-8").splitlines()
+    src = source_state(repo, "WebConsole/server.py")[0].splitlines()
     method = None
     out = []
     for n, line in enumerate(src, 1):
@@ -203,8 +233,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo", default="../TDStage")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--working-tree", action="store_true",
+                    help="read the checkout instead of HEAD (documents uncommitted code)")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
+    globals()['WORKING_TREE'] = a.working_tree
     if a.selftest:
         demo()
         return

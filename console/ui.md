@@ -383,7 +383,7 @@ govern the detector.
 
 ### Phone cameras
 
-A grid of per phone tiles, the camera frame resampled to the 256x192 depth grid
+A grid of per phone tiles, the camera frame resampled to the depth grid
 with the instance mask and wrists drawn on. Blank until a phone or the simulator
 puts the rgb plane on the wire.
 

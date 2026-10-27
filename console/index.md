@@ -286,8 +286,10 @@ than packets.
 **`udp_fanout.py` is legacy, and optional.** It still exists and still works,
 and the console can start and stop it, but it is not the show path. It copied
 every datagram with three syscalls and lost packets above about 30,000 per
-second, and eight phones with colour are 49,000. The bridge alone received
-61,000 per second with no loss. *Measured, simulation.* Keep the relay only for
+second, and eight phones with colour are 49,000 at the simulator's grid. The
+bridge alone received 61,000 per second with no loss. *Measured, simulation* —
+and note that real phones send a bigger grid, so eight of them with colour
+would offer about 76,000. Keep the relay only for
 a no bridge CPU path.
 
 The architecture **diagram** in the system repository's `CLAUDE.md` still shows

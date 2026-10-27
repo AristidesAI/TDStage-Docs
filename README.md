@@ -94,8 +94,21 @@ edited by hand:
 | `console/api.md` | the console's `do_GET` and `do_POST` route handlers | `python3 tools/gen_api.py` |
 
 Both take `--repo <path to TDStage>` and both have a `--check` mode that exits
-non-zero when the page is behind the code. Run the checks after any session
-where the console changed:
+non-zero when the page is behind the code.
+
+**They read the committed code, not the checkout.** That is deliberate. The
+system repository is worked on by more than one session at a time, so reading
+the working tree means a half-finished change can be published as documentation
+before it is even committed — and `--check` then calls the page stale against
+code that may still be rewritten or dropped. It happened on 2026-10-27: a
+regeneration picked up another session's uncommitted rewrite of the fix hints,
+and the page would have described behaviour that did not exist yet.
+
+So the default is `git show HEAD:<file>`, which is a state with a name you can
+point at. `--working-tree` opts into the checkout when you genuinely want to
+preview what an uncommitted change will do to a page.
+
+Run the checks after any session where the console changed:
 
 ```
 python3 tools/gen_api.py --check --repo ../TDStage

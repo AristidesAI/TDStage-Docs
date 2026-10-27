@@ -191,7 +191,8 @@ running with the wrong second target.
 
 **Do not reach for the fan out relay.** `udp_fanout.py` is legacy. It lost
 packets above about 30,000 datagrams per second, and eight phones with colour
-are 49,000. The bridge alone took 61,000 with no loss. The Start fan out button
+are 49,000 at the simulator's grid (about 76,000 at the grid real phones send).
+The bridge alone took 61,000 with no loss. The Start fan out button
 exists for a no bridge CPU path only.
 
 ---
@@ -203,7 +204,7 @@ frame". The camera overlay card over the 3D view is empty. The vision observer
 reports nothing.
 
 **Why.** Colour is not on the wire by default. The only colour anywhere in this
-system is the phone's camera frame resampled to the depth grid, 256x192 RGB8,
+system is the phone's camera frame resampled to the depth grid, RGB8,
 and it rides the wire only when that phone's `stage.udpPlanes` includes `rgb`.
 The default is `depth+conf`.
 

@@ -85,25 +85,40 @@ function of data the receiver already holds.
 Sending them anyway means paying for bandwidth to transmit information that
 was already there.
 
-Per 256×192 grid at 30 fps, over a gigabit link with roughly 940 Mbit/s
-usable. These are **arithmetic from the transport spec**, not measurements:
-cell count times bytes times frame rate. The transport was then measured
-separately, at the bottom of this page.
+{: .warning }
+**The grid is the phone's choice, not a constant, and it decides every number
+below.** The app takes the smallest float depth format the camera offers, which
+is **320×240 on an iPhone 17 Pro** — 1.56 times the cells of the 256×192 that
+the simulator uses and that most figures in this project were originally
+computed at. A `stage.depthgrid` setting exists and is inert. So read the right
+column for a real rig, and the left one only when you are reasoning about
+simulated phones.
 
-| What is sent | Bytes per cell | One phone | Eight phones | Share of the link |
+At 30 fps over a gigabit link with roughly 940 Mbit/s usable. These are
+**arithmetic from the transport spec**, not measurements: cell count times
+bytes times frame rate. The transport was then measured separately, at the
+bottom of this page.
+
+| What is sent | Bytes per cell | Eight phones at 256×192 | **Eight phones at 320×240** | Share of the link |
 |---|---:|---:|---:|---:|
-| Coordinates and colour, unprojected on the phone | 15 | 177 Mbit/s | 1,416 Mbit/s | 151 per cent. Does not fit. |
-| Depth, confidence and colour as a grid | 6 | 71 Mbit/s | 566 Mbit/s | 60 per cent |
-| **Depth and confidence as a grid (the show setting)** | 3 | 35 Mbit/s | 283 Mbit/s | 30 per cent |
-| Depth alone as a grid | 2 | 24 Mbit/s | 189 Mbit/s | 20 per cent |
+| Coordinates and colour, unprojected on the phone | 15 | 1,416 Mbit/s | **2,212 Mbit/s** | 235 per cent. Does not fit. |
+| Depth, confidence and colour as a grid | 6 | 566 Mbit/s | **885 Mbit/s** | 94 per cent. Does not leave room. |
+| **Depth and confidence as a grid (the show setting)** | 3 | 283 Mbit/s | **442 Mbit/s** | 47 per cent |
+| Depth alone as a grid | 2 | 189 Mbit/s | **295 Mbit/s** | 31 per cent |
 
-The first row does not fit on a gigabit network at all. The chosen row fits
-three times over.
+The first row does not fit on a gigabit network at all, which is the argument
+for sending a grid. The chosen row fits twice over.
+
+The second row is the one that changed character when the grid did. At 256×192
+colour on a full rig looked like a 60 per cent load, which is a decision about
+taste; at 320×240 it is 94 per cent of the usable link, which is not a decision
+anyone should take during a show. **Colour is for three phones and for
+measurement, not for eight phones live.**
 
 The work does not disappear, it moves. The receiver regenerates the points
-from the grid on the GPU, where unprojecting around 393,000 cells is
-sub-millisecond work. The phone's CPU is spared and the network carries a
-third of the traffic.
+from the grid on the GPU, where unprojecting around 614,000 cells is
+sub-millisecond work. The phone's CPU is spared and the network carries less
+than half the traffic.
 
 Two consequences worth knowing:
 
@@ -279,7 +294,7 @@ synthetic streams, not from phones.
 | Transport loss up to 16 streams | 0 incomplete frames, at 573 Mbit/s | Measured, simulation |
 | Bridge to TouchDesigner delay | 9.5 ms median, 15.3 ms at the 95th percentile | Measured, simulation |
 | Bridge receive capacity | 61,000 packets per second with no drops | Measured, simulation |
-| Eight phones with colour, offered load | 49,000 packets per second | Measured, simulation |
+| Eight phones with colour, offered load | 49,000 packets per second at 256×192; about 76,000 at the 320×240 real phones send | Arithmetic from the frame size |
 
 Real-phone evidence is **one phone**. Nothing in this table was produced by
 eight real phones, and simulated phones do not get hot, fight for a switch or

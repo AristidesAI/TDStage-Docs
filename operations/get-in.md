@@ -57,7 +57,8 @@ stream crosses the cable with nothing special done to it.
 That matters more than the raw numbers suggest, because of what the depth
 stream is. One frame from one phone is about a hundred packets, and a frame
 missing any one of them is discarded whole rather than resent. Eight phones
-with colour offer around 49,000 packets per second (measured, simulation).
+with colour offer around 49,000 packets per second at the simulator's grid, and
+about 76,000 at the grid real phones send.
 Wi-Fi under load drops packets in bursts, and a burst that costs single
 packets across many frames costs those whole frames. See
 [Why it is built this way](../reference/design.html).

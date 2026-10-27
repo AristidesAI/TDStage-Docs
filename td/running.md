@@ -150,8 +150,10 @@ Measured, simulation: the relay is bound by its three syscalls per datagram and
 tops out near 30,000 packets per second on an M-series Mac (no loss at 25,000,
 24 per cent loss at 40,000, 43 per cent at 50,000). The bridge alone took
 61,000 packets per second with no loss at twelve colour streams. Eight phones
-sending depth, confidence and colour would be about 49,000 packets per second,
-which is arithmetic from the frame size, not a measurement.
+sending depth, confidence and colour would be about 49,000 packets per second
+**at the simulator's 256×192 grid**, and about 76,000 at the 320×240 a real
+iPhone 17 Pro sends. Both are arithmetic from the frame size, not measurements,
+and the second one is above what the bridge was measured to carry.
 
 Do not put the relay in front of the bridge in a show configuration.
 

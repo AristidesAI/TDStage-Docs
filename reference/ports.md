@@ -35,10 +35,32 @@ The full argument, with the bandwidth arithmetic behind it, is in
 | One socket serves every device | Every datagram identifies its own sender, so demultiplex by the device id in the data and not by source address. |
 | Datagrams are kept inside a normal MTU | A frame is split across roughly a hundred numbered packets and reassembled by frame id. Do not rely on IP fragmentation. |
 
-Eight phones with colour offer around 49,000 packets per second (measured,
-simulation). A receiver that does not drain on a dedicated thread with a
-raised socket buffer will lose packets as buffer overflow, which looks like
-network loss and is not.
+Packet rates are worth a moment, because the number most often quoted is the
+**simulator's**, and real phones send more.
+
+| Eight phones, 30 fps | 256×192 (the simulator) | **320×240 (iPhone 17 Pro)** |
+|---|---:|---:|
+| Depth, confidence and colour | 49,000 pkt/s | **76,000 pkt/s** |
+| Depth and confidence (the show setting) | 24,000 pkt/s | **38,000 pkt/s** |
+| Depth alone | 16,000 pkt/s | **25,000 pkt/s** |
+
+The 49,000 figure that appears in this project's launcher comments and notes is
+the left column: the simulator sends 256×192. A rig of iPhone 17 Pros sends
+320×240, so the show setting is about 38,000 packets per second and colour on
+eight phones is about 76,000.
+
+{: .warning }
+That matters against a measured ceiling. The receiving bridge was measured at
+about 61,000 packets per second, and the retired fan-out relay lost packets
+above about 30,000. So the show setting fits the bridge with room, and **colour
+on eight real phones is above what the bridge was measured to carry.** The
+arithmetic here is from the wire format and the measured grid; the ceilings are
+measurements. Nobody has yet run eight real phones with colour to see which
+gives first.
+
+A receiver that does not drain on a dedicated thread with a raised socket
+buffer will lose packets as buffer overflow, which looks like network loss and
+is not.
 
 > **A name that misleads.** A setting called `stage.tcpHost` holds the
 > destination IP address. It is not a transport selector. The UDP point

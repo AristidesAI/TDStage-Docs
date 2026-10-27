@@ -133,7 +133,7 @@ not being written.
 It is the LIVE page's line with the packet count left out:
 
 ```
-TDP4/UDP → 192.168.1.10:9003 · 256×192 · 41203 frm · 0 drop
+TDP4/UDP → 192.168.1.10:9003 · 320×240 · 41203 frm · 0 drop
 ```
 
 Host, port, grid, frames and drops. LIVE adds `· N pkt` between the frame and
@@ -212,26 +212,41 @@ has no confidence buffer to offer, so the packer writes 2 where the depth cell
 is finite and positive and 0 where it is not. It carries nothing the depth
 plane does not already carry as NaN. The ARKit sibling supplies a real per-cell
 confidence, and there the plane means what its name says. Cost `depth+conf` on
-this app knowing that the extra 12 Mbit/s a phone buys a validity mask.
+this app knowing that the extra 18 Mbit/s a phone buys a validity mask.
 
-Wire cost per phone, **calculated from the wire format** at 256×192 and 30 fps:
+Wire cost per phone, **calculated from the wire format** at 30 fps and the
+**320×240** grid an iPhone 17 Pro actually sends:
 
 | Plane set | Bytes per frame | Per phone | Eight phones |
 |---|---|---|---|
-| depth | 98 424 | 23.6 Mbit/s | 189 Mbit/s |
-| depth+conf | 147 576 | 35.4 Mbit/s | 283 Mbit/s |
-| depth+conf+rgb | 295 032 | 70.8 Mbit/s | 566 Mbit/s |
+| depth | 153 720 | 36.9 Mbit/s | 295 Mbit/s |
+| depth+conf | 230 520 | 55.3 Mbit/s | 442 Mbit/s |
+| depth+conf+rgb | 460 920 | 110.6 Mbit/s | 885 Mbit/s |
 
-Eight phones on `depth+conf` is about 30 per cent of a gigabit link. Eight
-phones on `+conf+rgb` does not leave comfortable room on one.
+Eight phones on `depth+conf` is about 47 per cent of a gigabit link. **Eight
+phones on `+conf+rgb` is 94 per cent, which is not a show configuration** — it
+is also about 76,000 packets per second, above what the receiving bridge has
+been measured to carry. Colour is for three phones and for measurement.
+
+{: .note }
+Figures of 283 and 566 Mbit/s appear in older notes and in the system
+repository's `CLAUDE.md`. They are the same arithmetic at **256×192**, which is
+what the simulator sends and what everything here was originally computed at.
+A real phone sends 1.56 times the cells.
 
 {: .note }
 **There is no longer a Depth grid picker.** It was removed on 2026-10-27,
 because the format selector in the capture code accepted the target and
-deliberately ignored it: the phone captured and sent 256×192 whatever the
-picker said. A control that does nothing is worse than no control, because it
-gets planned against. The key still exists, is reported in telemetry and rides
-in a profile, but it is not a bandwidth or thermal lever.
+deliberately ignored it: the phone captures and sends whatever its own camera
+format gives, whatever the picker said. A control that does nothing is worse
+than no control, because it gets planned against. The key still exists, is
+reported in telemetry and rides in a profile, but it is not a bandwidth or
+thermal lever.
+
+What you get instead is the smallest float depth format the camera offers,
+which is **320×240 on an iPhone 17 Pro**. It is not 256×192 by rule, and a
+mixed rig of models can send more than one grid — every frame carries its own
+dimensions, so nothing downstream minds.
 
 ### Capture rate
 
@@ -370,14 +385,14 @@ and over a cable in Finder.
 
 ### Disk cost
 
-Write rate at 256×192 and 30 fps, **calculated from the wire format** and then
+Write rate at 320×240 and 30 fps, **calculated from the wire format** and then
 divided by the compression ratios above:
 
 | Plane set | Uncompressed | Compressed, best case | Compressed, assume this |
 |---|---|---|---|
-| depth | 3.0 MB/s | 0.8 MB/s | 1.5 MB/s |
-| depth+conf | 4.4 MB/s | 0.9 MB/s | 2.2 MB/s |
-| depth+conf+rgb | 8.8 MB/s | 1.4 MB/s | 4.4 MB/s |
+| depth | 4.6 MB/s | 1.2 MB/s | 2.3 MB/s |
+| depth+conf | 6.9 MB/s | 1.4 MB/s | 3.5 MB/s |
+| depth+conf+rgb | 13.8 MB/s | 2.2 MB/s | 6.9 MB/s |
 
 The best case uses the simulated ratios above. The column to plan with assumes
 only 2×, which is what the harshest synthetic noise produced and therefore the

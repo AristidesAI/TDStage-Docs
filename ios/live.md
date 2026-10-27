@@ -126,7 +126,7 @@ frames are being received.
 Under the stats row, one line describes the stream itself:
 
 ```
-TDP4/UDP → 192.168.1.10:9003 · 256×192 · 41203 frm · 128744 pkt · 0 drop
+TDP4/UDP → 192.168.1.10:9003 · 320×240 · 41203 frm · 128744 pkt · 0 drop
 ```
 
 The grid size appears once the first captured frame has revealed it. Nothing in
