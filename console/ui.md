@@ -20,6 +20,27 @@ Two query parameters affect the whole app:
   swapped in for the generic stage. The model files themselves are not part of
   this documentation.
 
+## Where the controls live
+
+```mermaid
+flowchart TD
+  T["Top bar: show transport, health bar,<br/>TD, listen, lock, Find"] --- V["The view"]
+  R["Left rail: page links,<br/>device list, device count"] --- V
+  V --> D["Dashboard: array control, broadcast settings,<br/>TD link, Rig health, simulator, device cards"]
+  V --> S["Stage 3D: the plan, auto setup, load plan,<br/>options, visual tuning, venue layers"]
+  V --> L["Live view: ingest, client output, latency,<br/>live phones, people only, tuning,<br/>cloud options, hand tracking, cameras"]
+  V --> A["All phones: every device setting once,<br/>with parity against what phones report"]
+  V --> M["Markers: marker tiles, printed size,<br/>placement plan"]
+  V --> G["Log: device, level, kind, filter"]
+  V --> P["Device page: config, autofix, marker, calibrate,<br/>control, takes, recovery, phone settings,<br/>limbs, telemetry"]
+```
+
+If you half remember a control and cannot place it, do not hunt the tree: press
+**Cmd-K** (or `/`) and type what you remember. **Find** searches every control on
+the current page by its label *and* by its hover explanation, opens the folded
+section it is in, scrolls to it and flashes it. That is the intended way to
+navigate a page this dense, and it is why every control carries hover text.
+
 ---
 
 ## The left rail
@@ -153,6 +174,21 @@ someone has edited the console's code, that change does not take effect until
 the console process itself is restarted. Use Restart to recover a wedged or
 erroring service, not to pick up a fix.
 
+That is a deliberate limit, not an omission. These buttons exist to be pressed
+during a performance, where dropping a service's queued work is safe and swapping
+its code under running threads is not: a reimport would leave threads holding
+references to the old module while new work ran on the new one. Recovery and
+deployment are different operations, so they have different mechanisms. See
+[Running the console](running.html#restarting-to-pick-up-a-code-change).
+
+**Why the first row is sometimes about `config.json`.** The panel's check list
+begins with how the session started. If the console could not use `config.json`
+and fell back to a backup, or seeded a new session, that is the first row you
+see, with the detail and what to check. It is first, and it persists for the whole
+session, because the equivalent line in the Log scrolls away in the first minute
+of a get in, and nobody reads a boot log before noticing that half the roster is
+missing.
+
 ### Simulator, synthetic phones
 
 Runs synthetic TDP4 phones with no hardware. Ids start at 101.
@@ -253,6 +289,11 @@ On the show machine neither socket listener is running: `--tdp4-port 0` and the
 frames come from the TDP4 bridge's memory mapped file instead. That path is
 reported by `GET /api/live` under `bridge`, and by the Rig health panel, not by
 these chips.
+
+Two paths can deliver the same frame, so the store deduplicates by device id and
+frame id: a frame already taken from one path is counted under `dup` rather than
+stored twice. That is what makes it safe to leave the legacy relay running beside
+the bridge while diagnosing one of them.
 
 ### Client output (F1 contract)
 
@@ -391,6 +432,21 @@ matches its reference.
 |---|---|
 | **printed size** field, in mm | The printed side of the black and white square, not the paper. Range 50 to 800 mm. An A4 sheet takes up to 195 mm, A3 up to 280 mm. |
 | **Apply to all phones** | Sets that size on every phone in the roster and sends it, with each phone's marker ids, to every enabled phone, so plan, print and phones agree. |
+
+**A fresh roster now defaults to 195 mm**, which is A4 printed at true size: the
+sheet's short side less a quiet zone, rounded to 5 mm. It used to default to
+200 mm, which matched no paper exactly, so the shipped default was a number
+nobody could print without either cropping the quiet zone or scaling the square.
+The same rule gives 280 mm for A3.
+
+**Loading a stage layout also sets one rig wide marker size.** Each marker in a
+layout carries its own **sheet** size, and the loader derives the printed side
+from the smallest sheet in the layout and writes that size onto every phone in
+the roster. It used to copy positions and labels only and leave every phone at
+200 mm, so the plan, the print and the phones disagreed the moment a layout was
+loaded. The size is written to the roster but **not** sent to the phones: press
+**Apply to all phones** here afterwards, which is what the log line after a load
+tells you to do.
 | **Export PNGs** | Writes `marker_01.png` upward. |
 | **Print PDF** | The browser print dialogue, one marker per page at the size in the box, plus a placement sheet on the last page. Only the assigned markers if any are assigned, otherwise all of them. It warns if the size will not fit an A3 sheet with its quiet zone. |
 
@@ -519,6 +575,15 @@ build reports nothing, and then the control shows the last value sent from this
 browser. After a send the control holds the sent value for three seconds, so a
 report that predates the change does not flick it back. A row for a control this
 phone does not have is hidden.
+
+Why it is built that way: a phone is a streamer, and a streamer that echoes its
+whole configuration back on a cadence spends bandwidth and invites a feedback
+loop where a stale echo overwrites an operator's fresh edit. So the wire is one
+way, the phone volunteers only the subset it reports in `/device/settings`, and
+the console is explicit about which of the three numbers you are looking at:
+what the phone says, what is on the wire, and what this browser last sent. The
+three second hold after a send exists because the phone's report is on its own
+2 Hz cadence and will often predate the change by a fraction of a second.
 
 | Group | Covers |
 |---|---|

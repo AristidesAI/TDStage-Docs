@@ -13,13 +13,35 @@ steps need internet the venue will not have.
 
 ## Order of work
 
-1. Network first, before any phone goes on a stand.
-2. Phones on the network and visible in the console.
-3. Stands and aiming.
-4. Markers and calibration.
-5. Verification.
+The order is not a preference. Each step is the thing that lets the next one
+be checked, so doing them out of order means doing them twice.
 
-Doing stands before network means climbing to every stand twice.
+```mermaid
+flowchart TD
+  N["1. Network<br/>addressing settled"]
+  P["2. Phones on the network<br/>visible in the console"]
+  S["3. Stands and aiming"]
+  M["4. Markers and calibration"]
+  V["5. Verification"]
+
+  N -- "a phone cannot be seen<br/>until it has an address" --> P
+  P -- "aiming needs the live view,<br/>which needs the phone visible" --> S
+  S -- "calibration solves the pose<br/>a phone is actually in" --> M
+  M -- "nothing can be verified<br/>before it is calibrated" --> V
+```
+
+Read each arrow as the reason, not as a sequence number.
+
+- **Network before phones**, because an unaddressed phone cannot appear in
+  the console, and a phone you cannot see is a phone you cannot check.
+- **Phones before stands**, because aiming is done from the live view. Doing
+  stands first means climbing to every stand twice: once to mount, once
+  again when you find out what it sees.
+- **Stands before calibration**, because calibration solves for where a
+  phone actually is. Move a stand afterwards and the solve is stale and
+  silently wrong.
+- **Calibration before verification**, because every check at the end is a
+  check of the calibrated rig.
 
 ## 1. Network
 
@@ -27,18 +49,47 @@ Phones reach the receiving machine over Ethernet. Wi-Fi works and is the
 fallback, but it costs latency and drops frames under load, so it is not what
 a show runs on.
 
+The gap is not marginal. A phone on a cable measured **0.55 ms** to the
+receiving machine against roughly **8 ms** over Wi-Fi (measured, real phone,
+one phone). An iPhone on a USB-C cable presents a real network link, so the
+stream crosses the cable with nothing special done to it.
+
+That matters more than the raw numbers suggest, because of what the depth
+stream is. One frame from one phone is about a hundred packets, and a frame
+missing any one of them is discarded whole rather than resent. Eight phones
+with colour offer around 49,000 packets per second (measured, simulation).
+Wi-Fi under load drops packets in bursts, and a burst that costs single
+packets across many frames costs those whole frames. See
+[Why it is built this way](../reference/design.html).
+
 ### Addressing, and the trap in it
 
 **Check this before you need it.** A plain unmanaged switch does not hand out
 addresses. If the rig has no router and no DHCP server on it, nothing on that
 network gets an address automatically and every phone needs a static one.
 
-Work out which case you are in before the get-in, not during it:
+Work out which case you are in before the get-in, not during it.
+
+```mermaid
+flowchart TD
+  Q{"Is anything on this network<br/>handing out addresses?"}
+  Q -- "a router" --> AUTO["Automatic.<br/>Phones appear on their own"]
+  Q -- "a machine sharing<br/>its connection" --> AUTO
+  Q -- "switches only,<br/>nothing else" --> MAN["Nothing gets an address.<br/>Every phone needs a static one,<br/>and so does the receiving machine"]
+  Q -- "not sure" --> CHK["Run the doctor check<br/>on the receiving machine"]
+
+  CHK -- "reports a LAN address" --> AUTO
+  CHK -- "reports no LAN address" --> MAN
+  MAN --> PLAN["Write the address plan<br/>on the case, before travel"]
+```
 
 | Rig has | Addressing | What to do |
 |---|---|---|
 | A router, or a machine sharing its connection | Automatic | Nothing. Phones appear on their own. |
 | Switches only | **None** | Set a static address on every phone and on the receiving machine. |
+
+People expect a switch to sort this out because almost every switch they have
+plugged into before had a router somewhere behind it. This one may not.
 
 Decide the address plan in advance and write it on the case. A rig discovered
 to need static addressing at 9am on a show day costs an hour.
@@ -90,6 +141,29 @@ visible to another, and that only happens if the angles were planned.
 
 Aim with the console's live view rather than by eye. What matters is what the
 phone sees, not where the phone points.
+
+### Why aiming is a coverage decision, not a framing one
+
+Occlusion has exactly one answer: another viewpoint. A performer behind
+another performer cannot be recovered by any amount of processing of the view
+that cannot see them, and is recovered trivially by a camera that can. That
+is the entire reason there is more than one phone.
+
+So the test of a phone position is not whether the picture looks good. It is
+whether that phone sees something the others do not.
+
+```mermaid
+flowchart TD
+  Q{"Does this phone see part of<br/>the playing area that the<br/>others see poorly?"}
+  Q -- "yes" --> K["Keep the position"]
+  Q -- "no, it mostly<br/>duplicates another" --> M["Move it.<br/>Duplicate angles add density,<br/>not information"]
+  Q -- "it sees a gap<br/>nothing else covers" --> P["Priority position.<br/>Note it before you leave"]
+```
+
+A rig where every phone looks from roughly the same side has redundancy and
+little extra information. Two phones looking across the playing area from
+opposite sides see more of a body standing between them than four phones
+ranged along one side.
 
 ## 4. Markers and calibration
 

@@ -27,6 +27,32 @@ packets are dropped silently, and unknown addresses are ignored.
 
 The model is LAN trust. There is no authentication on this port.
 
+### What happens when a command arrives
+
+```mermaid
+flowchart TD
+  A["OSC datagram on :9010"] --> B{"One OSC 1.0 message,<br/>known address, supported type tags?"}
+  B -- no --> X["Dropped silently"]
+  B -- yes --> C["Remember the source address<br/>(cable and network slots kept apart)"]
+  C --> D{"Which command?"}
+  D -- "/ctl/set key value" --> E{"Key in the whitelist?"}
+  E -- no --> X
+  E -- yes --> F["Clamp the value,<br/>write the UserDefaults key"]
+  F --> G["Run the same side effect<br/>the on-screen control runs"]
+  D -- "a dedicated verb" --> H["Act on the capture, the streamer,<br/>the recorder or the player"]
+  G --> I["Next 0.5 s telemetry tick<br/>reports the phone's new state"]
+  H --> I
+```
+
+Two things in that path are deliberate and easy to break. The whitelist is a
+`switch` over literal key names, so an unknown key cannot write arbitrary
+UserDefaults: there is no dictionary and no reflection. And the side effect is
+the *same function* the on-screen control calls, not a copy of it, so a remote
+edit and a thumb on the phone cannot leave the phone in two different states.
+A new setting that needs a side effect and does not get one in that function is
+the classic defect here: the value lands, the telemetry reports it, and nothing
+changes until something else is touched.
+
 ### The listener repairs itself
 
 A deaf phone is the one failure an operator cannot fix from front of house,
@@ -39,7 +65,8 @@ because every other remedy is delivered over this socket. So:
   up.
 - A watchdog polls whether the listener is bound, and rebuilds only the
   listener if it is not. Capture is never stopped for it: restarting a capture
-  session cannot free a port another process holds.
+  session cannot free a port another process holds, so a self-heal that tore
+  the camera down would cost the show its cloud and still not fix the socket.
 
 ### The phone learns where you are from your packets
 
@@ -63,9 +90,13 @@ exception is `rawmode`: turning it on *is* doing less, so a bare pulse arms the
 fast path.
 
 **A non-finite number reads as no number.** A NaN or an infinity is a legal OSC
-float and used to crash the phone on an integer conversion. They are now
-skipped, and the rest are clamped to a billion either way before any key sees
-them.
+float. Converting one to an integer in Swift is a trap, not an error: it
+terminates the process. One stray value from one console control would have
+taken a phone off a truss, and a supervised phone would have relaunched into
+the same push. Non-finite values are now dropped before anything reads them,
+and what survives is clamped to a billion either way and then clamped again to
+each key's own range, so two bad clamps would both have to be wrong for a value
+to reach a key unbounded.
 
 **Playback needs a name.** A bare pulse cannot start a replay, because playback
 replaces the live camera. A mistyped control must never take a phone off its
@@ -119,11 +150,19 @@ restart, except where stated.
 |---|---|---|
 | `/tdlidar/ctl/marker` | `primaryId` `secondaryId` `sizeMM` | Which marker ids this phone hunts, and the printed size in millimetres. A secondary below 0 means none. Re-applied live if a calibration is already running |
 | `/tdlidar/ctl/markerpose` | `id` `x` `z` `yawDeg` `[y]` | A marker's known floor pose in the stage frame, from the venue layout. The id must be 1 or more |
-| `/tdlidar/ctl/calibrate` | `0|1`, default 0 | 1 swaps the rear LiDAR to ARKit marker tracking, which stops the point stream. 0 stores the solved pose and resumes streaming if the phone was streaming before |
+| `/tdlidar/ctl/calibrate` | `0|1`, default 0 | 1 swaps the rear LiDAR to ARKit marker tracking, which stops the point stream. 0 stores the solved pose and resumes streaming if the phone was streaming **or** if auto-resume (`stage.showActive`) is set |
 | `/tdlidar/ctl/calibclear` | none | Forget the stored solve and go back to gravity levelling |
 
 A stored calibration survives a relaunch. Calibration replies on
 `/device/calib/pose` and `/device/marker/seen`.
+
+Entering calibration is a hard swap, because the rear LiDAR cannot feed
+AVFoundation and ARKit at once. It therefore also ends a replay and stops a
+recording first: the phone must not be emitting two different clouds, and a
+take cannot span a camera change. Whether streaming resumes on the way out is
+decided from the state on the way in, `streaming` **or** auto-resume set, and
+auto-resume is not cleared by a replay. So a phone that was streaming, then
+replayed a take, then was sent to calibrate, comes back streaming.
 
 Marker calibration works end to end in the code and has unit tests. It has not
 been confirmed on a phone against a printed marker (**built, not verified**).
@@ -132,19 +171,40 @@ been confirmed on a phone against a printed marker (**built, not verified**).
 
 | Address | Arguments | Effect |
 |---|---|---|
-| `/tdlidar/ctl/profile` | `<json or flat yaml or an http(s) url>` | Apply a whole profile document and store it as the new last known good. A URL is fetched, with a 5 s timeout. Refused while a take is recording. Replies on `/device/profile/ack` |
+| `/tdlidar/ctl/profile` | `<json or flat yaml or an http(s) url>` | Apply a whole profile document and store it as the new last known good. A URL is fetched, with a 5 s timeout. **Dropped** while a take is recording, with no ack. Replies on `/device/profile/ack` otherwise |
 | `/tdlidar/ctl/profile/save` | none | Snapshot the live configuration as the new last known good |
 | `/tdlidar/ctl/recover` | `tier`, default 1 | Force a self-heal now: 1 restart capture, 2 reconnect transport, 3 full reconfigure, 4 relaunch. Tier 4 needs the opt-in recovery key, and is only meaningful on a supervised phone |
 | `/tdlidar/ctl/health` | none | One-shot health and recovery report. Replies on `/device/health`, `/device/health/cause` and `/device/profile/name` |
 | `/tdlidar/ctl/reset` | none | Clear the crash history, which leaves safe mode |
 
-A profile applied without a parse is never silently dropped: a rejected push
-replies with `accepted = 0`, because an operator who believes a phone is
-reconfigured when it is not is worse off than one who knows the push failed.
+A profile that cannot be parsed is never silently dropped: it replies with
+`accepted = 0`, because an operator who believes a phone is reconfigured when
+it is not is worse off than one who knows the push failed. A URL fetch that
+fails replies the same way.
+
+{: .warning }
+**A profile pushed while a take is recording is dropped, and no ack is sent.**
+It is not queued and not applied later. The only report is one line of text on
+`/device/rec/note`, reading "Profile push deferred — a take is recording",
+which a console shows on the phone's row but which is easy to miss and is
+overwritten by the recorder's next note. The two `accepted = 0` acks exist for
+an unparseable document and for a failed URL fetch, so the absence of an ack is
+the only signal that a push went nowhere.
+<br><br>
+The refusal itself is right: a profile can carry a grid size, a plane set and a
+transport, and a take is one file with one geometry in its header. Push the
+profile before you arm the recorder, not during.
 
 A profile can only reach the keys in its schema. Everything else in the
 document is ignored, including the destination address: see
 [the settings reference](settings.html#identity-and-network) for why.
+
+The two authorities sit at different trust levels on purpose. `/ctl/set` is a
+narrow per-key surface, numerically clamped, and a person at a console is
+behind every call. A profile is a whole document applied in one go, cached on
+disk, and **re-applied at boot and on a full self-heal** without anyone
+pressing anything. That last property is what decides what may live in a
+profile: anything a profile can set, it can also silently re-set minutes later.
 
 ## Recording
 
@@ -243,15 +303,56 @@ The thermal ladder acts on the worse of `pressure` and `thermal`.
 | `/tdlidar/<id>/device/points` | Valid depth cells in the last frame sent |
 | `/tdlidar/<id>/device/stream` | `w` `h` `fps` `planes` `transport` `port`. Planes is a bitmask: 1 depth, 2 confidence, 4 colour. Transport is always 1, meaning UDP |
 | `/tdlidar/<id>/device/net` | `framesSent` `packetsSent` `framesAbandoned` |
-| `/tdlidar/<id>/device/captureage` | `p50` `p95` in ms. The capture-to-packet age of the last 64 or so live frames: the phone's own photon-to-wire latency |
+| `/tdlidar/<id>/device/captureage` | `p50` `p95` in ms. The capture-to-**socket** age of the last 64 live frames: the phone's own photon-to-wire latency |
 | `/tdlidar/<id>/device/agesplit` | Seven medians in ms, in order: capture delivery, depth and colour prep, hop to the main thread, main-thread work, send queue, pack, socket. Where that age goes, so a warning can name the slowest stage |
-| `/tdlidar/<id>/device/link` | `"wired"|"wifi"|"none"` `wiredUp` `preferWired` `cableAttached`. **A phone on a cabled rig reading `wifi` has lost its adapter or its switch port** |
+
+#### What `captureage` measures, exactly
+
+It is stamped when the **last datagram of the frame has left the socket**, in
+that datagram's send completion, against the capture timestamp in the frame's
+own header. Not when the frame was packed. The pack-to-socket leg was the one
+leg the telemetry could not see, and it is the leg that grows first when a link
+is congested, so measuring to the packer would have reported a healthy phone on
+a saturated switch. The seventh entry in `agesplit`, `socket`, is that leg on
+its own.
+
+Both figures are kept in a 64-sample ring, which is about two seconds at
+30 fps, so they describe now rather than the session. The ring is cleared when
+streaming starts and when it stops, so a new session never reports the old
+one's ages. Replayed frames are not sampled: the player rewrites each frame's
+capture time to now, so an age measured against it would be meaningless.
+
+{: .note }
+The accessor in the source is still named and commented as a capture-to-packet
+age. The code behind it stamps at the socket. Trust the code: the figure
+includes the fragmenter and the send queue.
+| `/tdlidar/<id>/device/link` | `"wired"|"wifi"|"none"` `wiredUp` `preferWired` `cableAttached`. A phone on a cabled rig reading `wifi` has a link problem. Read the second argument before concluding which: see below |
 | `/tdlidar/<id>/device/source` | `"live"` or `"playback"`. The only thing on the wire that distinguishes a replay from a live phone |
 | `/tdlidar/<id>/device/tcp` | **Always 0.** There is no TCP link. The address is kept so that consoles which parse it keep working |
 
 {: .warning }
 `/device/tcp` is not a transport report. It is a constant, left in place for
 compatibility after the TCP streamer was deleted. Do not read anything into it.
+
+#### Reading `link = "wifi"` on a cabled rig
+
+Three causes, and the second argument, `wiredUp`, separates them.
+
+| `link` | `wiredUp` | Cause |
+|---|---|---|
+| `wifi` | 0 | The adapter or the switch port is gone. A cable fault |
+| `wifi` | 1, `preferWired` 0 | Nobody asked for the wire. Set `stage.preferWired 1` |
+| `wifi` | 1, `preferWired` 1 | **The wired requirement was dropped after its five-second grace.** The adapter's link is up and its routing is not |
+
+The third is the one that is read wrong. The phone required wired Ethernet,
+the connection did not come up within five seconds, and the streamer rebuilt it
+once without the requirement so the phone would not sit silent for the whole
+session. The LIVE page reads "Wi-Fi (Ethernet waiting)" in amber. It is a
+routing fault, not a cable fault: check which subnet the adapter has an
+address on and whether the receiver is reachable there. The requirement
+re-arms on the next wired path change, so bouncing the link makes the phone
+try the wire again. See
+[Prefer Ethernet](live.html#prefer-ethernet-poe--cable).
 
 ## Geometry
 

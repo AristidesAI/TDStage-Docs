@@ -15,6 +15,90 @@ seen working on hardware. **Gap** means there is no fallback today.
 
 Read the gaps first. They are at the bottom of this page.
 
+## Why the failures are shaped like this
+
+Most of what follows is a consequence of two structural choices, and knowing
+them makes the individual cases predictable rather than a list to memorise.
+
+**The phones and the receiver share no state.** A phone holds a destination
+address and sends to it. It does not negotiate, does not wait for an
+acknowledgement and does not care whether anything is listening. So a
+receiver can die and come back without the phones noticing, and a phone can
+die and come back without the receiver needing to be told. There is no
+session to re-establish, because there was never a session.
+
+**The receiving side forks.** The bridge publishes each received frame once,
+and TouchDesigner and the console each read it independently. Neither is
+downstream of the other for point data. So no single process failure takes
+out both the visuals and the tracking output.
+
+The cost of the first choice is that nothing is guaranteed to arrive. That is
+paid for deliberately, and the reasoning is in
+[Why it is built this way](../reference/design.html).
+
+## Triage: something has stopped, what do I check first
+
+One question orders everything else. **Are the visuals still running?**
+
+That answer tells you whether TouchDesigner is alive, and because
+TouchDesigner and the console are two independent readers of the same
+received frames, it separates three completely different problems
+immediately.
+
+```mermaid
+flowchart TD
+  S{"Are the visuals<br/>still running?"}
+  S -- "yes" --> A{"Is the tracking output<br/>reaching the other system?"}
+  S -- "no" --> B{"Does the console still<br/>show points arriving?"}
+
+  A -- "yes" --> A1["Both sides are alive.<br/>Look at one phone, not the system"]
+  A -- "no" --> A2["Console side only.<br/>TouchDesigner is fine"]
+
+  B -- "yes" --> B1["TouchDesigner only.<br/>Phones and bridge are fine"]
+  B -- "no" --> B2{"Does any phone<br/>show as streaming?"}
+
+  B2 -- "yes" --> B3["Bridge or network"]
+  B2 -- "no" --> B4["Phones or power"]
+```
+
+Work down the branch you landed on.
+
+| You landed on | Check, in this order |
+|---|---|
+| **One phone** | That phone's own health: thermal state, charging, its link. One phone misbehaving is not a rig problem and does not need a rig action. |
+| **Console side only** | The console restarts itself within about three seconds, so if the output is still missing after that, look at the console rather than waiting. The point cloud and the visuals are unaffected throughout. |
+| **TouchDesigner only** | Reopen the project. The phones never stopped and the console never stopped. Nothing needs restarting except TouchDesigner. |
+| **Bridge or network** | The bridge restarts itself within two or three seconds. If points still do not arrive, it is the cable, the switch or the addressing. |
+| **Phones or power** | Everything downstream is innocent. Go to the stands. |
+
+### The state that fools people
+
+**The roster goes blank but points are still arriving.**
+
+This looks like most of the rig has died. It has not. Phone health reaches
+the console by a different route from point data, and by default that route
+goes through the port TouchDesigner owns. While TouchDesigner is down or
+restarting, health stops and point data does not.
+
+```mermaid
+flowchart TD
+  Q{"Roster blank, but<br/>points still arriving?"}
+  Q -- "yes" --> R["Telemetry is going to a port<br/>nothing is listening on"]
+  R --> F["Press Send telemetry here<br/>in the console"]
+  F --> G["Health arrives directly,<br/>and survives the next<br/>TouchDesigner outage too"]
+  Q -- "no, points stopped too" --> H["This is not a telemetry problem.<br/>Go back to the triage tree"]
+```
+
+**Restarting the console does not fix this**, and that is the mistake worth
+inoculating against, because someone makes it once, under pressure, at the
+worst possible moment. The telemetry is not arriving at the console in the
+first place, so restarting the thing that is not receiving it changes
+nothing. Retarget instead.
+
+Retargeting is also the better state to be in generally: once a phone sends
+health to the console's own listener, that health survives a TouchDesigner
+outage entirely.
+
 ## During a show
 
 ### A phone's app crashes or is killed
@@ -81,9 +165,15 @@ outputs.
 Operator: reopen the project. The console re-seeds the phone positions when
 the link comes back.
 
-One catch worth knowing: phone health reaches the console **through**
-TouchDesigner. Until it is back, the phones look dead even though they are
-streaming. The console can be told to take telemetry directly.
+One catch worth knowing: by default phone health reaches the console
+**through** TouchDesigner, on the port TouchDesigner owns. Until it is back,
+the phones look dead even though they are streaming, because the point data
+comes by a different route and never stopped.
+
+Operator: press **Send telemetry here** in the console. That moves every
+phone's health to the console's own listener, so it arrives directly and
+survives the next TouchDesigner outage as well. Do not restart the console:
+the telemetry is not reaching it, so restarting it changes nothing.
 
 Status: verified.
 
@@ -108,8 +198,9 @@ come back.
 
 ### Two performers are confused for each other
 
-Automatic: the output flags the identity as uncertain for the whole crossing,
-so the receiving side can treat it as provisional rather than trusting it.
+Automatic: the output flags the identity as uncertain while it cannot be
+told apart, so the receiving side can treat it as provisional rather than
+trusting it.
 
 This is a property of the measurement, not a bug. See
 [Evidence and claims](evidence.html).
@@ -118,7 +209,7 @@ This is a property of the measurement, not a bug. See
 
 | Lost | Way back |
 |---|---|
-| The TouchDesigner project, damaged or badly edited | Every change is saved as a numbered version. A drift check shows whether a saved project's code matches version control, and can extract its code as plain files. |
+| The TouchDesigner project, damaged or badly edited | Every change is saved as a numbered version, so the previous one is always on disk. The working project is **v78** as of 2026-10-27. A drift check shows whether a saved project's code matches version control, and can extract its code as plain files. |
 | Learned background and floor | Re-learn on an empty stage. Checkpoints are included in every snapshot. |
 | Roster, markers, settings | The console keeps its last fifty saves, and they are in every snapshot. |
 | A phone's settings after a reinstall | The console keeps each phone's profile and can push it back. |

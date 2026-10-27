@@ -29,16 +29,45 @@ The streamer assembles the complete TDP4 frame, then cuts it into UDP packets.
 The recorder taps that assembled frame, one step before the packets. Playback
 hands the same bytes back at the same point.
 
+```mermaid
+flowchart TD
+  A["Capture deposits a frame<br/>in the latest-wins mailbox"] --> B["Send queue packs ONE assembled TDP4 frame:<br/>120-byte header, then planar planes"]
+  B --> C["Recorder tap fires here"]
+  B --> D["Fragment into 1452-byte payloads"]
+  D --> E["UDP to the receiver"]
+  C --> F{"Still accepting, and this frame<br/>survives 1-in-N?"}
+  F -- no --> G["Ignored"]
+  F -- yes --> H{"Fewer than 8 writes<br/>already in flight?"}
+  H -- no --> I["Dropped and counted:<br/>the stream wins"]
+  H -- yes --> J["Writer queue: shuffle, deflate,<br/>28-byte record header, append"]
+  J --> K["take.tdp4rec"]
+```
+
+The tap is a closure the streamer holds under the same lock the send queue
+reads it with, so arming a recording mid-stream is not a race between the
+interface and the packer. It is handed the finished byte array, a Swift array,
+so the hand-off is a copy-on-write reference rather than a memcpy of the 148 to
+295 kB the frame occupies, and it returns to the send queue immediately. Replayed
+frames are deliberately not tapped: a take cannot record itself.
+
 That has three consequences, and they are the reason the recorder was built
 this way:
 
 1. There is no second packer. Nothing in the recording path has to be kept in
-   step with the wire format, because it *is* the wire format.
+   step with the wire format, because it *is* the wire format. The alternative
+   was a recorder that captured the pixel buffers and packed its own frames, or
+   one that captured the datagrams and reassembled them. Both add a second
+   implementation of a layout that already has four artifacts to keep bit-exact
+   (the phone's packer, the TouchDesigner receiver, the simulator and the
+   bench), and both would drift silently: a recorder that writes a format no
+   longer on the wire produces files that look fine and replay wrong. Tapping
+   the assembled buffer removes the possibility rather than testing for it.
 2. A replay is indistinguishable from a live phone to every receiver. Same
    socket, same destination, same fragmentation, same latest-wins policy, same
-   hello, same telemetry shape. The only difference is one string: the hello
-   says `source: playback` and the telemetry reports `playback` instead of
-   `live`.
+   hello, same telemetry shape. The differences are two fields in the hello
+   JSON, `source: playback` and `take: <name>`, and one telemetry address,
+   `/device/source`, reading `playback` instead of `live`. Everything else on
+   the wire, down to the frame-id sequence, is produced by the same code.
 3. Whatever the phone is sending is exactly what lands in the file. There is no
    separate recording quality to configure.
 
@@ -93,9 +122,19 @@ Five figures, refreshed twice a second.
 | FPS | Measured delivery rate |
 | FREE | Free space in GB. Red below the floor |
 
-Under them, the same wire line the LIVE page shows, because a take only exists
-if the wire does. The recorder taps datagrams on their way out, so a dead link
-is a dead recording.
+Under them, a wire line, because a take only exists if the wire does. The tap
+sits on the send queue, so a link that is not sending is a recording that is
+not being written.
+
+It is the LIVE page's line with the packet count left out:
+
+```
+TDP4/UDP → 192.168.0.23:9003 · 256×192 · 41203 frm · 0 drop
+```
+
+Host, port, grid, frames and drops. LIVE adds `· N pkt` between the frame and
+drop counts; PLAYBACK ends instead with the device id the replay is being sent
+as. The three pages read the same counters.
 
 ### Dropped frames
 
@@ -105,10 +144,27 @@ several megabytes a second, frames are dropped and counted rather than queued
 without bound. A recorder that backs up into the show is worse than a recorder
 with a hole in it.
 
+The mechanism is a bound rather than a timeout. The writer allows at most eight
+frames in flight on its own utility queue; a ninth arriving before one of them
+has landed is counted and discarded on the spot. Nothing waits, and nothing
+grows.
+
 A take with dropped frames is still valid. It has gaps.
 
 The dropped count is written into the file header when the take is stopped, so
 it survives export without the sidecar.
+
+### Why Stop keeps two flags
+
+Stopping a take closes the door and finishes the washing up, and those are not
+the same instant. The writer holds two booleans: one stops accepting new
+frames, the other allows writing at all. A normal Stop clears only the first,
+so the frames already on the writer queue are still written, and the finalise
+step runs behind them because the queue is FIFO. The take therefore ends
+exactly where the operator ended it, rather than one frame short.
+
+Only a hard stop, the disk floor or a write error, clears the second flag as
+well, because there the whole point is to stop touching the disk now.
 
 ---
 
@@ -135,8 +191,24 @@ Below them, an estimate of the write rate and the headroom in minutes.
 
 ### Planes
 
-Depth is always sent. The confidence plane adds one byte per cell, and tells
-the receiver which cells to trust. The RGB plane adds three bytes per cell.
+Depth is always sent: it is bit 0 of the plane mask and the packer sets it
+unconditionally. The confidence plane adds one byte per cell and tells the
+receiver which cells to trust. The RGB plane adds three bytes per cell.
+
+They are separate planes, and planar rather than interleaved, for three
+reasons. Each has its own cost and its own consumer, so the plane mask lets a
+rig buy only what its receiver uses. A receiver can upload one plane straight
+to the GPU as a texture without a stride walk. And the compressor below sees a
+plane of like-valued bytes rather than a repeating six-byte pattern, which is
+most of where its ratio comes from.
+
+{: .note }
+On this app the confidence plane is **derived, not measured.** The capture path
+has no confidence buffer to offer, so the packer writes 2 where the depth cell
+is finite and positive and 0 where it is not. It carries nothing the depth
+plane does not already carry as NaN. The ARKit sibling supplies a real per-cell
+confidence, and there the plane means what its name says. Cost `depth+conf` on
+this app knowing that the extra 12 Mbit/s a phone buys a validity mask.
 
 Wire cost per phone, **calculated from the wire format** at 256×192 and 30 fps:
 
@@ -205,7 +277,19 @@ noise, so the compressor sees long runs where before it saw an alternating
 pattern.
 
 Because every frame stands alone, seeking, looping and crash recovery stay
-cheap.
+cheap. There is no keyframe, no backward reference and no decoder state, so
+jumping to frame 9000 costs one record's decode and a crash costs the last
+record rather than the file.
+
+That independence was measured against the obvious alternatives rather than
+assumed (**measured, simulation**): LZFSE came within one per cent of deflate
+and is Apple-only, which would have made the file unreadable on the
+TouchDesigner side; LZMA gained a further 30 per cent at 15 to 35 ms a frame,
+which drops frames at 30 fps; a temporal XOR against the previous frame bought
+nothing at all over the per-frame shuffle, so per-record independence is free;
+and spatial deltas made things worse, because differencing noise adds entropy.
+The deflate stream is a raw one, so the Mac-side reader decompresses it with
+`zlib.decompress(data, -15)` and no Apple code.
 
 Ratios against the raw wire bytes, **measured, simulation** (synthetic frames
 with the shared-world simulator's noise model):
@@ -360,5 +444,12 @@ Refusals, in the app's own words:
 A take whose format version is newer than the installed build is refused up
 front rather than half-played.
 
-Both this app and its ARKit sibling export one file type under one identifier,
-with byte-identical declarations, so "Open in" works for either.
+Both this app and its ARKit sibling export the take type under one identifier,
+`aristides.lintzeris.tdstage.take`, with the same conformances, description and
+filename-extension tag. The two declarations are **semantically** identical
+rather than byte-identical: the keys appear in a different order in the two
+`Info.plist` files, and the ARKit app's list carries a second type,
+`aristides.lintzeris.tdstage.imu`, for its IMU sidecar. Neither difference
+affects "Open in", which matches on the identifier and the tag. What would
+break it is a change to the identifier, the extension tag or the conformances
+in one app and not the other.

@@ -1,7 +1,7 @@
 ---
 title: Parameters
 parent: TouchDesigner
-nav_order: 3
+nav_order: 4
 ---
 
 # Parameters
@@ -14,6 +14,16 @@ and checked against the saved file.
 `TD/newtox/param_manifest.py` is a larger design inventory for a component that
 was never built. Most of what it lists does not exist. Do not treat it as a
 parameter reference.
+
+This page says what each parameter does. It does not say where in the pipeline
+it is read, which is often the thing you actually want to know:
+[How the pipeline is built](pipeline.html) has the stage order, the two merge
+paths side by side, and where each parameter bites.
+
+One caveat on the generated list: `tox_params_live.md` was generated at v63 and
+the working copy is v78. A multi-component parameter is printed there as its X
+component alone. The operator or shader that **reads** a parameter is the real
+contract, and that is what the tables below were checked against.
 
 ## Reading this page
 
@@ -44,10 +54,38 @@ Ingest, and the legacy whole-cloud controls.
 | `Maxpoints` | Max Output Points | Int | 400000 | Get-in | CPU | Output budget. The emit strides evenly over the merged cloud to stay under it. |
 | `Colormode` | Colour Mode | Menu `rgb` / `tint` | `rgb` | Show | both | `rgb` uses the phone's own colour plane. `tint` gives each device a flat colour, which is how you tell whose cloud is whose while aiming. |
 | `Cropon` | Stage Crop | Toggle | False | Get-in | CPU | Enables the axis-aligned crop on the CPU path. The GPU path always crops. |
-| `Cropmin` | Crop Min | XYZW | -8.0 | Get-in | both | Minimum corner of the stage box. The GPU path reads X and Z from here and takes its Y floor from `Floorcut`, not from `Cropminy`. |
-| `Cropmax` | Crop Max | XYZW | 8.0 | Get-in | both | Maximum corner. The GPU path reads X and Z from here and takes its Y ceiling from `Geoceiling`, not from `Cropmaxy`. |
+| `Cropmin` | Crop Min | XYZ | -8, -1, -4 | Get-in | both | Minimum corner of the stage box, in metres. The defaults differ per component: X -8, Y -1, Z -4. Saved working copy: -6, -3, -5. |
+| `Cropmax` | Crop Max | XYZ | 8, 9, 4 | Get-in | both | Maximum corner. Per component: X 8, Y 9, Z 4. Saved working copy: 6, 3, 5. |
 | `Voxelsize` | Voxel Dedup (m, 0=off) | Float | 0.0 | Build | CPU | Drops duplicate points where views overlap, on the legacy unsegmented path only. Zero is off. |
 | `Cleardevices` | Forget All Devices | Pulse | - | Show | both | Wipes every learned device and its buffered cloud, and clears the `devices` table. Use it when a phone has gone and its frozen cloud is still in the view. |
+
+### Which parameter the crop box actually reads
+
+`Cropmin` and `Cropmax` are three-component parameters, and the generated
+parameter list prints only the X component, so a reader who trusts it sees one
+number for a box with six faces. Read the file, or read the component.
+
+The GPU crop does not use the Y components at all. Its uniforms, on the GLSL
+POP `gpu_gl`, are:
+
+| Uniform | Reads |
+|---|---|
+| `uMin.x`, `uMin.z` | `Cropminx`, `Cropminz` |
+| `uMin.y` | `Floorcut` |
+| `uMax.x`, `uMax.z` | `Cropmaxx`, `Cropmaxz` |
+| `uMax.y` | `Geoceiling` |
+| `uMin.w` | A fixed 0.08 m floor band, not a parameter |
+
+So on the GPU path the vertical extent is set on the Level page, not on the
+Point Cloud page. `Cropminy` and `Cropmaxy` are read by the CPU crop.
+
+`Cropminy` is not dead on the GPU path, though: `gpu_clean` and `gpu_hyst`
+take the **origin** of their spatial hash grid from
+`Cropminx - 0.5`, `Cropminy - 0.1`, `Cropminz - 0.5`, and the grid's extent in
+X and Z from `Cropmax - Cropmin`. Change `Cropminy` on the GPU path and you
+move the cleanup and hysteresis grid without moving the crop. That is a
+deliberate split, not an oversight: the crop decides what is in the room, and
+the hash grid only has to cover it.
 
 ## View
 
@@ -57,7 +95,7 @@ The preview render. None of this touches the output cloud.
 |---|---|---|---|---|---|
 | `Pointsize` | Point Size | Float | 3.0 | Show | Point sprite size in the preview render. Saved working copy: 8. |
 | `Floorviz` | Show Floor Plane | Toggle | False | Get-in | Draws the floor plane in the preview, which is how you see whether the level solve landed. |
-| `Flooroffset` | Floor Offset (m) | Float | 0.0 | Get-in | Subtracted from Y on every landed frame, so it moves the whole cloud vertically. |
+| `Flooroffset` | Floor Offset (m) | Float | 0.0 | Get-in | Subtracted from Y on every landed frame, on **both** merge paths, so it moves the whole cloud vertically. The saved v78 tox ships **-0.782028 m**, which is not a small correction: it is most of a metre. On the CPU path `udp_pc_exec._land` passes it to `level_ops.unproject_level`; on the GPU path `gpu_atlas_callbacks` bakes it into each phone's pose row. It is applied at landing, before any merging. |
 | `Autofloor` | Set Floor To Origin (auto) | Pulse | - | Get-in | Takes the fifth percentile of Y across live devices and adds it to `Flooroffset`, putting the floor at y = 0. Robust to people standing in frame. It is cumulative, so it refines rather than replaces. |
 | `Autoframe` | Auto-Frame Preview Cam | Toggle | True | Get-in | Keeps the preview camera framed on the cloud. Saved working copy: off. |
 
@@ -145,7 +183,7 @@ Saved working copy: `Trimy` 0.25, the rest zero.
 
 | Parameter | Label | Type | Default | When | Path | What it does |
 |---|---|---|---|---|---|---|
-| `Mergegpu` | GPU Merge Path | Toggle | False | Get-in | - | Builds the cloud on the GPU: the depth grids go up as one texture and a GLSL POP unprojects, transforms and crops every pixel each frame. The CPU merge stands down completely, and the merged CHOP goes empty. Needs the bridge running. No learned-background removal, clustering or CPU fusion on this path. Saved working copy: on. |
+| `Mergegpu` | GPU Merge Path | Toggle | False | Get-in | - | Builds the cloud on the GPU: the depth grids go up as one texture and a chain of GLSL POPs unprojects, transforms, crops, cleans and fuses every cell each frame. The **CPU merge stands down**; background removal, cleanup and fusion continue as GPU stages. `out_merged` goes empty. Needs the bridge running. Saved working copy: on. |
 | `Fusionmode` | Fusion Mode | Menu `points` / `grid` / `merged` | `points` | Build | CPU | `grid` runs the angle-aware weighted merge on the full grid rather than on decimated points. |
 | `Mergevoxel` | Merge Voxel (m) | Float | 0.025 | Build | CPU | Voxel size for the grid merge. |
 | `Mergealign` | Pre-align Devices | Toggle | False | Build | CPU | Runs the alignment solve before merging. |
@@ -155,7 +193,10 @@ Saved working copy: `Trimy` 0.25, the rest zero.
 
 ### GPU merge path controls
 
-These are read only while `Mergegpu` is on.
+These are read only while `Mergegpu` is on. They are the GPU equivalents of
+the CPU path's stages, not extras: background removal, cleanup and fusion all
+happen on this path, on the GPU. See [How the pipeline is built](pipeline.html)
+for the stage order and for which parameter each shader reads.
 
 | Parameter | Label | Type | Default | When | What it does |
 |---|---|---|---|---|---|
@@ -258,3 +299,38 @@ rather than trusting this table.
 | `Handsactive` | off |
 | `Floorviz` | on |
 | `Pointsize` | 8 |
+| `Cropmin` | -6, -3, -5 |
+| `Cropmax` | 6, 3, 5 |
+| `Flooroffset` | -0.782028 |
+| `Floormargin` | 0.033 |
+| `Levelframes` | 56 |
+| `Levelrecentre` | off |
+| `Levelmaxtilt` | 53.1 |
+| `Trimy` | 0.25 |
+| `Handsrate` | 30 |
+| `Regdevice` | 2 |
+| `Regyaw` | 21 |
+| `Regtx` | 0.3 |
+| `Regty` | -0.09 |
+| `Regtz` | -1.9 |
+
+`Cropmin` and `Cropmax` together are the live stage box: about six metres
+either side in X and five either side in Z, three metres down and three up.
+The X and Z figures are read directly by the GPU crop; the Y figures are read
+by the CPU crop and by the cleanup grid's origin.
+
+The `Align` knobs are the pose of whichever device `Regdevice` selects, so the
+saved values are device 2's. The saved `registration` table carries non-zero
+poses for devices 1, 2 and 3:
+
+| id | yaw (deg) | tx | ty | tz |
+|---|---|---|---|---|
+| 1 | 46.0 | -2.7 | 0.53 | -0.9 |
+| 2 | 21.0 | 0.3 | -0.09 | -1.9 |
+| 3 | 90.0 | 0.0 | 1.67 | 0.599 |
+| 50 | 0 | 0 | 0 | 0 |
+
+Those are a bench rig, not a venue. They are in the file because the component
+was last saved with them, and they will land somebody's phone in the wrong
+place if they are left there. With `Posesource` on `manual`, as saved, the
+console cannot correct them.

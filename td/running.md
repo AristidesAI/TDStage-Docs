@@ -33,21 +33,71 @@ checked by checksum.
 ## The topology
 
 Phones send TDP4 depth grids over UDP. A separate process receives them and
-hands TouchDesigner whole frames through a memory-mapped file.
+hands TouchDesigner whole frames through a memory-mapped file. The web console
+reads the same file, as a second independent reader.
 
-```
-phones ──UDP :9003──▶ tdp4_bridge.py ──┬── memory-mapped file ──▶ TouchDesigner
-                                       └── memory-mapped file ──▶ web console
+```mermaid
+flowchart LR
+  PH["Phones<br/>TDP4 depth grids"]
+  BR{{"tdp4_bridge.py<br/>binds UDP :9003<br/>own process, own GIL"}}
+  SHM[("Memory-mapped file<br/>published as 9004<br/>16 device slots")]
+  TD["TouchDesigner<br/>ShmReader on Udpport"]
+  CON["Web console<br/>its own bridge loop"]
+
+  PH -- "UDP" --> BR
+  BR -- "latest assembled frame<br/>per device" --> SHM
+  SHM --> TD
+  SHM --> CON
 ```
 
-The bridge exists because TouchDesigner's main thread holds the Python global
-interpreter lock through GPU work. A receive thread running inside
-TouchDesigner is starved while the GPU merge path runs, and the kernel drops
-the packets it cannot hand over. Measured, simulation: three streams of
-depth and confidence into TouchDesigner's own socket lost about 25,000 of
-55,080 packets over six seconds, about 48 per cent, reproducibly; with the GPU
-merge path off, none (2026-10-26). The bridge receives in its own process,
-with its own lock, and the loss goes away.
+Neither reader is downstream of the other. TouchDesigner's cloud and the
+console's outputs come from the same frames and are independent of each other.
+
+With no bridge running, TouchDesigner falls back to binding the socket itself
+and the console loses its feed:
+
+```mermaid
+flowchart LR
+  PH2["Phones<br/>TDP4 depth grids"]
+  TD2["TouchDesigner<br/>binds Udpport itself,<br/>receive thread inside TD"]
+  CON2["Web console<br/>no frames"]
+
+  PH2 -- "UDP to Udpport" --> TD2
+  PH2 -. "nothing arrives" .-> CON2
+```
+
+That fallback is a safety net, not a configuration. On the GPU merge path it
+loses packets, badly, which is the reason the bridge exists at all.
+
+### Why the receiving is not inside TouchDesigner
+
+TouchDesigner's main thread holds the Python global interpreter lock through
+GPU work. A receive thread living inside TouchDesigner is starved for the
+duration, its socket buffer fills, and the kernel discards what it cannot hand
+over. The loss is invisible from inside: the thread is running, the socket is
+draining, and frames simply never complete.
+
+Measured, simulation, 2026-10-26: three streams of depth and confidence into
+TouchDesigner's own socket lost about 25,000 of 55,080 packets over six
+seconds, about 48 per cent, reproducibly. With the GPU merge path off, none.
+
+The bridge runs the **same** `tdp4_receiver` module, with the same reassembly
+and the same drop-incomplete policy, in its own process with its own lock. It
+does not interpret the data. The wire, the phones and the tox are unchanged.
+
+A few implementation details are worth knowing because they decide how it
+fails:
+
+| Choice | Why |
+|---|---|
+| A plain file plus `mmap`, not `multiprocessing.shared_memory` | That module starts a resource-tracker helper by re-running `sys.executable`, which inside TouchDesigner is TouchDesigner |
+| The layout version is in the filename | A bridge and a tox from different builds miss each other and TouchDesigner keeps its own socket, instead of one process resizing a file the other has mapped, which crashes TouchDesigner on macOS |
+| Sixteen device slots, least-recently-written evicted | A seventeenth device takes a slot rather than growing the file |
+| Each slot and the metadata block is seqlocked | The writer makes the sequence odd, writes, makes it even; a reader keeps a copy only if the sequence was even and unchanged. No memory barriers, so a per-slot checksum is the upgrade if a torn frame is ever actually seen |
+| A frame larger than 512 KB is refused, counted, and not written | A 320 by 240 grid with depth, confidence and colour is 460,920 bytes, so the slot has headroom but not unlimited headroom |
+
+How the frames then become a point cloud is
+[How the pipeline is built](pipeline.html).
 
 The bridge publishes its file under a port name. The show launchers bind
 `:9003` and publish under the name `9004`, so a tox left on `Udpport` 9004
@@ -61,10 +111,34 @@ Set `Udpport` to whichever name the bridge publishes under. With no
 `--shm-port`, the bridge publishes under its bind port, so a tox on `Udpport`
 9003 and a bridge on `--port 9003` also match.
 
-Start order does not matter. The bridge announces itself in the file before it
-binds; TouchDesigner sees that announcement within about half a second, drops
-its own socket, and reads the file instead. If the bridge stops, TouchDesigner
-binds the socket itself within a second and carries on.
+### Handover
+
+Start order does not matter, and neither process knows about the other. The
+whole handover rides on one heartbeat timestamp in the file's header.
+
+The bridge writes the file and starts its heartbeat **before** it binds.
+TouchDesigner re-checks for a fresh heartbeat twice a second, so within about
+half a second it drops its own socket and reads the file instead. The bridge
+then binds the port it has been waiting for.
+
+Coming back the other way, the timing depends on **how** the bridge stopped:
+
+| How it stopped | What the heartbeat does | When TouchDesigner takes the socket |
+|---|---|---|
+| Clean stop, for example Ctrl-C | `ShmWriter.close` zeroes the heartbeat, so readers see it gone immediately | Within about half a second, at the next check |
+| Crash or kill | The last heartbeat stays in the file and ages out | The freshness window is 2 s, so 2 to 2.5 s later |
+
+So "TouchDesigner binds within a second" is the clean case only. After a crash
+there is a gap of two to two and a half seconds during which neither process
+holds the port and no frames land.
+
+In practice the launchers close that gap from the other side: each watchdog
+restarts the process it supervises two seconds after it exits, so a crashed
+bridge is usually back at about the same moment TouchDesigner would have taken
+over. Which of the two wins the race is not deterministic, and it does not
+need to be: whichever binds, the other reads or stands down. What you should
+expect after a bridge crash is a couple of seconds of missing frames and a log
+line naming the new source, not a dead rig needing a restart.
 
 ### The fan-out relay is not in the show path
 

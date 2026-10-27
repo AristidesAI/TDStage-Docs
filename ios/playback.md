@@ -20,13 +20,63 @@ replayed depth-only to compare link budgets without recording anything new.
 
 
 A replay re-enters the streamer one step after the packer, so a receiver cannot
-tell it from a live phone except by one string in the hello. That is why the
+tell it from a live phone except by two fields in the hello. That is why the
 details on this page matter: what you are about to send is whatever the take was
 recorded with, unless you change it here.
 
+Every override on this page is applied to the frame body in memory, before the
+bytes reach the streamer. Nothing downstream of that point knows a replay is
+happening.
+
+```mermaid
+flowchart TD
+  A["Memory-mapped take<br/>+ record index"] --> B["Decode one record<br/>(v2 shuffle+deflate, or v1 LZ4)"]
+  B --> C{"Plane filter<br/>other than as recorded?"}
+  C -- yes --> D["Drop conf and/or rgb:<br/>header rewrite, one block move"]
+  C -- no --> E["Patch the frame header"]
+  D --> E
+  E --> F["captureMicros rewritten to now,<br/>unless that is switched off"]
+  F --> G{"Pose override?"}
+  G -- "as recorded" --> J["Leave the pose alone"]
+  G -- "current pose" --> H["Write this phone's pose,<br/>bit 0 takes its validity"]
+  G -- identity --> I["Write identity,<br/>clear bit 0"]
+  H --> K["Hand the bytes to the streamer's<br/>latest-wins mailbox"]
+  I --> K
+  J --> K
+  K --> L["Fragment and send:<br/>the live path, untouched"]
+```
+
+Three details in that path are worth knowing before changing anything in it.
+
+**The frame id is not in the frame.** It lives in the 20-byte packet header, so
+a replayed frame takes a fresh id from the same counter a live frame would, and
+a receiver's reassembly keys never collide with the take's history.
+
+**The header patch touches bit 0 of the frame flags and nothing else.** Bits 1
+to 4 are the ARKit sibling's depth-conditioning flags. They ride through this
+app untouched, which is what lets a take made in either app replay through the
+other verbatim.
+
+**The plane filter is a rewrite, not a repack.** Planes are contiguous and
+ordered in the frame, so dropping colour is a new plane mask plus at most one
+block move. Depth is never dropped: the mask is ANDed with the filter and then
+ORed with bit 0.
+
+**An unreadable record is skipped, never guessed at.** A corrupt record, or one
+written by a codec this build does not know, is passed over and the schedule
+moves on. A file whose format version is above the build's is refused up front
+instead, so there is no half-played take.
+
 While a take replays, the camera is off. The LiDAR must not compete with the
 replay for thermal headroom, and a phone that captured and replayed at once
-would be sending two clouds down one socket.
+would be sending two clouds down one socket: the mailbox holds one frame, so
+the two would simply overwrite each other and the receiver would get an
+interleaving of a take and a camera under one device id.
+
+Stopping the camera for a replay deliberately does **not** clear the auto-resume
+flag (`stage.showActive`). A phone that dies mid-replay should come back
+streaming, because that flag means "this phone's job is to stream", not "this
+phone is streaming right now".
 
 ---
 
@@ -35,8 +85,9 @@ would be sending two clouds down one socket.
 Top right is a round button: green play, or red stop while a replay is running.
 It is disabled when no take is selected and while a take is recording.
 
-The line under the title reads the state: `Choose a take below`,
-`Selected: <name>`, `ARMED · 5s`, `Importing…`, `REPLAYING <name>`,
+The line under the title reads the state: `No takes on this phone` on an empty
+library, `Choose a take below` once there are takes but none is selected,
+`Selected: <name>`, `ARMED · 5s`, `Importing…`, `REPLAYING · <name>`,
 `PAUSED · <name>`, or `Recording — stop it before replaying`.
 
 When nothing is playing, the outcome of the last import, armed start or refused
@@ -56,9 +107,14 @@ Five figures while a replay runs.
 | SPEED | The current speed multiplier |
 | DROP | Frames abandoned by the streamer |
 
-Under them, the same wire line the other pages show, plus the device id the
-replay is being sent as. A replay depends on the network exactly as much as a
-live stream does. A green socket is still not a reachable receiver.
+Under them, the same wire line the other pages show, ending in the device id
+the replay is being sent as. A replay depends on the network exactly as much as
+a live stream does. A green socket is still not a reachable receiver.
+
+`DROP` is the streamer's own abandonment counter, not the player's. A replay
+shares the live latest-wins mailbox, so a slow link drops replayed frames
+exactly as it drops captured ones, and this figure rising means the socket
+cannot keep up with the speed you have asked for.
 
 ---
 
@@ -81,11 +137,18 @@ and the loop count. Releasing the slider seeks.
 Four preset buttons (0.25×, 0.5×, 1×, 2×) and a slider from 0.05× to 4×. The
 recorded intervals are scaled by this figure.
 
-Timing follows the recorded intervals. A take recorded at 28 fps replays at
-28 fps, and a dropout stays a dropout, because a replay that silently
-regularised the stream would hide exactly the faults it exists to reproduce. A
-single gap is capped at 5 seconds, so one bad timestamp cannot park a replay
-forever.
+Timing follows the recorded intervals, scaled by this figure. A take recorded
+at 28 fps replays at 28 fps, and a dropout stays a dropout, because a replay
+that silently regularised the stream would hide exactly the faults it exists to
+reproduce: a take is the only way to put a known-bad stream back in front of a
+receiver and watch what it does with it.
+
+The intervals are differences between consecutive records' recorded capture
+timestamps, floored at 1 ms and capped at 5 s, so one bad timestamp cannot park
+a replay forever. Those timestamps are on the recording phone's own uptime
+clock, which is why they are only ever used as intervals. Each record also
+carries a unix wall-clock stamp, written for aligning several phones' takes
+after the fact; the player does not schedule from it.
 
 ### Loop
 
@@ -150,7 +213,15 @@ on.
 **Send as** stamps a different device id into every replayed packet, so one
 phone can stand in for another on a receiver's roster. The point stream, the
 hello and the telemetry all move to that id together, so the receiver sees one
-device standing in rather than two halves.
+device standing in rather than two halves. This is how a bench of two phones
+exercises an eight-stream receiver: each plays a take under a different
+stand-in id, and the receiver's roster, reassembly and per-device tables all
+behave as if the missing phones were there.
+
+{: .warning }
+Two sources sending under one id collide in the receiver's reassembler exactly
+as two phones on one id would. If a stand-in id belongs to a phone that is also
+streaming, the result is not two streams but one broken one.
 
 The telemetry destination and the control listener are not affected by this
 panel. Only where the replayed depth goes.

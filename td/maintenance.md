@@ -1,7 +1,7 @@
 ---
 title: Maintenance
 parent: TouchDesigner
-nav_order: 6
+nav_order: 7
 ---
 
 # Maintenance
@@ -9,6 +9,57 @@ nav_order: 6
 The hub is a binary file edited live. That makes two things essential: a
 versioning discipline so you can always get back, and a check that the code
 inside the file is the code the repository thinks it is.
+
+## The loop
+
+Every change to the component goes round this. It is four steps and one check,
+and skipping the check is how the repository and the binary drift apart
+without anything saying so.
+
+```mermaid
+flowchart TD
+  ED["Edit the tox<br/>live in TouchDesigner"]
+  LS["ls TD/*.tox<br/>read the highest number off disk"]
+  CL["Clear runtime state<br/>Udpactive off, unstore pcstate,<br/>cook merged, prune sim rows,<br/>clear the log"]
+  SV["Save vNN AND re-save<br/>the working copy"]
+  SZ{"File size<br/>about 130 KB?"}
+  DR["python3 TD/newtox/tox_drift.py"]
+  R0{"What does it say?"}
+  OK["0 differ, 0 tox-only.<br/>The repository IS the tox's code"]
+  D1["N differ: decide which side is<br/>right, load or copy, save again"]
+  D2["DATs with text and no repo copy:<br/>code that exists only in<br/>the binary. Copy it out"]
+
+  ED --> LS
+  LS --> CL
+  CL --> SV
+  SV --> SZ
+  SZ -- "much larger" --> CL
+  SZ -- "yes" --> DR
+  DR --> R0
+  R0 --> OK
+  R0 --> D1
+  R0 --> D2
+  D1 --> SV
+  D2 --> SV
+```
+
+### Why it is a binary edited by hand
+
+There is a generator, `TD/newtox/build_tox.py`, and the component it was meant
+to produce was never finished. What exists is a component edited live in
+TouchDesigner, which is the normal way to work in TouchDesigner and is not
+going to change.
+
+The consequence is that the artefact is a binary, so git can store it but
+cannot tell you what changed in it. The numbered snapshots are therefore the
+only usable history: a snapshot is a thing you can open, and a diff of two
+snapshots is a thing you cannot read. That asymmetry is the whole reason for
+the discipline below, and the reason the **code** inside the component is also
+kept as plain text in the repository, where it can be diffed and reviewed like
+anything else.
+
+`tox_drift.py` is what keeps the two copies honest. Without it, the repository
+is a hopeful account of what is in the binary rather than a record of it.
 
 ## The versioning rule
 

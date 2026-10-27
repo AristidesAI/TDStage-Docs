@@ -14,6 +14,38 @@ not engineering mistakes. They are claims made to a client that turn out to
 be a simulation figure, or a feature that was written but never run on real
 hardware. Those get discovered at an integration, in front of people.
 
+## How a claim becomes evidence
+
+A number is not evidence because it is a number. It becomes evidence when it
+can be re-produced by someone else and when it carries the conditions it was
+produced under.
+
+```mermaid
+flowchart TD
+  R["Record<br/>the output, while the<br/>thing happens"]
+  T{"Scored against<br/>what?"}
+  SIM["Simulation's own truth.<br/>Exact, synthetic"]
+  MRK["Marks someone typed in.<br/>Real, approximate"]
+  G{"LABELLING GATE<br/>Phone count? Real or simulated?<br/>Network? Command used?"}
+  FIG["A figure that can<br/>be quoted"]
+  NO["Not quotable yet.<br/>Go back and record<br/>the conditions"]
+
+  R --> T
+  T -- "a simulation run" --> SIM
+  T -- "a real recording" --> MRK
+  SIM --> G
+  MRK --> G
+  G -- "all four answered" --> FIG
+  G -- "any one missing" --> NO
+```
+
+**The gate in the middle is the whole page.** A score with no phone count,
+no statement of real or simulated, and no command attached is an impression
+with a decimal point on it. It will be quoted anyway, by someone who was not
+there, to someone who will hold you to it.
+
+So the rule is: a figure travels with its conditions or it does not travel.
+
 ## The four words
 
 Conformance is tracked with four results, and they are not interchangeable.
@@ -59,6 +91,24 @@ Current state worth being honest about: real-phone evidence is **one phone**.
 Every multi-phone figure is simulation. Simulated phones do not get hot, do
 not drop frames on a congested switch, and do not occlude each other the way
 bodies do.
+
+### What one phone cannot evidence
+
+Being specific about this is more useful than a general disclaimer, because
+it tells you which questions a demonstration can and cannot answer.
+
+| Question | Can one phone answer it? |
+|---|---|
+| Does the wire format parse correctly? | Yes. A format is a format. |
+| Does a phone sustain capture while charging? | Yes, for that phone, that cable, that power. |
+| Does the rig hold its frame rate at eight streams? | **No.** Simulation says yes. Simulation does not share a switch or a thermal envelope. |
+| Does a phone throttle under stage lighting over two hours? | **No.** This has not been run. |
+| Does coverage survive a performer walking the playing area? | **No.** This needs the angles, and angles need phones. |
+| Does the system separate performers who cluster? | **No.** Separation is a multi-view property. One view has nothing to fuse. |
+
+The last two are the interesting ones, and they are the ones a client will
+ask about. Both are structural: they are not short of testing time, they are
+short of phones. Say that rather than implying the test is pending.
 
 ## Producing tracking evidence
 

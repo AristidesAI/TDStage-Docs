@@ -42,18 +42,24 @@ The app is distributed privately as a test build, not on the App Store.
 Do both at base.
 
 {: .warning }
-**Check which build a phone actually has before you trust anything on these
-pages.** The invitation shared externally serves at most build 1.0 (3). That
-build predates a number of later changes, among them the thermal ladder taking
-effect, so a phone installed from the existing invitation today is running
-software months behind the current one. The older readiness and remote-test
-notes in the source repository predate those changes too, and describe the
-build of their date rather than the current build.
+**Check which app and which build a phone actually has before you trust
+anything on these pages.** The two apps are at different places. The ARKit
+app's invitation now serves **1.1 (3)**, uploaded 2026-10-27. This app,
+TDStage, has not been uploaded since **1.0 (1)** and has never carried a
+build 3, so any note or invitation that mentions "1.0 (3)" is describing the
+ARKit app's export, not this one.
 <br><br>
-Read the build number in TestFlight, or from the phone's own telemetry: it
-reports its app name, version, build number and the commit it was built from.
-Compare that against the build you believe you are running before you report a
-behaviour, and before you conclude anything from a measurement.
+A phone running TDStage 1.0 (1) predates a number of later changes, among them
+the thermal ladder taking effect, so it is months behind the source these pages
+describe. The older readiness and remote-test notes in the source repository
+predate those changes too, and describe the build of their date rather than the
+current build.
+<br><br>
+Read the version and build in TestFlight, or from the phone's own telemetry on
+`/device/app`: it reports its app name, version, build number and the commit it
+was built from. That is the authority, because it comes from the running
+binary. Compare it against the build you believe you are running before you
+report a behaviour, and before you conclude anything from a measurement.
 
 ### Test builds expire
 
@@ -84,16 +90,27 @@ at any mounting angle. Raw motion does not prompt.
 
 {: .note }
 A declined Local Network permission is one of the hardest faults to read,
-because the phone's own screen looks healthy. If a phone is silent and
-everything else checks out, look in Settings, the app's entry, Local Network.
+because the phone's own screen looks healthy. The app's own stats come from its
+own counters, and a UDP socket reaches ready whether or not anything can leave,
+so the phone reports frames and packets rising while nothing reaches the LAN.
+Nothing on the phone contradicts it. If a phone is silent and everything else
+checks out, look in Settings, the app's entry, Local Network.
 
 ### The device id
 
 A fresh install carries device id 1 and a flag saying nobody chose it. While
 that flag is unset and the id is still 1, the app refuses to start streaming
-and shows a red banner on the LIVE page. Two phones on one id overwrite each
-other's frames, and the symptom is a stream that delivers almost nothing or
-delivers corrupt frames.
+and shows a red banner on the LIVE page.
+
+The id is in the packet header of every datagram, and a receiver reassembles
+fragments per `(device id, frame id)`. Two phones on one id therefore do not
+make two streams that a receiver can tell apart: they make one stream whose
+packets interleave, so frames get assembled from two phones' halves. The
+symptom is a cloud that delivers almost nothing, or geometry that cannot exist,
+and it reads like a hardware fault. Hence a refusal rather than a warning.
+
+The guard is on the *flag*, not on the number, so phone 1 is reachable: the
+banner's own confirm button clears it without changing anything.
 
 Give each phone its own id, 1 to 9, before it leaves base. Use the **Device ID**
 stepper on the LIVE page, or push it from the console. If the phone really is
@@ -151,9 +168,11 @@ Use the app's own **Blackout Screen** on the LIVE page rather than letting the
 phone sleep. It sets brightness to zero, hides the status bar and stops drawing
 the page, while leaving the phone awake and reachable. Triple-tap to wake it.
 
-A blacked-out phone keeps one tiny dot lit in the top right corner: green when
-the socket is up, red when it is not, red while recording, green while
-replaying.
+A blacked-out phone keeps one tiny dot lit in the top right corner. The
+recorder's colour wins over the socket's: red while recording, green while
+replaying, orange while a start is armed, and otherwise green when the socket
+is up and red when it is not. A blacked-out phone that is quietly recording
+still says so.
 
 ---
 
@@ -185,6 +204,14 @@ roster entry.
 Run only one of them at a time on a given phone. Both want the same rear LiDAR
 and the same ports.
 
-Takes are interchangeable between them. Both export one file type under one
-identifier, with identical declarations, so a take recorded in either app opens
+Takes are interchangeable between them. Both export the take type under one
+identifier, `aristides.lintzeris.tdstage.take`, with the same conformances,
+description and filename-extension tag, so a take recorded in either app opens
 into either app.
+
+The two declarations are **semantically** identical rather than byte-identical.
+The keys appear in a different order in the two `Info.plist` files, and the
+ARKit app declares a second type, `aristides.lintzeris.tdstage.imu`, for its
+IMU sidecar. Neither difference affects "Open in", which matches on the
+identifier and the extension tag. What would break it is changing the
+identifier, the tag or the conformances in one app and not the other.

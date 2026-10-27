@@ -88,7 +88,14 @@ TD\newtox\tdp4_bridge.py --port 9003 --shm-port 9004
 The bridge receives the phones on UDP 9003 in its own process and publishes
 whole frames through a memory mapped file named for port 9004, which is what the
 tox's `Udpport` expects. TouchDesigner and the console both read that one file,
-each keeping its own place in it.
+each keeping its own place in it. The working tox is **v78**.
+
+The reason the receiver is a separate process is the GPU merge path. A receive
+thread **inside** TouchDesigner starves while the merge runs, because the merge
+holds the interpreter and datagrams are dropped meanwhile. Outside, the bridge
+drains its socket at full rate and hands over assembled frames, which TD reads
+whenever it is ready. The console reads the same file for free, which is why
+there is no relay in the show path any more.
 
 **There is no fan out relay in front of it, and there should not be.**
 `udp_fanout.py` is legacy. It lost packets above about 30,000 per second, and
@@ -130,6 +137,55 @@ python3 server.py --http 9080 --listen 9001 --tdp4-port 0
 Use `--listen 9001` whenever TouchDesigner is on the same machine. TD binds UDP
 9000 for phone telemetry, and the console cannot have it as well.
 
+## Start up, and what binds which port
+
+Boot is a fixed order, and only one step in it can fail in a way that leaves the
+console running but half useful.
+
+```mermaid
+flowchart TD
+  A["server.py starts"] --> B["Load config.json, or the newest<br/>backup that passes the shape check"]
+  B --> C["Start the worker threads:<br/>TD link, health, recovery,<br/>bridge reader, motion engine"]
+  C --> D["Bind TCP :9001 for the field stream,<br/>unless --f1-port 0"]
+  D --> E{"Is --tdp4-port<br/>non zero and free?"}
+  E -- "0, or TouchDesigner holds it" --> F["No phone facing socket.<br/>Frames arrive from the bridge file"]
+  E -- "free" --> G["Bind UDP :9003"]
+  F --> H["Bind UDP :9013 always:<br/>console owned, the simulator's target"]
+  G --> H
+  H --> I{"Bind the telemetry port<br/>named by --listen"}
+  I -- "bound" --> J["listening :9001"]
+  I -- "already in use" --> K["bind failed: no phone health,<br/>no pongs, no auto recover.<br/>Pick another port, or another machine"]
+  J --> L["Bind TCP :9080 and serve the UI"]
+  K --> L
+```
+
+**The telemetry bind is the one that fails softly.** The console logs the error,
+the top bar reads `bind failed` instead of `listening :<port>`, and it carries on
+serving the UI: you can still see the roster, edit poses and send `/ctl`, but no
+phone health arrives, no pong lands, and auto recover has nothing to act on. The
+cause is almost always TouchDesigner already holding 9000 on the same machine,
+which is why the show machine runs the console on `--listen 9001`.
+
+The platform behaves differently here, deliberately. On macOS and Linux the
+listener sets `SO_REUSEADDR`; on Windows it does not, because there
+`SO_REUSEADDR` lets a second socket **steal** a port another process already
+holds, and silently taking TouchDesigner's telemetry port is worse than
+refusing to start the listener.
+
+**`--tdp4-port 0` on the show machine is not a performance choice, it avoids a
+deadlock.** TouchDesigner must be able to bind 9003 the instant it launches. A
+console that opportunistically grabs the port while TD is down wedges the pair,
+because the console only yields the port once it learns from TD's status message
+that TD wants it, and TD cannot send that message until it has started. With `0`
+the question never arises: the bridge owns the phone port, and both readers take
+frames from its file.
+
+**9001 appears twice and is not a clash.** `--listen 9001` is a **UDP** socket
+for phone telemetry and TouchDesigner's replies. `--f1-port 9001` is a **TCP**
+listener for the client field stream. Different protocols share a port number
+without seeing each other, and the pairing is intentional so there is one number
+to remember and one firewall rule per direction.
+
 ## Every CLI flag
 
 | Flag | Default | What it does | When to change it |
@@ -137,7 +193,7 @@ Use `--listen 9001` whenever TouchDesigner is on the same machine. TD binds UDP
 | `--http PORT` | `9080` | TCP port for the browser UI and the whole HTTP API. | Only if something else holds 9080, or you are running a second instance. |
 | `--listen PORT` | not set, falls back to the saved value in `config.json`, else `9000` | UDP port the console binds for phone telemetry (`/tdlidar/<id>/device/*`) and for TouchDesigner's health and pong replies. | Set `9001` whenever TouchDesigner runs on the same machine, because the tox binds 9000. The phones must then be pointed at it, which the Dashboard's telemetry retarget button does. |
 | `--no-autostart` | off | Do not bind the telemetry listener at boot. | For a bring up where you want the port left free. Start it later from the toolbar. |
-| `--tdp4-port PORT` | `9003` | A direct TDP4 UDP listener on the phone facing port. It is bound only while nothing else claims it, and the console hands it straight back when the tox mirror is alive. `0` disables it. | `0` on the show machine, where TouchDesigner must be able to bind 9003 the instant it launches and the console reads the bridge file instead. Another number to run a measurement instance beside TD. |
+| `--tdp4-port PORT` | `9003` | A direct TDP4 UDP listener on the phone facing port. It is bound only while nothing else claims it, and the console gives it up once TouchDesigner's status message (`/tdstage/td/status`) reports that the tox wants that `Udpport`. `0` disables it. | `0` on the show machine, where TouchDesigner must be able to bind 9003 the instant it launches and the console reads the bridge file instead. Another number to run a measurement instance beside TD. |
 | `--sim-port PORT` | `9013` | A second TDP4 listener the console always owns. The built in simulator is aimed at it. A real phone can be pointed here when TD is not in the loop. | Rarely. Change it only to avoid a clash, and then set the fan out's second target to match. |
 | `--f1-port PORT` | `9001` | The F1 0.4 draft WebSocket (SMSF, SMSP, SMSS). **TCP**, so it coexists with a UDP `--listen 9001`. `0` turns it off. | `0` when no client machine is consuming it. |
 | `--f1-hz RATE` | `15.0` | Rate of the F1 field. | Only if the client asks for a different rate. |
@@ -229,12 +285,20 @@ Never forward port 9080 to the public internet. **The console has no login.**
 
 ### The off LAN cap
 
-`WebConsole/README.md` says the console can be operated from Sydney. True, with
-one caveat it does not state: **the Live view is capped for any client that is
-not on the LAN, to 5 frames per second and 20,000 points shared across all
-phones.** At eight phones that is 2,500 points each. The console logs the cap the
-first time it applies, and every capped response carries an
-`X-Cloud-Remote: 5 Hz, 20000 points` header.
+`WebConsole/README.md` says the console can be operated from the other side of
+the world. True, with one caveat it does not state: **the Live view is capped for
+any client that is not on the LAN, to 5 frames per second and 20,000 points
+shared across all phones.** At eight phones that is 2,500 points each. The
+console logs the cap the first time it applies, and every capped response carries
+an `X-Cloud-Remote: 5 Hz, 20000 points` header.
+
+**Why there is a cap at all.** A LAN view is about 2 MB per poll at 30 Hz, which
+is over 60 MB/s. No remote uplink carries that, and the failure is not graceful:
+the console's own threads stall writing into a socket that cannot drain, so a
+single remote tab degrades the show machine. 20,000 points at 5 Hz is about
+147 KB a frame, roughly 6 Mbit/s, which a tunnel can move. The budget is held per
+client address, so two tabs on one remote machine share it rather than doubling
+it.
 
 A Tailscale `100.64/10` address counts as off LAN, because it is a tunnel. Only
 private, loopback and link local addresses count as on LAN.
@@ -271,7 +335,7 @@ is no TCP transport for depth anywhere in this system.
 | Path | What |
 |---|---|
 | `WebConsole/config.json` | Roster, poses, marker plan, person figures, listen port, TD link, client output targets, recovery policy, every setting |
-| `WebConsole/backups/config-*.json` | Rotating copies. The console loads the newest if `config.json` ever fails to parse |
+| `WebConsole/backups/config-*.json` | Rotating copies, at most one a minute, newest 50 kept. The console loads the newest usable one if `config.json` is unusable |
 | `WebConsole/profiles/phone-<id>.json` | Each phone's last known good profile, with a revision number |
 | `WebConsole/logs/console.log` | Rotating, 5 files of 5 MB |
 | `WebConsole/logs/track-<stamp>.jsonl` | Written only while `/track` recording is on |
@@ -286,16 +350,41 @@ sums. Run it before anything you might want to undo.
 Treat it as a snapshot, not as a tested restore. **Restoring a configuration is
 not proven.** Two specific gaps:
 
-- The console keeps `backups/config-*.json` and falls back to the newest file
-  that **parses** if `config.json` fails to parse. Parsing is the only test it
-  applies. A file that parses cleanly but holds the wrong values is accepted
-  without complaint, and you will not be told.
+- **The fallback tests shape, not sense.** The console keeps
+  `backups/config-*.json`, and when `config.json` is unusable it sets that file
+  aside as `config.json.corrupt-<timestamp>` and loads the newest backup that
+  passes `_config_invalid`: a JSON object, with a device list, every device
+  carrying an integer id, and a marker list whose entries have `id`, `label`,
+  `x`, `y` and `z`. Nothing checks whether the **values** are the show's. A file
+  that parses and has the right shape but holds the wrong poses, the wrong roster
+  size or last month's marker plan is accepted in silence.
+
+  Shape checking is itself new as of 2026-10-27, and it exists because of how the
+  old behaviour failed. `{}`, `[]` and `"devices": null` all parse. Each of them
+  used to seed a fresh six device session, the next save wrote that seed over
+  `config.json`, and the save after that filed the seed as the newest backup, so
+  the real roster aged out of the folder. The console now also says what it did:
+  **Rig health's first row reports a session that started from a backup, or from
+  a seed**, and the note stays for the whole session rather than scrolling away
+  in the Log.
 - The backup path has open review findings, and no restore has been exercised
   end to end.
 
 So: keep the snapshots, and if you ever need one, check the restored roster,
 poses, marker plan and listen port by eye against what you expected before
 trusting them. Do not plan a show around an unattended restore.
+
+### Why saves are serialised and fsynced
+
+`config.json` is written whole on every change, into a private temporary file
+that is fsynced before it is renamed over the real one, under one lock. All three
+parts earn their keep. Until 2026-10-27 concurrent POST handlers shared a single
+`config.json.tmp`: the second `open()` truncated the first writer's file, the
+rename raised a 500 for whoever pressed the button, and a reader could find
+`config.json` empty or half written. The rename is atomic, so a crash mid save
+leaves the previous file intact rather than a partial one. The temporary file is
+created with mode 0600, so the code reads `config.json`'s own mode and restores
+it before the rename.
 
 ### Restarting to pick up a code change
 
@@ -304,3 +393,14 @@ do **not** reimport any Python module. An edit to the console's code needs the
 console process restarted: Ctrl-C and run it again, or close the `run.bat` or
 `show.bat` window. Both watchdogs restart the process on their own if it exits,
 so on the show machine the process comes straight back.
+
+The reason the buttons stop short of reloading code is what they are for. They
+exist to recover a service that has wedged or is erroring **during a show**,
+where the fastest safe action is to drop its queued work and cached results,
+clear its error counters and start a fresh thread if the old one died. Reimporting
+a module under a live rig would swap code out from under threads that hold
+references to the old one, which is a different and much worse failure than the
+one being fixed. So the split is: Restart to recover, process restart to deploy.
+For the YOLO backend the distinction is narrower, because its Restart really does
+restart the separate worker process, but even there the console's own code is
+unchanged.

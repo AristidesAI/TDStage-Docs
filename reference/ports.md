@@ -6,9 +6,10 @@ nav_order: 2
 
 # Ports and topology
 
-Everything carrying stage data runs over **UDP**. The only exceptions are the
-browser talking to the console over HTTP and the websocket that carries the
-tracking channel.
+Everything carrying stage data runs over **UDP**. There are three exceptions,
+and none of them carries depth: the browser talking to the console over HTTP,
+the websocket that carries the field stream, and the bridge handing frames to
+TouchDesigner, which is a shared memory file rather than a socket at all.
 
 ## Why UDP, and why there is no TCP option
 
@@ -20,6 +21,24 @@ network is busiest, which is during a show.
 
 So there is no TCP mode and no TCP fallback. Any TCP found in this system is
 a leftover to remove, not a choice to offer.
+
+The full argument, with the bandwidth arithmetic behind it, is in
+[Why it is built this way](design.html).
+
+### What that means if you are receiving from this system
+
+| Property | Consequence for your integration |
+|---|---|
+| No retransmission, no negative acknowledgement | A gap is normal. Do not treat one as a fault or a disconnection. |
+| A frame with any missing packet is dropped whole | You never receive a partial frame. You receive the next complete one instead. |
+| Latest wins | A newer frame replaces an older unread one. Do not assume you see every frame, and do not build state that depends on seeing them all. |
+| One socket serves every device | Every datagram identifies its own sender, so demultiplex by the device id in the data and not by source address. |
+| Datagrams are kept inside a normal MTU | A frame is split across roughly a hundred numbered packets and reassembled by frame id. Do not rely on IP fragmentation. |
+
+Eight phones with colour offer around 49,000 packets per second (measured,
+simulation). A receiver that does not drain on a dedicated thread with a
+raised socket buffer will lose packets as buffer overflow, which looks like
+network loss and is not.
 
 > **A name that misleads.** A setting called `stage.tcpHost` holds the
 > destination IP address. It is not a transport selector. The UDP point
@@ -45,7 +64,8 @@ flowchart LR
   PN --> BR
   BR --> SHM --> TD --> OUT
   BR -- ":9013" --> CO --> CLI
-  P1 -. "telemetry :9000" .-> TD
+  P1 -. "telemetry :9000 (default)" .-> TD
+  P1 -. "telemetry :9001 (retargeted)" .-> CO
   CO -. "control :9010" .-> P1
 ```
 
@@ -58,18 +78,64 @@ running inside TouchDesigner, so the receiving cannot live there.
 > in the show path predates 2026-10-27. The relay still exists and still
 > works, but it is no longer the show path. Treat it as legacy.
 
+## Which surface is which protocol
+
+People assume everything is HTTP, because the console is a web page. It is
+not. Almost nothing here is HTTP, and the exceptions are the two surfaces a
+person or a browser touches.
+
+```mermaid
+flowchart TD
+  subgraph U["UDP. No delivery guarantee, by design"]
+    U1["Depth frames<br/>:9003, :9013"]
+    U2["Telemetry<br/>:9000 or :9001"]
+    U3["Control to a phone<br/>:9010"]
+    U4["Console and TouchDesigner<br/>:9006, :9001"]
+    U5["Tracking output, OSC<br/>:7000"]
+  end
+  subgraph T["TCP. Connected streams"]
+    T1["Console web interface<br/>and HTTP API, :9080"]
+    T2["Field stream, websocket<br/>:9001"]
+  end
+  subgraph X["Not a socket at all"]
+    X1["Bridge to TouchDesigner<br/>shared memory, named 9004"]
+  end
+```
+
+Three things follow from that picture.
+
+**Every surface carrying stage data is UDP, and none of them guarantees
+delivery.** Write an integration that expects gaps. A missing frame means a
+newer one replaced it.
+
+**Port 9001 is two different things depending on protocol.** 9001/udp is the
+console's own telemetry listener, which is where phone health goes when
+telemetry is retargeted away from TouchDesigner. 9001/tcp is the field
+stream's websocket. Same number, different protocol, unrelated purposes. This
+confuses people and is worth checking before assuming a port conflict.
+
+**The bridge to TouchDesigner hop is not a network hop.** It is a
+memory-mapped file, published under the name 9004 so that TouchDesigner's own
+port setting needs no change. Nothing is listening on 9004. A port scan will
+not find it, and a firewall rule for it does nothing.
+
 ## Ports
 
-| Port | Direction | Carries |
-|---|---|---|
-| 9003/udp | phones to the bridge | Depth grid frames and the device hello |
-| 9004 | bridge to TouchDesigner | The same frames, through shared memory rather than a socket |
-| 9013/udp | bridge to the console | Depth grid frames for the console's own outputs |
-| 9000/udp | phones to TouchDesigner | Telemetry: battery, thermal, frame rate, stream health |
-| 9010/udp | to a phone | Control messages |
-| 9006/udp, 9001/udp | console and TouchDesigner | Poses, health and status between the two |
-| 9080/tcp | browser to the console | The console's web interface and HTTP API |
-| 7000/udp | console to another system | The tracking output |
+| Port | Protocol | Direction | Carries |
+|---|---|---|---|
+| 9003 | UDP | phones to the bridge | Depth grid frames and the device hello |
+| 9004 | **not a socket** | bridge to TouchDesigner | The same frames, through shared memory. The number is a published name, not a port. |
+| 9013 | UDP | bridge to the console | Depth grid frames for the console's own outputs |
+| 9000 | UDP | phones to TouchDesigner | Telemetry: battery, thermal, frame rate, stream health. The default. |
+| 9001 | UDP | phones or TouchDesigner to the console | Telemetry, when it has been retargeted to the console's own listener, and the TouchDesigner link's replies |
+| 9001 | TCP | console to another system | The field stream, as a websocket |
+| 9010 | UDP | to a phone | Control messages |
+| 9006 | UDP | console to TouchDesigner | Poses, health and status |
+| 9080 | TCP | browser to the console | The console's web interface and HTTP API |
+| 7000 | UDP | console to another system | The tracking output, as OSC |
+
+The old relay sat on 9003 and 9004 as real sockets. If a document says
+TouchDesigner binds 9004, it predates the bridge.
 
 ## What must never carry depth
 

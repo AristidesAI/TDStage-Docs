@@ -14,6 +14,52 @@ phone that needs an App Store sign-in, a software update or a permission tap
 at a get-in is a phone that is not in the show. Several of the steps below
 cannot be done remotely at all.
 
+## The split that is the whole point of this page
+
+Some of this can only be done where there is internet and a person holding
+the phone. The rest can be done at a venue, from the console, with the phone
+on a stand three metres up. Knowing which is which is the difference between
+a get-in and a crisis.
+
+```mermaid
+flowchart TD
+  subgraph OFF["Needs internet and hands. Before travel."]
+    A["Update iOS"]
+    B["Install the app"]
+    C["Open the app once<br/>and allow Local Network"]
+    D["Turn off automatic updates"]
+    E["Supervision, if it is wanted<br/>(erases the phone)"]
+  end
+  subgraph VEN["Can be done at a venue"]
+    F["Set or confirm the device id"]
+    G["Set the host address"]
+    H["Start, stop, blackout, calibrate"]
+    I["Retarget telemetry"]
+    J["Push a saved phone profile back"]
+  end
+  OFF --> VEN
+```
+
+The left-hand box is not a preference, it is a hard boundary. A rig LAN has
+no internet and no app store sign-in, and a permission prompt needs a finger
+on the glass.
+
+Two of those are worth singling out.
+
+**Opening the app once, on internet, is the step people skip.** First launch
+is when the operating system asks for Local Network access. Decline it, or
+never trigger it, and the phone looks completely healthy and sends nothing,
+with nothing in the console to explain why. There is no remote fix.
+
+**Supervision erases the phone**, so it cannot be added at a venue, in a
+hotel, or on the day. If it is wanted it has to be decided before the phones
+go out. See the decision below.
+
+The right-hand box is deliberately large, because every setting that *can*
+be remote was made remote. The phone is a streamer with a control surface,
+so a phone on a stand needs no one to climb to it for anything that is not
+physical.
+
 ## Why this cannot wait until the venue
 
 | Step | Why it has to be done early |

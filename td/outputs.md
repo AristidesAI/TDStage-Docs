@@ -1,7 +1,7 @@
 ---
 title: Outputs
 parent: TouchDesigner
-nav_order: 4
+nav_order: 5
 ---
 
 # Outputs
@@ -20,15 +20,53 @@ plan.
 
 The component's node viewer is `out_preview`.
 
+```mermaid
+flowchart LR
+  GPU["GPU merge chain<br/>gpu_del"]
+  CPU["CPU merge<br/>merged Script CHOP"]
+  SW{"pc_switch<br/>on Mergegpu"}
+  POP["out_pop<br/>the merged cloud"]
+  CH["out_merged<br/>cloud as channels<br/>empty on the GPU path"]
+  RGB["out_rgb<br/>phone camera images"]
+  PRE["out_preview<br/>rendered 3D view"]
+  HAN["out_hands<br/>hand markers"]
+  CONS["Web console<br/>detection over HTTP"]
+
+  GPU --> SW
+  CPU --> SW
+  SW --> POP
+  CPU -- "null_merged" --> CH
+  CPU -. "per-point colours<br/>for depth-only phones" .-> RGB
+  POP --> PRE
+  CONS --> HAN
+  HAN --> PRE
+```
+
+Read the dependencies, not the layout. `out_pop` is the only output that works
+on both merge paths. `out_merged` depends on the CPU path. `out_hands` depends
+on the console being up. `out_preview` depends on everything and is for a
+person to look at.
+
 ## Coordinates
 
 Every point is in stage coordinates: metres, Y up, origin at the centre of the
-stage floor. The phones emit global stage coordinates themselves, using the
-extrinsic from their own calibration, so the hub only unions and cleans. There
-is no per-device alignment guesswork in the merge.
+stage floor.
+
+**The hub does not only union.** A phone's extrinsic is gravity-levelled but
+origin-centred: the phone knows which way is up and nothing about where it
+stands, so without help three phones pile up on top of each other at the
+origin. The hub applies a **per-device registration** of yaw, tx, ty and tz on
+both merge paths, from the console roster when `Posesource` is `console` or
+from the Align page knobs otherwise, and then the stage level solve and the
+manual trim.
+
+The full transform, per phone, is `Trim . Reg . Floor . Level . E`.
+[How the pipeline is built](pipeline.html#where-the-per-device-registration-is-applied)
+has the terms and where each one is applied.
 
 That means a point you read from `out_pop` is already in the space your content
-works in. No further transform is needed or wanted.
+works in. No further transform is needed or wanted. The alignment happens in
+the hub precisely so that nothing downstream has to repeat it.
 
 ## `out_pop`: the merged point cloud
 

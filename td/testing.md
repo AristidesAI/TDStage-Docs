@@ -1,7 +1,7 @@
 ---
 title: Testing without hardware
 parent: TouchDesigner
-nav_order: 5
+nav_order: 6
 ---
 
 # Testing without hardware
@@ -17,6 +17,44 @@ Every command below was checked against the script's own argument parsing on
 Run them from the repository root. The scripts add their own directory to the
 import path, so `python3 TD/newtox/<script>.py` works from anywhere in the
 tree.
+
+## Which one do I run?
+
+There are five senders and six self-tests, and picking the wrong one wastes an
+afternoon proving something you were not asking about. Start from what you are
+testing, not from what is convenient to launch.
+
+```mermaid
+flowchart TD
+  Q0{"What are you<br/>actually testing?"}
+  ST["Self-tests<br/>tdp4_bench, tdp4_bridge,<br/>glsl_parity_test"]
+  Q1{"Do the cameras need<br/>to share a world?"}
+  TK["take_play.py<br/>recorded takes as devices"]
+  SIM["tdp4_sim.py<br/>N synthetic phones"]
+  MS["merge_sim.py<br/>one shared world"]
+  Q2{"Is TouchDesigner<br/>in the test?"}
+  BE["tdp4_bench.py<br/>the receiver alone"]
+  PORT["Send to the port that is<br/>actually bound: the bridge's<br/>--port, or the tox's Udpport"]
+  SC["td_merge_score.py<br/>against the simulator's truth"]
+
+  Q0 -- "the code, no sockets" --> ST
+  Q0 -- "the wire and the ingest" --> Q1
+  Q0 -- "real sensor data" --> TK
+  Q1 -- "no: load, reassembly, drops" --> SIM
+  Q1 -- "yes: merge, fusion, coverage" --> MS
+  SIM --> Q2
+  Q2 -- "no" --> BE
+  Q2 -- "yes" --> PORT
+  TK --> PORT
+  MS --> PORT
+  MS --> SC
+```
+
+The distinction that catches people is the middle branch. `tdp4_sim.py` builds
+its scene in **camera space**, so every synthetic phone sees a different
+private world and the merged result is a ring of disjoint clouds. That is
+correct for what it is for, and useless for judging a merge. `merge_sim.py`
+exists for the other question.
 
 ## Which port to send to
 

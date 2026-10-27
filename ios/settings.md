@@ -10,8 +10,21 @@ Every setting the app holds, with the key it is stored under, its default, what
 it does, and whether a console can set it remotely.
 
 All settings live in iOS UserDefaults under keys beginning `stage.`. Every
-default is registered once at launch, and every reader goes through
-UserDefaults with no inline fallback, so a fresh install and a reset agree.
+default is registered once at launch, in one place, and every reader goes
+through UserDefaults with no inline fallback.
+
+That is the rule that keeps the three authorities over a setting, the on-screen
+control, `/ctl/set`, and a pushed profile, from disagreeing. An inline
+fallback (`?? 30`) is a second default that only one reader sees: the screen
+shows 30, the registered default says something else, the telemetry reports a
+third thing, and which one you get depends on whether anything has written the
+key yet. A new key that is read without being registered is the defect to look
+for when a fresh install behaves differently from a reset one.
+
+Each value is also clamped twice on the remote path: once to a billion either
+way after the non-finite check, and again to the key's own range in the same
+`switch` that writes it. Both would have to be wrong for a value to reach a key
+unbounded.
 
 ## How to read the Remote column
 
@@ -33,11 +46,16 @@ key the profile schema does not list is dropped, so a profile cannot reach
 anything below that does not say `profile`.
 
 {: .note }
-Every setting a person can change on the phone's screens is reported back at
-2 Hz as a JSON object on `/tdlidar/<id>/device/settings`, keyed by these same
-UserDefaults keys. That is how a console shows the phone's real state rather
-than the last value it happened to send. A key absent from that object is a
-control the app does not have, and the console hides that row.
+Every setting a person can change on the phone's screens is reported back as a
+JSON object on `/tdlidar/<id>/device/settings`, keyed by these same UserDefaults
+keys. It is sent **when it changes**, on the next 0.5 s telemetry tick, and
+**every 2 s regardless** whether it changed or not. The first half means a
+console catches up with an edit within half a second, whether the edit came
+from a thumb on the phone or from its own `/ctl/set`. The second half means a
+console that starts late, or that drops a datagram, still converges rather than
+waiting for the next change. That is how a console shows the phone's real state
+rather than the last value it happened to send. A key absent from that object
+is a control the app does not have, and the console hides that row.
 
 An unknown key sent to `/ctl/set` is ignored. Nothing writes arbitrary
 UserDefaults.
@@ -56,7 +74,7 @@ UserDefaults.
 | `stage.oscHost` | `""` | `set` text | Telemetry destination. Blank means use `stage.tcpHost` |
 | `stage.oscPort` | `9000` | profile | Telemetry destination port |
 | `stage.ctlPort` | `9010` | profile | The port the phone listens on for commands |
-| `stage.preferWired` | `true` | `set` number, profile | Require wired Ethernet for outgoing connections whenever a wired interface is up |
+| `stage.preferWired` | `true` | `set` number, profile | Require wired Ethernet for outgoing connections whenever a wired interface is up. The requirement is provisional: see below |
 | `stage.hostCable` | `""` | no | The last complete cable address the phone learned. Powers the LIVE page's **Cable** button |
 | `stage.hostWifi` | `""` | no | The last complete network address. Powers the **Wi-Fi** button |
 | `stage.markerExtrinsic` | empty | no | The last marker calibration solve, as 16 floats. Written by a calibration and cleared by `/ctl/calibclear` |
@@ -77,6 +95,42 @@ on-screen advice names the same button.
 
 `stage.hostCable` and `stage.hostWifi` are the only two keys with no registered
 default. They read as empty until the phone learns an address.
+
+### `stage.preferWired` is a preference with a five-second escape
+
+While this is on and a wired interface is up, each outgoing UDP connection is
+built with `requiredInterfaceType = .wiredEthernet`. Cellular is prohibited on
+every connection regardless.
+
+That requirement is **dropped after five seconds if the connection has not come
+up, even while the wired link stays up.** An adapter that is up but routes
+nowhere, link-local only, the wrong VLAN, a receiver on the Wi-Fi subnet,
+otherwise parks the connection in `waiting` for the whole session, and the
+phone cannot be rescued remotely either, because its telemetry leaves under the
+same requirement: `/ctl/set stage.preferWired 0` cannot reach the phone that
+needs it. So the streamer rebuilds the connection once with no requirement,
+notes `wifi (wired adapter not routing)`, and re-arms the requirement on the
+next wired path change.
+
+The key itself is not changed by this. A phone that has fallen back still
+reports `preferWired 1`, and the fallback shows up as `link = "wifi"` with
+`wiredUp = 1` on `/device/link` and as "Wi-Fi (Ethernet waiting)" on the LIVE
+page.
+
+{: .warning }
+**Toggling this key does not re-arm the requirement.** Writing it relinks both
+the depth and the telemetry connections, but the fallback latch is cleared only
+by a wired path change, so a phone that has already fallen back rebuilds
+without the requirement again. Bounce the wired link, or restart the app. There
+is no remote verb that clears the latch on its own.
+
+Full description, including what to check when it happens:
+[Prefer Ethernet](live.html#prefer-ethernet-poe--cable).
+
+{: .note }
+Link selection is being revised in the source to add an explicit Link picker
+(automatic, Ethernet, cable, Wi-Fi) alongside this preference. The five-second
+escape survives that change. The authority is `TDStage/Net/WiredLink.swift`.
 
 ---
 

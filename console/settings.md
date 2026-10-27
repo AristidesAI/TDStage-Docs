@@ -14,6 +14,72 @@ They are **not** phone settings. Phone settings are sent over OSC to each phone
 and live on the [device page](ui.html). These change the console's own
 segmentation, tracking, hand emission and output.
 
+## How a setting reaches the code that reads it
+
+```mermaid
+flowchart TD
+  U["Tuning panel, generated from<br/>GET /api/settings"] --> P["POST /api/settings"]
+  P --> V{"Is the group.key<br/>in the schema?"}
+  V -- "no" --> X["Rejected and named in errors.<br/>Nothing changes"]
+  V -- "yes" --> C["Coerced to the declared type,<br/>clamped to the declared range"]
+  C --> M["Stored, then the WHOLE group is<br/>handed to every module registered<br/>for that group"]
+  M --> S["segmentation to segment.py"]
+  M --> VI["vision to vision_seg,<br/>person_obs, yolo_seg"]
+  M --> TK["tracking and hands<br/>to track_emit.py"]
+  M --> OU["output to track_emit,<br/>ndi_out, rgb_stream"]
+  M --> LA["latency to ingest.py"]
+  M --> NR["restart class keys are<br/>also listed in needsRestart"]
+  M --> PE["Persisted into the settings<br/>section of config.json"]
+```
+
+Three design choices in that path explain most of the odd cases further down
+this page.
+
+**The values live in `settings.py`; the modules keep their own globals.** A
+module does not look a setting up when it needs it. It receives the whole group
+as a plain dict through `apply_settings(d)` and copies what it owns into its own
+module globals, which its hot loop then reads with no dict lookup and no lock.
+Every one of those globals is a plain scalar written from the HTTP thread and
+read inside exactly one worker loop, which is safe without a lock because a
+CPython global store is atomic, and the loop reads them once at the top of each
+tick so a change lands cleanly on the next one.
+
+**Several modules can own one group, and a missing module is skipped silently.**
+`output` goes to `track_emit`, `ndi_out` and `rgb_stream`; `vision` goes to
+`vision_seg` and to whichever observers started. Each is handed the whole group
+and ignores the keys it does not own. A module with no `apply_settings` attribute
+is accepted and skipped, and starts working on its own if it later grows one,
+because the attribute is looked up at dispatch time rather than at registration.
+That is what lets the console boot without NDI, or without Vision, and still
+accept their settings. A hook that raises is caught and reported as an error on
+the group: **a broken hook must not take the console down mid show.**
+
+**Some hooks spell keys in snake_case.** Those schema entries carry `aliases`,
+and the dispatched dict holds the value under both spellings, so either
+implementation works without a translation layer.
+
+**The panel cannot drift from the server**, because it is built from
+`GET /api/settings`, which returns the schema, the current values and the
+defaults together. The hover text you see on a row is the schema's own `help`
+string. If a page and the panel disagree, the panel is right.
+
+### Which groups apply live, and which need more
+
+| Group | Applied by | Live |
+|---|---|---|
+| `segmentation` | `segment.py` | Live, except `vox`, which requantises every learned key and so **resets** the engine |
+| `vision` | `vision_seg`, `person_obs`, `yolo_seg` | Live, except `yoloModel` and `yoloDevice`, which **rebuild** the worker |
+| `tracking` | `track_emit.py` | Live |
+| `hands` | `track_emit.py` | Live |
+| `output` | `track_emit`, `ndi_out`, `rgb_stream` | Live, except the four `ndi*` geometry and naming keys, which **rebuild** the sender and make receivers reconnect |
+| `latency` | `ingest.py` | Live |
+
+Nothing in any group needs the console **process** restarted. `restart` here
+means one object is rebuilt, and the console tells you which key by naming it in
+`needsRestart`. A console process restart is only needed to pick up a **code**
+change. See
+[Running the console](running.html#restarting-to-pick-up-a-code-change).
+
 ## How to read the table
 
 | Column | Meaning |
@@ -51,6 +117,13 @@ A small number of defaults have been retuned after measurement. When that
 happens the console moves a saved value **only if it equals the old default**,
 on the grounds that nobody chose it; a value someone set differently is kept.
 The pairs it migrates are listed as `RETUNED` in `WebConsole/settings.py`.
+
+That migration runs **once**, not on every boot. The saved settings block
+carries a `_rev`, and a file already at the current `SETTINGS_REV` is never
+touched. The first version of this had no revision and re-ran at every start,
+which made the old value unsettable: an operator who deliberately chose the
+previous default had it silently moved back on the next restart. A file written
+before revisions existed counts as revision 0 and is migrated once.
 
 ## What this page deliberately does not cover
 
@@ -291,11 +364,38 @@ roster, not these.
 
 ## What a tick costs
 
-The engine's own work is about 15 ms per tick with eight devices in frame,
+The engine's own work is about **15 ms per tick with eight devices in frame**,
 down from about 29 ms before the 2026-10-27 optimisation. *Measured,
-simulation.* Eight real phones have never been run, and simulated devices do
-not get hot or drop frames, so treat this as a ceiling on the code's cost and
-not as a rig figure.
+simulation.* Eight real phones have never been run, and simulated devices do not
+get hot or drop frames, so treat this as a ceiling on the code's cost and not as
+a rig figure.
 
-That matters when choosing `segTick`. A period shorter than the work takes
-does not make the engine faster, it only makes it late every tick.
+The bench numbers behind that, on the same scene at 306,000 points a tick: 29.2
+to 14.6 ms, and 37.7 to 14.4 ms with the background frozen. The live figure
+before the change was worse than the bench, 44.8 ms a tick on a 50 ms period,
+which is one core with no slack left. The optimisation itself replaced
+`searchsorted` joins of each observation against roughly 170,000 sorted state
+rows, which were 40 per cent of a tick, with a dense cell to row table over the
+stage box. Published arrays are bit identical before and after, checked tick by
+tick for 900 ticks.
+
+The engine stayed on the CPU on purpose. A GPU version would mean importing
+torch into the console process, which is exactly what the YOLO worker exists to
+avoid, or running a second supervised worker fed every tick's whole cloud. That
+is a decision rather than a fix, and it is not needed at these numbers.
+
+{: .note }
+*Built, not verified on a running console.* The figure the Rig health panel shows
+on the Motion background engine row comes from the live engine, so a console
+started before this change still reports the old cost until it is restarted.
+
+That matters when choosing `segTick`, because the engine period is the dominant
+server side latency lever: `/track` does not re-segment, it filters the
+**current** cloud against the foreground set the engine published on its **last**
+tick. A period shorter than the work takes does not make the engine faster, it
+only makes it late every tick.
+
+{: .warning }
+`segment.py`'s docstring says the engine runs at a fixed cadence of about 10 Hz.
+The code disagrees: the period is `latency.segTick`, default 0.05 s, which is
+20 Hz. The comment is stale; the schema's default is what runs.

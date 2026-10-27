@@ -27,6 +27,57 @@ fix.
 
 ---
 
+## A phone is not behaving
+
+Start here, because almost every phone symptom is one of **three independent
+channels** being down, and people confuse them under pressure. Point data,
+health and control each take a different route, with a different destination and
+a different failure. Any one of them can be perfect while the other two are
+dead.
+
+| Channel | Route | How you see it |
+|---|---|---|
+| **Point data** | phone to the bridge's file, read by TouchDesigner and the console in parallel | Live view, `GET /api/live` frame counts |
+| **Health** | phone telemetry to port 9000 and relayed by TouchDesigner, **or** straight to the console's own listener | the device card's `OSC` pill, battery, thermal, fps, `/healthz` |
+| **Control** | console to the phone's own address on its Ctl port, 9010 | Ping, and the pong with its round trip in the Log |
+
+```mermaid
+flowchart TD
+  A{"Are its points reaching<br/>the console?<br/>GET /api/live"} -- "no" --> B{"Is TouchDesigner<br/>getting them?"}
+  B -- "no, neither is" --> C["The phone or its link.<br/>Device page, then Autofix"]
+  B -- "yes, only TD" --> D["The console's own feed.<br/>No bridge, wrong port, or the<br/>reader never started"]
+  A -- "yes" --> E{"Is its health<br/>arriving?<br/>OSC pill, /healthz"}
+  E -- "no" --> F["Telemetry targets a port this<br/>console does not read.<br/>Send telemetry here.<br/>Do NOT restart the console"]
+  E -- "yes" --> G{"Does control reach it?<br/>Ping, then wait for the pong"}
+  G -- "no" --> H["Wrong destination, or the phone<br/>is locked or asleep.<br/>Check Phone IP and Ctl port"]
+  G -- "yes" --> I["All three channels are up.<br/>The fault is in what the phone<br/>sends, not in reaching it"]
+```
+
+**Neither reader has points.** The phone is not sending, or not sending here. Its
+device page and **Autofix** are the fastest route: Autofix diagnoses the
+connection and runs the known good repair sequence on the server, logging each
+step.
+
+**TouchDesigner has them and the console does not.** This is structural, not a
+phone fault, and it has its own entry below:
+[The console sees nothing while TouchDesigner is fine](#the-console-sees-nothing-while-touchdesigner-is-fine).
+
+{: .warning }
+**Points arriving but no health is not fixed by restarting anything.** The
+telemetry is not reaching the console in the first place, so restarting the
+console, the bridge or TouchDesigner changes nothing: it comes back and still
+reads no port the phone is sending to. The fix is to move the phone's telemetry,
+with **Send telemetry here** or `POST /api/telemetry/retarget`. This is a mistake
+people make exactly once, under pressure, at the worst moment.
+
+**Control not landing** is nearly always the destination. The console sends
+`/ctl` to the phone's own address, which it learns from telemetry unless someone
+typed one in, and a manual entry wins. A phone whose screen has auto locked goes
+deaf to `/ctl`; builds from 2026-10-27 keep it awake, and on an older build the
+phone needs Auto-Lock set to Never.
+
+---
+
 ## Phone shows offline, or shows no health, but is streaming fine
 
 **What you see.** TouchDesigner has the phone's cloud. The console's device card
@@ -35,10 +86,31 @@ on the case, the card is either grey (offline) or green but with blank numbers.
 
 **Why.** The console treats a phone as **online** on fresh evidence from either
 channel: telemetry, or point data in its store. But `STREAM` and every health
-number come from **telemetry only**. The phone sends telemetry to
-`stage.oscHost:stage.oscPort`, which defaults to port 9000, and that is the
-port TouchDesigner binds. With TD running on the same machine the console never
-receives a single telemetry packet, even while the stream is perfect.
+number come from **telemetry only**, and telemetry takes a route that point data
+does not.
+
+A phone sends telemetry to `stage.oscHost:stage.oscPort`, which defaults to port
+9000, and that is the port TouchDesigner binds. The tox does not swallow it: its
+`osc_in` callback forwards every datagram unchanged to the console over the
+TouchDesigner link, and sends `/tdstage/peer` alongside it so the console learns
+the phone's real address rather than TouchDesigner's. So with the default ports
+the console's health **comes through TouchDesigner**.
+
+That relay has three ways to be missing, and all of them look the same on the
+card:
+
+- the tox is not running, or is running without the tox loaded
+- the tox's `Consoleactive` parameter is off
+- the tox does not know where the console is, which it learns from the console's
+  own ping, so a disabled TouchDesigner link on the console side can break it in
+  the other direction
+
+{: .warning }
+A comment in `server.py` at the retarget handler says the console "never
+receives a single telemetry packet" with TouchDesigner running. The code
+disagrees with that comment: `console_link_lib.relay` forwards every telemetry
+datagram. The comment predates the relay. Trust the relay, and treat a missing
+relay as one of the three causes above.
 
 **Confirm.** Compare the two channels:
 
@@ -62,7 +134,11 @@ curl -s -X POST http://localhost:9080/api/telemetry/retarget \
 
 The reply names the host, the port and how many phones took it. It prefers the
 USB cable address when there is one, because that is the same UDP transport at
-0.55 ms instead of about 8 ms over Wi-Fi.
+0.55 ms instead of about 8 ms over Wi-Fi. *Measured, real phone (one phone).*
+
+Doing this also removes the dependency: once a phone's telemetry goes straight to
+the console's own listener, its battery, temperature and frame rate survive a
+TouchDesigner outage.
 
 Note why this is one button and not two settings edits: the host moves by an
 explicit `/ctl/set`, because the phone's profile schema keeps hosts out on
@@ -551,10 +627,22 @@ runs; NDI just reports unavailable.
 **What you see.** After a restore, poses or the marker plan are not what you
 expected, and nothing complains.
 
-**Why.** The console keeps rotating copies in `WebConsole/backups/` and falls
-back to the newest file that **parses** if `config.json` fails to parse.
-**Parsing is the only test it applies.** A file that parses cleanly but holds
-the wrong values is accepted silently.
+**Why.** The console keeps rotating copies in `WebConsole/backups/`, at most one
+a minute, newest 50 kept. If `config.json` cannot be used it sets that file aside
+as `config.json.corrupt-<timestamp>` and loads the newest backup that passes a
+**shape** test: a JSON object, with a device list, every device carrying an
+integer id, and markers that have `id`, `label`, `x`, `y` and `z`.
+
+**That is shape, not sense.** Nothing checks whether the values are the show's. A
+file that parses and has the right shape but holds the wrong poses, the wrong
+roster size or last month's marker plan is accepted without a word about it.
+
+**Check Rig health's first row.** When the console did not simply load
+`config.json`, the top row of the Rig health panel says so: started from a
+backup, or seeded a new session, with the reason and what to check. It stays
+there for the whole session, because the matching Log line scrolls away in the
+first minute of a get in. If that row is absent, the config was loaded normally
+and a wrong looking roster is someone's edit, not a fallback.
 
 **Restore is not a proven path.** The backup code has open review findings and
 no restore has been exercised end to end. Treat `./Tools/backup_state.sh` as a
