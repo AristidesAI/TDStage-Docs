@@ -276,7 +276,8 @@ hands, because the fallback hand detector is macOS only.
 Operator: nothing, unless it keeps happening. Rig health shows the worker's
 state and how many times it has restarted, and can restart it by hand.
 
-Status: the respawn is covered by a test that runs in the build.
+Status: the respawn has an automated test. It is run by hand at the moment, because the repository's Actions have been refused on billing since
+2026-10-27.
 
 ### The show machine goes to sleep
 

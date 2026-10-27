@@ -233,14 +233,19 @@ check_fix_hints: 60 warn/error messages, 0 without a fix
 ```
 
 It runs inside the self test step of
-`.github/workflows/windows-console.yml` and exits 1 on a miss, which turns the
-run red.
+`.github/workflows/windows-console.yml` and exits 1 on a miss.
 
-{: .note }
-Red, not blocked. That workflow runs on pushes to `main`, and work here lands
-on `main` directly, so an unhinted warning is caught **after** the commit
-rather than before it. Treat the check as a thing to run yourself before
-pushing, not as a gate that will stop you.
+{: .warning }
+**Nothing in that workflow has actually run since 2026-10-27.** Every GitHub
+Actions job on the system repository fails within a few seconds on an account
+billing block, so a red run there says nothing about the code. The self-tests
+are run by hand instead — all 31 of them passed on a development Mac on
+2026-10-28. Treat every check in this section as a thing somebody ran, not as a
+gate that is standing guard, and run them yourself before pushing.
+
+Even when the billing is fixed, it is red rather than blocked: that workflow
+runs on pushes to `main`, and work here lands on `main` directly, so an
+unhinted warning is caught **after** the commit rather than before it.
 
 The gate also has a blind spot worth knowing: it reads `server.py` as text and
 only sees calls whose level and message are literals. The autofix path logs
@@ -733,9 +738,11 @@ the phone actually came back.
 **Most of the fallbacks are verified in code, not on the rig.** The distinction
 is in the "Verified" column of `Notes/Fallbacks.md` and it is worth taking
 seriously. The worker respawn and the fix hint
-gate run in the build. Config corruption recovery and concurrent saves were
+gate have automated tests. Config corruption recovery and concurrent saves were
 verified once, by scratch-console probes on 2026-10-27, and nothing re-runs
-them. The
+them. Since the Actions billing block of 2026-10-27, **none of the automated
+tests run on a push** — they are run by hand, which means they are as reliable
+as somebody remembering. The
 spare phone swap, the profile push on a real phone, the heat test and the
 wired adapter rebuild are **designed and not yet seen working on the rig**. Any
 of them could be wrong in a way that only a stage will show.

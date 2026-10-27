@@ -60,6 +60,13 @@ the Live view without them.
    and the compute section must say `yoloDevice=auto resolves to cuda`. If it
    says cpu, the CUDA torch wheel did not install: set `TORCH_INDEX_URL` and run
    `install.bat` again.
+6. **Run `python xplat.py` once**, from `WebConsole` with the virtual
+   environment's Python. It is the cross-process self-test for the
+   platform-specific half of the console — the file locking that stops two
+   consoles sharing one configuration, among other things. That code takes a
+   different path on Windows from the one every development machine exercises,
+   so this is the first place it has ever run for real. A failure here is
+   worth stopping for.
 
 YOLO weights (`yolo26n-seg.pt`, `yolo26n-pose.pt`) ship in `WebConsole/models/`,
 so the install works offline once pip has run.
@@ -228,6 +235,24 @@ holds it, so it is marked as a test instance without anyone remembering a flag.
 port 9080, and it restores `/track` and NDI exactly as it last saved them. A
 test instance saves its own file's settings back rather than the show's, so it
 cannot switch the show console's link off behind your back.
+
+### One console per configuration file
+
+A second console started on a configuration file that another console already
+holds **exits immediately**, with status 3, naming the file that is taken. The
+lock is the operating system's, on a file beside the configuration, so it is
+released the moment the holder dies — a crash or a watchdog restart frees it
+with nothing to clean up, and the launchers retry every two or three seconds,
+so a restart takes over as soon as the old process is gone.
+
+This closes the last route by which a second console could rewrite the show's
+roster: not by driving TouchDesigner or the client bus, which the test-instance
+rules already prevent, but simply by saving its own idea of the roster over the
+show's file. Two consoles on one file was never a configuration anyone wanted;
+now it is one that cannot happen.
+
+To run a second console deliberately, give it its own file with `--config`,
+which is what you want anyway — its phone profiles move with it.
 
 ### What `--config` does to a fresh instance
 
