@@ -71,6 +71,7 @@ Run the checks before pushing:
 ```
 python3 tools/check_diagrams.py
 python3 tools/check_links.py
+python3 tools/check_tox_version.py
 ```
 
 The link checker resolves every internal link, image and heading anchor. A
@@ -100,6 +101,14 @@ where the console changed:
 python3 tools/gen_api.py --check --repo ../TDStage
 python3 tools/gen_troubleshooting.py --check --repo ../TDStage
 ```
+
+`tools/check_tox_version.py` covers the one number no generator owns: the
+TouchDesigner project's version. Several pages quote it, and a new saved version
+usually means some saved parameter default moved with it, so a stale number is
+not a cosmetic problem. The check requires that the highest version mentioned
+anywhere in the docs is the highest on disk, which allows historical mentions
+while catching the whole site lagging. It skips when the system repository is
+not beside this one.
 
 ## Numbers
 

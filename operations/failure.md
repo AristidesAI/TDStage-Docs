@@ -209,7 +209,7 @@ This is a property of the measurement, not a bug. See
 
 | Lost | Way back |
 |---|---|
-| The TouchDesigner project, damaged or badly edited | Every change is saved as a numbered version, so the previous one is always on disk. The working project is **v78** as of 2026-10-27. A drift check shows whether a saved project's code matches version control, and can extract its code as plain files. |
+| The TouchDesigner project, damaged or badly edited | Every change is saved as a numbered version, so the previous one is always on disk. A drift check shows whether a saved project's code matches version control, and can extract its code as plain files. |
 | Learned background and floor | Re-learn on an empty stage. Checkpoints are included in every snapshot. |
 | Roster, markers, settings | The console keeps its last fifty saves, and they are in every snapshot. |
 | A phone's settings after a reinstall | The console keeps each phone's profile and can push it back. |

@@ -88,7 +88,7 @@ TD\newtox\tdp4_bridge.py --port 9003 --shm-port 9004
 The bridge receives the phones on UDP 9003 in its own process and publishes
 whole frames through a memory mapped file named for port 9004, which is what the
 tox's `Udpport` expects. TouchDesigner and the console both read that one file,
-each keeping its own place in it. The working tox is **v78**.
+each keeping its own place in it.
 
 The reason the receiver is a separate process is the GPU merge path. A receive
 thread **inside** TouchDesigner starves while the merge runs, because the merge

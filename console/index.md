@@ -275,7 +275,7 @@ phones ──UDP :9003──▶ tdp4_bridge.py ──┬──▶ TouchDesigner 
 `tdp4_bridge.py` binds the phone facing port itself and hands whole assembled
 frames to both readers through one memory mapped file, published under the name
 `9004` so the tox's `Udpport` needs no change. Each reader keeps its own place in
-the file. Nothing copies packets. The working TouchDesigner project is **v78**.
+the file. Nothing copies packets.
 
 The bridge exists because of where the receive thread has to live. With the GPU
 merge path, a receive thread **inside** TouchDesigner starves: the merge holds

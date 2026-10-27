@@ -21,7 +21,7 @@ it is read, which is often the thing you actually want to know:
 paths side by side, and where each parameter bites.
 
 One caveat on the generated list: `tox_params_live.md` was generated at v63 and
-the working copy is v78. A multi-component parameter is printed there as its X
+the working copy has moved on since (v80 at the time of writing). A multi-component parameter is printed there as its X
 component alone. The operator or shader that **reads** a parameter is the real
 contract, and that is what the tables below were checked against.
 
@@ -95,7 +95,7 @@ The preview render. None of this touches the output cloud.
 |---|---|---|---|---|---|
 | `Pointsize` | Point Size | Float | 3.0 | Show | Point sprite size in the preview render. Saved working copy: 8. |
 | `Floorviz` | Show Floor Plane | Toggle | False | Get-in | Draws the floor plane in the preview, which is how you see whether the level solve landed. |
-| `Flooroffset` | Floor Offset (m) | Float | 0.0 | Get-in | Subtracted from Y on every landed frame, on **both** merge paths, so it moves the whole cloud vertically. The saved v78 tox ships **-0.782028 m**, which is not a small correction: it is most of a metre. On the CPU path `udp_pc_exec._land` passes it to `level_ops.unproject_level`; on the GPU path `gpu_atlas_callbacks` bakes it into each phone's pose row. It is applied at landing, before any merging. |
+| `Flooroffset` | Floor Offset (m) | Float | 0.0 | Get-in | Subtracted from Y on every landed frame, on **both** merge paths, so it moves the whole cloud vertically. The saved tox shipped **-0.782028 m** until v80, which was not a small correction: it was most of a metre, and it is why #38 exists. It now ships **0**. On the CPU path `udp_pc_exec._land` passes it to `level_ops.unproject_level`; on the GPU path `gpu_atlas_callbacks` bakes it into each phone's pose row. It is applied at landing, before any merging. |
 | `Autofloor` | Set Floor To Origin (auto) | Pulse | - | Get-in | Takes the fifth percentile of Y across live devices and adds it to `Flooroffset`, putting the floor at y = 0. Robust to people standing in frame. It is cumulative, so it refines rather than replaces. |
 | `Autoframe` | Auto-Frame Preview Cam | Toggle | True | Get-in | Keeps the preview camera framed on the cloud. Saved working copy: off. |
 
@@ -265,8 +265,8 @@ place.
 
 | Parameter | Label | Type | Default | When | What it does |
 |---|---|---|---|---|---|
-| `Posesource` | Pose Source | Menu `console` / `manual` | `console` | Get-in | `console` takes poses from the console roster. `manual` uses the knobs below. Saved working copy: `manual`. |
-| `Regdevice` | Edit Device Id | Int | 1 | Get-in | Which device the knobs below edit. Saved working copy: 2. |
+| `Posesource` | Pose Source | Menu `console` / `manual` | `console` | Get-in | `console` takes poses from the console roster. `manual` uses the knobs below. Saved working copy: `console` since v80; it shipped as `manual` before that, which silently ignored every pose the console pushed. |
+| `Regdevice` | Edit Device Id | Int | 1 | Get-in | Which device the knobs below edit. Saved working copy: 1. |
 | `Regyaw` | Yaw (deg) | Float | 0.0 | Get-in | That device's yaw. Note that the registration yaw is not the same number as the roster's plan heading; see the console documentation before typing a figure in by hand. |
 | `Regtx`, `Regty`, `Regtz` | Move X/Y/Z (m) | Float | 0.0 | Get-in | That device's translation. |
 | `Regreload` | Reload From Table | Pulse | - | Get-in | Loads the selected device's stored values onto the knobs. |
@@ -294,43 +294,55 @@ rather than trusting this table.
 | `Geoceiling` | 4 |
 | `Learnframes` | 450 |
 | `Mergeprecut` | off |
-| `Posesource` | manual |
+| `Posesource` | console |
 | `Autoframe` | off |
 | `Handsactive` | off |
 | `Floorviz` | on |
 | `Pointsize` | 8 |
 | `Cropmin` | -6, -3, -5 |
 | `Cropmax` | 6, 3, 5 |
-| `Flooroffset` | -0.782028 |
+| `Flooroffset` | 0 |
 | `Floormargin` | 0.033 |
 | `Levelframes` | 56 |
 | `Levelrecentre` | off |
 | `Levelmaxtilt` | 53.1 |
 | `Trimy` | 0.25 |
 | `Handsrate` | 30 |
-| `Regdevice` | 2 |
-| `Regyaw` | 21 |
-| `Regtx` | 0.3 |
-| `Regty` | -0.09 |
-| `Regtz` | -1.9 |
+| `Regdevice` | 1 |
+| `Regyaw` | 0 |
+| `Regtx` | 0 |
+| `Regty` | 0 |
+| `Regtz` | 0 |
 
 `Cropmin` and `Cropmax` together are the live stage box: about six metres
 either side in X and five either side in Z, three metres down and three up.
 The X and Z figures are read directly by the GPU crop; the Y figures are read
 by the CPU crop and by the cleanup grid's origin.
 
-The `Align` knobs are the pose of whichever device `Regdevice` selects, so the
-saved values are device 2's. The saved `registration` table carries non-zero
-poses for devices 1, 2 and 3:
+The `Align` knobs are the pose of whichever device `Regdevice` selects. They
+are all zero as saved, and so is every row of the `registration` table.
+
+That is a recent state, and the reason it changed is worth knowing, because the
+same thing can happen again on any bench. Up to v79 the saved component carried
+a real bench placement:
 
 | id | yaw (deg) | tx | ty | tz |
 |---|---|---|---|---|
 | 1 | 46.0 | -2.7 | 0.53 | -0.9 |
 | 2 | 21.0 | 0.3 | -0.09 | -1.9 |
 | 3 | 90.0 | 0.0 | 1.67 | 0.599 |
-| 50 | 0 | 0 | 0 | 0 |
 
-Those are a bench rig, not a venue. They are in the file because the component
-was last saved with them, and they will land somebody's phone in the wrong
-place if they are left there. With `Posesource` on `manual`, as saved, the
-console cannot correct them.
+Those were a desk in a room, not a venue, and they were in the file only
+because the component was last saved while they were set. Worse, `Posesource`
+was saved on `manual`, so the obvious correction, fixing the poses in the
+console, returned early and did nothing at all. A phone would land in the wrong
+place and the one control an operator would reach for was inert.
+
+v80 cleared the table, set `Regdevice` back to 1, zeroed the `Align` knobs and
+put `Posesource` back on `console`. The lesson generalises past this one file:
+
+{: .warning }
+Anything you nudge by hand on a bench is saved into the component. Zero the
+`Align` knobs and put `Posesource` back on `console` before saving a numbered
+version, or you ship a venue a desk's geometry. The issue this came from is
+[#38](https://github.com/AristidesAI/TDStage/issues/38).
