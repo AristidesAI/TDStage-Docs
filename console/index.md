@@ -89,9 +89,9 @@ place in it. Neither is in the other's path for point data.
 ```mermaid
 flowchart LR
   P["Phones<br/>TDP4 depth grid, UDP :9003"] --> B["tdp4_bridge.py<br/>assembles frames into one<br/>memory mapped file"]
-  B --> TD["TouchDesigner<br/>merge, cleanup, fusion"]
+  B --> TDH["TouchDesigner<br/>merge, cleanup, fusion"]
   B --> C["WebConsole<br/>its own ingest,<br/>its own segmentation"]
-  TD --> V["Visual output"]
+  TDH --> V["Visual output"]
   C --> O["Tracking output,<br/>field stream,<br/>video output"]
 ```
 

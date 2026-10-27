@@ -157,11 +157,17 @@ is its own logged problem. See the generated page.
 empty, the Rig health panel saying "Console is receiving no frames", hand
 tracking reporting zero devices, and no error anywhere in TD.
 
-**Why.** This is the single most common console failure, and it is structural:
-**TouchDesigner and the console are fed by different readers.** TD looking
-healthy says nothing about the console. On the show machine the console has no
-socket of its own at all (`--tdp4-port 0`) and gets every frame from the TDP4
-bridge's memory mapped file.
+**Why.** This is the single most common console failure, and it is structural.
+**TouchDesigner and the console are two independent readers of the same bridge
+file**, not a chain. The console is not downstream of TouchDesigner, so TD
+looking healthy says nothing whatsoever about whether the console is being fed.
+On the show machine the console has no socket of its own at all
+(`--tdp4-port 0`) and gets every frame from the bridge's memory mapped file; the
+reader is a thread that only exists if `tdp4_receiver` imported.
+
+The same independence is why a broken console feed cannot hurt the visuals: the
+two pipelines share a source and nothing else. It is also why nothing in
+TouchDesigner will ever warn you about this.
 
 **Confirm.**
 
