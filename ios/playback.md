@@ -12,11 +12,13 @@ one is replayed.
 
 ![The PLAYBACK page: transport, pose and plane overrides, and the replay destination](../assets/screens/playback.webp)
 
-The two **As recorded** pickers are what make a take useful beyond watching it
-again. Pose decides whether the replay claims the extrinsic it was recorded
-with, the phone's current pose, or identity. Planes can drop the colour plane
-out of each frame before sending, so a take recorded with colour can be
-replayed depth-only to compare link budgets without recording anything new.
+The transport (1) behaves as you would expect. The two **As recorded** pickers
+are what make a take useful beyond watching it again. Pose (2) decides whether
+the replay claims the extrinsic it was recorded with, the phone's current pose,
+or identity. Planes (3) can drop the colour plane out of each frame before
+sending, so a take recorded with colour can be replayed depth-only to compare
+link budgets without recording anything new. The replay leaves by the live
+stream's own destination (4) unless you redirect it (5).
 
 
 A replay re-enters the streamer one step after the packer, so a receiver cannot

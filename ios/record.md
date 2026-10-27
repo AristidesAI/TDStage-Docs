@@ -13,12 +13,16 @@ before anyone is on the floor, then press one button.
 
 {: .note }
 This screenshot was taken on 2026-10-27, shortly before the **Depth grid**
-picker was removed. It is shown here because the rest of the page is current;
-ignore that one row. The reason it went is below.
+picker, marked **3**, was removed. It is shown here because the rest of the
+page is current; ignore that one row. The reason it went is below.
 
-The blue line under the settings is the one to read before a session. It turns
-the choices above into bytes per second and minutes of headroom on the disk
-actually in the phone, so a plane you add is immediately priced.
+The blue line (5) is the one to read before a session. It turns the choices
+above it into bytes per second and minutes of headroom on the disk actually in
+the phone, so a plane you add is immediately priced.
+
+The numbers are drawn on the screenshot rather than listed beside it, so the
+pairing survives being printed, pasted into a call sheet, or read on a phone
+where the caption has wrapped somewhere else.
 
 
 ## What a take is
@@ -336,10 +340,13 @@ phones is separate, later work.
 
 ![The RECORD page's naming, compression, IMU and storage limits](../assets/screens/record-storage.webp)
 
-The three storage numbers are guard rails rather than preferences. A take is
-refused below the first, running takes stop at the second, and the third
-decides how many are kept. A phone that fills its disk mid-session loses the
-take it is writing, so these are set once and left alone.
+The three storage numbers (4, 5 and 6) are guard rails rather than
+preferences. A take is refused below the first, running takes stop at the
+second, and the third decides how many are kept. A phone that fills its disk
+mid-session loses the take it is writing, so these are set once and left alone.
+
+The prefix (1) is worth one look before a session rather than after it: the
+line under it shows the exact filename the next take will get.
 
 
 | Control | Default | Range |
