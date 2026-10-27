@@ -98,33 +98,31 @@ not stages**. Nothing flows from one into the other.
 flowchart TD
   ST[("Landed grids<br/>depth, conf, K, E")]
   SW{"Mergegpu?"}
-  A["gpu_atlas_callbacks<br/>depth atlas + pose rows,<br/>colour atlas, background texture"]
-  T["gpu_temporal<br/>still-cell depth averaging<br/>off by default"]
-  U["gpu_unproject<br/>ray x depth, pose matrix,<br/>crop, learned background"]
+  A["gpu_atlas_d<br/>depth atlas + pose rows<br/>(gpu_atlas_rgb, gpu_bg, gpu_count)"]
+  T["gpu_temporal (TOP)<br/>still-cell depth averaging<br/>off by default"]
+  TP["gpu_tp<br/>TOP to POP"]
+  GL["gpu_gl (gpu_unproject.glsl)<br/>ray x depth, pose, crop,<br/>learned background"]
   H["gpu_hyst<br/>temporal hysteresis"]
   C["gpu_clean<br/>density + cluster cleanup"]
-  F["gpu_fuse<br/>voxel fusion"]
-  D["gpu_del<br/>remove rejected points"]
-  M["merged Script CHOP<br/>union + registration + trim"]
+  F["gpu_fuse<br/>voxel fusion, 2 passes"]
+  D["gpu_del (Delete POP)<br/>removes points flagged keep = 0"]
+  M["merged (Script CHOP)<br/>union + registration + trim"]
   W["segmentation worker<br/>off the main thread"]
-  E["budget cap, 7 channels"]
-  POP["out_pop"]
+  CTP["chopto_pop<br/>CHOP to POP"]
   CH["out_merged"]
+  PS{"pc_switch"}
+  NP["null_pop"]
+  POP["out_pop"]
 
   ST --> SW
   SW -- "on, the show path" --> A
-  A --> T
-  T --> U
-  U --> H
-  H --> C
-  C --> F
-  F --> D
-  D --> POP
+  A --> T --> TP --> GL --> H --> C --> F --> D
+  D -- "input 1" --> PS
   SW -- "off, legacy and inspection" --> M
-  M --> W
-  W --> E
-  E --> POP
-  E --> CH
+  M --> W --> CTP
+  CTP -- "input 0" --> PS
+  M --> CH
+  PS --> NP --> POP
 ```
 
 With `Mergegpu` on, `out_merged` is **empty by design**. The Script CHOP emits
