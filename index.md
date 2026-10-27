@@ -12,6 +12,14 @@ single TouchDesigner project, which fuses them into one point cloud in a
 shared stage coordinate space and drives real-time visuals. A web console
 manages the devices and carries the tracking outputs to other systems.
 
+{: .note }
+**This documentation is public; the code is not.** Links on these pages to
+issues, to the board or to the source repository go to a private repository and
+will ask an outside reader to sign in, or show nothing. They are kept because
+they are the right pointers for anyone working on the system, and because a
+named issue number is still a usable reference in an email or a call. Nothing
+on these pages depends on being able to open one.
+
 ## The whole system on one page
 
 ```mermaid

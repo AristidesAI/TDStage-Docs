@@ -43,7 +43,7 @@ then the console's interpreter anyway so that the error names a real path. On
 the Windows show machine the installer puts everything in one virtualenv and
 the first two branches collapse into one. On a development Mac they frequently
 do not, and the console then runs segmentation in an interpreter nobody
-remembers creating.
+remembers creating. On the board as [#39](https://github.com/AristidesAI/TDStage/issues/39).
 
 TouchDesigner never participates. It loads its own Python 3.11 from inside the
 application bundle, so a package you install system wide, or into the console's

@@ -604,7 +604,8 @@ that decision has not been made.
 "how long a phone may be back before we act", is persisted, is loaded and is
 settable over the API, but `recovery_loop` never reads it. The loop acts on the
 next two second tick after a phone returns, gated only by `cooldown`. Where a
-comment and the code disagree, trust the code: there is no grace period.
+comment and the code disagree, trust the code: there is no grace period. On
+the board as [#40](https://github.com/AristidesAI/TDStage/issues/40).
 
 **Most of the fallbacks are verified in code, not on the rig.** The distinction
 is in the "Verified" column of `Notes/Fallbacks.md` and it is worth taking

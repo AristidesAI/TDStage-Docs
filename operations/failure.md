@@ -13,6 +13,11 @@ The status column is the important one. "Verified" means a test or a run
 showed it. "Not verified" means it is designed and written but has not been
 seen working on hardware. **Gap** means there is no fallback today.
 
+Most of the "not verified" items are waiting on the same thing: a session with
+real phones on real stands. That session is [#24](https://github.com/AristidesAI/TDStage/issues/24), and it is what will
+move them. Where a gap has its own issue, this page links it; the live list is
+the [board](https://github.com/users/AristidesAI/projects/1).
+
 Read the gaps first. They are at the bottom of this page.
 
 ## Why the failures are shaped like this
@@ -131,14 +136,17 @@ after about forty five seconds of cooling.
 Operator: shade it or give it air. The console shows capture pressure per
 device.
 
-Status: the ladder is tested. **A real heat test has not been run.**
+Status: the ladder is tested. **A real heat test has not been run.** The
+measured case that needs explaining is [#31](https://github.com/AristidesAI/TDStage/issues/31): thermal serious, 14 fps,
+capture age 77 ms.
 
 ### The wired link routes nowhere
 
 Automatic: the stream falls back to Wi-Fi after five seconds.
 
 Operator: re-seat the cable. A direct cable address can drift, in which case
-the console can re-teach the phone where to send.
+the console can re-teach the phone where to send. Detecting that drift rather
+than waiting for somebody to notice is [#19](https://github.com/AristidesAI/TDStage/issues/19).
 
 Status: code review and unit tests. **Not verified on a rig.**
 
@@ -203,7 +211,8 @@ told apart, so the receiving side can treat it as provisional rather than
 trusting it.
 
 This is a property of the measurement, not a bug. See
-[Evidence and claims](evidence.html).
+[Evidence and claims](evidence.html). What `clustered` and an identity change
+mean on the wire is being pinned down in [#32](https://github.com/AristidesAI/TDStage/issues/32).
 
 ## Between shows
 
@@ -219,7 +228,9 @@ This is a property of the measurement, not a bug. See
 ## The gaps
 
 These have no fallback today. They are listed plainly because a gap you know
-about can be planned around, and a gap you discover during a show cannot.
+about can be planned around, and a gap you discover during a show cannot. Each
+links its issue where it has one; the full, current list is the
+[board](https://github.com/users/AristidesAI/projects/1) and the [issues](https://github.com/AristidesAI/TDStage/issues).
 
 **No hot standby for the show machine.** If it dies, the rebuild is from a
 snapshot onto another machine. Whether the rig runs one machine or two is
@@ -232,7 +243,9 @@ restart by itself, but there is a pause.
 
 **App distribution past ninety days.** Test builds expire. For a production
 running months ahead that means a re-upload roughly every quarter, or moving
-to a distribution route that does not expire. The decision is outstanding.
+to a distribution route that does not expire. The decision is outstanding:
+[#16](https://github.com/AristidesAI/TDStage/issues/16) for the expiry itself, [#21](https://github.com/AristidesAI/TDStage/issues/21) for the non-expiring route
+and source escrow the agreement asks for.
 
 ## Routine that prevents most of this
 
