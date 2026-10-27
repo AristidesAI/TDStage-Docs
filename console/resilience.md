@@ -1,7 +1,7 @@
 ---
 title: Built for a live show
 parent: Console
-nav_order: 7
+nav_order: 8
 ---
 
 # Built for a live show
@@ -209,7 +209,7 @@ renders each `log(..., "warn"|"error", ...)` message with its placeholders
 blanked, and fails if any message has no hint and no `fix=`:
 
 ```
-check_fix_hints: 60 warn/error messages, 0 without a fix
+check_fix_hints: 57 warn/error messages, 0 without a fix
 ```
 
 It runs as the first line of the self test step in
