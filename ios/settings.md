@@ -70,6 +70,11 @@ seconds later would walk the phone back onto Wi-Fi on its own. An explicit
 `/ctl/set stage.tcpHost` still works, because that is a person at a console
 deciding.
 
+In practice an operator does not send that by hand. Pressing **Send telemetry
+here** on the console's device row sends the address over the control channel,
+which is the supported way to point a phone at a machine. The phone's own
+on-screen advice names the same button.
+
 `stage.hostCable` and `stage.hostWifi` are the only two keys with no registered
 default. They read as empty until the phone learns an address.
 
