@@ -215,6 +215,70 @@ the paper the plan assumed.
 3. Keep them out of the path of anyone who will be moving around the stage.
 4. Leave them up until calibration is verified, not until it is run.
 
+### Aligning from the clouds instead
+
+There is a second way to place phones, which needs no markers at all: **Rig
+align** solves where every phone is relative to one anchor phone, from what the
+clouds themselves see.
+
+It works because the phones already know which way is down. Each one streams a
+gravity-levelled view, so pitch and roll are right and only four numbers are
+unknown between two phones: a heading and a position. The floor gives one of
+them — the height difference between two phones' floors. For the other three,
+the console looks at both clouds from above, rasterises what stands between
+knee and head height, and cross-correlates the two pictures at every heading in
+turn. The best match wins, then gets refined.
+
+That is a **global** search, which matters: the finer alignment step it then
+runs can only polish a rig that is already within about ten degrees and half a
+metre, so on its own it cannot find the answer from nothing.
+
+```mermaid
+flowchart TD
+  A["Every phone streams<br/>a levelled view"] --> B["Floor heights give<br/>the vertical offset"]
+  B --> C["Top-down pictures,<br/>correlated at every heading"]
+  C --> D{"Graded"}
+  D -- "OK" --> E["Polished, then applied"]
+  D -- "WARN" --> F["Applied, with the reason<br/>and what to do"]
+  D -- "FAIL" --> G["Refused. The phone is<br/>left where it was"]
+```
+
+**Every answer is graded, and the grade is the useful part.** OK means the
+solver settled — not that the pose is right. A WARN is applied with its reason
+attached; a FAIL is refused and that phone is left alone rather than moved
+somewhere confident and wrong.
+
+Three things the grading is looking for, each worth recognising on a get-in:
+
+- **Overlap.** How much of what one phone sees the other sees too. This is the
+  failure no setting fixes: two phones pointed at different halves of the stage
+  have nothing to match, and the answer is to move a phone, not to retry.
+- **Consensus.** The match is re-run on subsets of the points. If those runs
+  disagree with each other, the scene is ambiguous and it warns even when the
+  score looks healthy.
+- **Chaining.** Phones are matched pairwise and then composed along the
+  strongest route back to the anchor, so a phone that shares nothing with the
+  anchor — the back phone facing the front row — can still land through a
+  neighbour it does share with.
+
+{: .warning }
+Two rooms defeat it, and both are rooms you might be standing in. An empty box
+with a flat floor and bare walls has nothing to correlate, and a symmetric room
+can match 180 degrees out. The solver reports its score and how far ahead the
+winner was, for exactly that reason: a low score or a close second place means
+look at the result before trusting it.
+
+It runs as a background job — eight phones is twenty-eight pairs and takes tens
+of seconds — so the console stays responsive and reports progress while it
+works. One solve at a time.
+
+{: .note }
+Measured on simulated rigs, **not yet used at a real get-in**. The approach
+follows the principles in Darien Brito's
+[TDXDepthCamMerger](https://github.com/DarienBrito/TDXDepthCamMerger): grade
+every answer with a reason and a fix rather than a bare pass, report overlap
+for every pair, and only polish a match that is already good.
+
 ## 5. Verification before you release the rig
 
 Do not call a rig built until all of these pass:
