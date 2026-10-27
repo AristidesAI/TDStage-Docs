@@ -1,0 +1,29 @@
+title: TDStage
+description: Multi-phone LiDAR stage tracking. Operator and integrator documentation.
+remote_theme: just-the-docs/just-the-docs
+
+# just-the-docs options
+color_scheme: dark
+search_enabled: true
+search:
+  heading_level: 2
+  previews: 2
+heading_anchors: true
+back_to_top: true
+back_to_top_text: "Back to top"
+
+aux_links:
+  "Source (private)":
+    - "https://github.com/AristidesAI/TDStage"
+
+footer_content: >-
+  TDStage documentation. Operator and integrator reference.
+  Figures are measured on the rig and dated; re-measure before quoting them.
+
+plugins:
+  - jekyll-remote-theme
+  - jekyll-seo-tag
+
+exclude:
+  - README.md
+  - .github/
