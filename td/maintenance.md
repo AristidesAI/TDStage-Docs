@@ -211,7 +211,7 @@ after every scripted callback-text edit.
 ## Where learned state lives
 
 Learned numpy state is large, and component storage is the wrong place for it.
-It lives on disk as compressed numpy checkpoints, reloaded lazily when a module
+It lives on disk as numpy checkpoints, the learned background compressed and the floor and level state not, reloaded lazily when a module
 recompiles.
 
 | Platform | Directory |

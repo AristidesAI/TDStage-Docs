@@ -27,12 +27,12 @@ flowchart TD
   BR[["tdp4_bridge.py<br/>own process, own GIL"]]
   SHM[("Memory-mapped file<br/>one slot per device")]
   CON["Web console<br/>second reader"]
-  RX["tdp4_receiver<br/>reassembly, latest-wins"]
-  LAND["udp_pc_exec<br/>floor offset, level, unwarp"]
+  RX["ShmReader in TouchDesigner<br/>reads whole frames"]
+  LAND["udp_pc_exec<br/>stores the grid, lazily"]
   ST[("Module dicts<br/>depth, conf, K, E, cam<br/>never a table")]
 
   PH --> BR
-  BR --> SHM
+  BR -- "reassembly,<br/>latest-wins" --> SHM
   SHM --> RX
   SHM --> CON
   RX --> LAND
@@ -46,11 +46,20 @@ memory-mapped file, as a second independent reader. Its own outputs do not
 depend on TouchDesigner's pipeline at all, which is why closing one does not
 affect the other.
 
-**The floor offset, the stage level solve and the lens unwarp are applied
-here, at landing, not later in the chain.** By the time anything merges, the
-frame is already level and already sitting at the right height. A document
-that puts levelling after the merge is describing something that does not
-exist.
+**Where the floor offset, the level solve and the lens unwarp are applied
+depends on which merge path is running, and the two differ.**
+
+On the **CPU path** they are applied here, at landing, so by the time anything
+merges the frame is already level and already at the right height.
+
+On the **GPU path**, which is how the saved project ships, landing stores the
+raw grid and does no transforming at all. The same corrections arrive later,
+baked into the per-phone pose row the atlas builder writes, as
+`Trim . Registration . Floor . Level . Extrinsic`. The result is the same
+geometry; the place it happens is not.
+
+That distinction matters when a cloud is in the wrong place: on the GPU path
+there is nothing to inspect at landing, because the numbers are still raw.
 
 ### What the receiver guarantees
 
@@ -85,9 +94,14 @@ first is pure waste. Measured, simulation: 0.9 to 1.7 ms per phone frame,
 which is 25 to 40 per cent of the main thread at eight streams. The frame is
 stored with a lazy marker instead, and the few occasional readers that really
 need CPU points call `ensure(did)` to compute them on demand: the auto-frame
-camera, the floor pulse, hands on a phone with no colour plane, an RGB view
-with no colour plane, and a background learn. A level solve in progress forces
-the full path, because it needs every frame.
+camera, the floor pulse (which asks for every device at once), hand detection
+on any lazy phone where a hand was found, and the CPU merge, which asks for
+every device on each merge. A level solve in progress forces the full path,
+because it needs every frame.
+
+The RGB views are **not** among them. A view of a phone with no colour plane
+is drawn as a depth shade rather than by unprojecting points for it, which is
+why opening one costs nothing on the GPU path.
 
 ## The two merge paths
 
@@ -99,15 +113,16 @@ flowchart TD
   ST[("Landed grids<br/>depth, conf, K, E")]
   SW{"Mergegpu?"}
   A["gpu_atlas_d<br/>depth atlas + pose rows<br/>(gpu_atlas_rgb, gpu_bg, gpu_count)"]
-  T["gpu_temporal (TOP)<br/>still-cell depth averaging<br/>off by default"]
+  T["gpu_temporal (TOP)<br/>still-cell depth averaging<br/>side branch, off by default"]
+  CNT["gpu_count<br/>point budget"]
   TP["gpu_tp<br/>TOP to POP"]
-  GL["gpu_gl (gpu_unproject.glsl)<br/>ray x depth, pose, crop,<br/>learned background"]
-  H["gpu_hyst<br/>temporal hysteresis"]
+  GL["gpu_gl (gpu_unproject.glsl)<br/>samples the atlases:<br/>depth, colour, background, temporal"]
+  H["gpu_hyst<br/>only with Gpuhyst and<br/>Segmode learned"]
   C["gpu_clean<br/>density + cluster cleanup"]
   F["gpu_fuse<br/>voxel fusion, 2 passes"]
   D["gpu_del (Delete POP)<br/>removes points flagged keep = 0"]
-  M["merged (Script CHOP)<br/>union + registration + trim"]
-  W["segmentation worker<br/>off the main thread"]
+  M["merged (Script CHOP)<br/>union + registration + trim<br/>segmentation runs in a thread here"]
+  NM["null_merged"]
   CTP["chopto_pop<br/>CHOP to POP"]
   CH["out_merged"]
   PS{"pc_switch"}
@@ -116,12 +131,14 @@ flowchart TD
 
   ST --> SW
   SW -- "on, the show path" --> A
-  A --> T --> TP --> GL --> H --> C --> F --> D
+  A --> CNT --> TP --> GL --> H --> C --> F --> D
+  A -. "when Gputemporal is on" .-> T
+  T -. "sampled by" .-> GL
   D -- "input 1" --> PS
   SW -- "off, legacy and inspection" --> M
-  M --> W --> CTP
+  M --> NM --> CTP
   CTP -- "input 0" --> PS
-  M --> CH
+  NM --> CH
   PS --> NP --> POP
 ```
 
@@ -143,7 +160,7 @@ path consumes the same grid as an R8 texture.
 | Atlas build | `gpu_atlas_d`, `gpu_atlas_rgb`, `gpu_bg` (Script TOPs) | Packs every live phone's depth grid into one RGBA32F texture, its colour into an RGBA8 texture, and the learned background into an R8 texture | `Stalesecs`, `registration`, `Flooroffset`, level state |
 | Temporal | `gpu_temporal` (GLSL TOP, fed back on itself) | Averages a depth cell over up to sixteen frames while it holds still, three-frame hold, resets on movement | `Gputemporal`, `Gputempsigma` |
 | Unproject | `gpu_gl` running `gpu_unproject.glsl` | One thread per atlas texel: ray times depth, pose matrix, Brown radial term, crop box, learned-background drop | `Cropminx/z`, `Cropmaxx/z`, `Floorcut`, `Geoceiling`, `Colormode`, `Segmode` |
-| Hysteresis | `gpu_hyst` | A cell must hold points for three consecutive merges before it appears, and inherits the streak from any of its 27 neighbours | `Gpuhyst`, `Fusevox` |
+| Hysteresis | `gpu_hyst` | A cell must hold points for several consecutive merges before it appears, and inherits the streak from any of its 27 neighbours. The hold scales with the cook rate, so it is six cooks at 60 Hz rather than a fixed three. **Runs only when `Gpuhyst` is on AND `Segmode` is `learned`**, so on a project shipped as `geometric` it is a pass-through | `Gpuhyst`, `Segmode`, `Fusevox` |
 | Cleanup | `gpu_clean` | Density and cluster cleanup on a spatial hash grid | `Gpuclean`, `Densitymin`, `Minclusterpts` |
 | Fusion | `gpu_fuse` | Collapses overlapping views into one point per voxel | `Gpufuse`, `Fusevox`, `Gpufusemin`, `Gpusmooth` |
 | Delete | `gpu_del` (Delete POP) | Removes every point the shaders rejected | - |
@@ -195,7 +212,13 @@ registration table and the Level page trim, then segments according to
 
 Segmentation runs on a latest-wins worker thread when `Mergethread` is on, so
 TouchDesigner's frame rate stops following the phone count. It costs about one
-merge of extra latency. The worker touches numpy and plain module dictionaries
+merge of extra latency.
+
+The toggle is permission rather than instruction. The first cook always runs
+on the main thread, and the work only moves off it once the measured
+segmentation cost passes about 20 ms, returning to synchronous when it drops
+back under about 12 ms. So a light scene stays synchronous with the toggle on,
+and a profile that shows no worker is not evidence the toggle is off. The worker touches numpy and plain module dictionaries
 only, never the TouchDesigner API.
 
 The tail is shared between the cook paths: `Maxpoints` caps the output by
@@ -273,7 +296,9 @@ TouchDesigner's own socket lost about 25,000 of 55,080 packets over six
 seconds, about 48 per cent, reproducibly. With the GPU merge path off, none.
 
 So the receiving moved into its own process, with its own lock, running the
-**same** `tdp4_receiver` with the same reassembly and the same policy. The
+**same** `tdp4_receiver` with the same reassembly and the same policy, but it
+runs **in the bridge process**, not inside TouchDesigner. TouchDesigner's
+reader takes whole frames out of the file and never sees a packet. The
 bridge does not interpret the data; it reassembles frames and publishes each
 device's latest one.
 
@@ -346,7 +371,9 @@ each invented slightly different geometry fuse worse than two noisy honest
 ones. This is why the phone captures with Apple's depth filtering switched
 off.
 
-The one place time is used is `gpu_temporal`, and it is careful about it: a
+Two stages carry state across frames. `gpu_hyst` keeps a feedback buffer and
+its own counters, which is what hysteresis means. The other is
+`gpu_temporal`, and it is careful about it: a
 cell is averaged **only while it holds still**, gated against a depth-noise
 model, and the average resets the moment the cell moves. It is off by default,
 and the offline check for it requires that body error on moving performers
@@ -358,7 +385,8 @@ A learned background is a large numpy array. Component storage is saved into
 the tox, so putting it there would bloat a binary file that is already
 versioned by hand, and would carry a venue's floor into every snapshot.
 
-So it lives on disk as a compressed numpy checkpoint, reloaded lazily when the
+So it lives on disk as a compressed numpy checkpoint (the floor and level
+state beside it is saved uncompressed), reloaded lazily when the
 module recompiles. See [Maintenance](maintenance.html#where-learned-state-lives)
 for the paths and the consequences, of which the important one is that a fresh
 show machine starts with no learned state at all.

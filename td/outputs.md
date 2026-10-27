@@ -36,7 +36,7 @@ flowchart LR
   CPU --> SW
   SW --> POP
   CPU -- "null_merged" --> CH
-  CPU -. "per-point colours<br/>for depth-only phones" .-> RGB
+  CPU -. "per-point colours<br/>CPU path only" .-> RGB
   POP --> PRE
   CONS --> HAN
   HAN --> PRE
