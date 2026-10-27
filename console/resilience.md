@@ -303,11 +303,14 @@ flowchart TD
   B -- "no" --> K["Copy aside as config.json.corrupt-TIME"]
   B -- "yes" --> C{"Passes the shape test?"}
   C -- "no" --> K
-  C -- "yes" --> D["Use it"]
+  C -- "yes" --> V{"Do its values<br/>all apply?"}
+  V -- "yes" --> D["Use it"]
+  V -- "no" --> K
   K --> E["Scan backups newest first"]
-  E --> F{"A backup that parses AND passes?"}
+  E --> F{"Parses, passes<br/>AND applies?"}
   F -- "yes" --> G["Load it, log an ERROR naming it"]
-  F -- "no" --> H["Seed a new 6-device session"]
+  F -- "no, try the next" --> E
+  F -- "none left" --> H["Seed a new 6-device session.<br/>Poses are NOT pushed to TouchDesigner"]
   G --> I["Rig health shows a boot note"]
   H --> I
 ```
@@ -340,6 +343,26 @@ is accepted in silence and the show runs on it. There is no checksum, no
 recent: before 2026-10-27, `{}`, `[]` and `"devices": null` all parsed, each
 seeded a fresh six device session, and the next save wrote that seed over
 `config.json` and filed it as the newest backup.
+
+The case between "wrong shape" and "wrong values" used to fall through the
+floor. A file with the right shape holding one value that cannot be read — a
+position written `1,5` instead of `1.5` — did not go to the backups at all: it
+seeded a fresh six-phone session, which was then written over `config.json`,
+while a perfectly good backup sat beside it. That is fixed. A file whose values
+will not apply is now treated like a file that will not parse, and the console
+walks back through the backups until it finds one that both parses and applies,
+skipping any that do not and naming each one it skipped.
+
+Two consequences of the seed path that remain, and are now deliberate:
+
+- **A seeded roster does not push poses to TouchDesigner.** A seed's six
+  default positions are certainly not the venue's, and the console pushes poses
+  on every TouchDesigner link-up, so a seed used to move the live cloud as a
+  side effect of reconnecting. It now holds them until somebody presses Push
+  poses, or saves a pose edit, and says so in Rig health until then.
+- **The newest backup is still a minute old at worst.** Backups are taken at
+  most once a minute, so a restore loses whatever was saved since. Check the
+  calibration after any restore rather than assuming it is the state you left.
 
 Because the console cannot tell a good file from a plausible one, it tells the
 operator instead. Boot problems are collected into a **list** that sits at the
@@ -396,6 +419,12 @@ and the "show is running" latch are written to `config.json` and restored,
 because the loop used to come back disarmed with the show forgotten, mid
 performance. The console also says at boot what the restored supervisor will
 do, before it does anything.
+
+Since 2026-10-27 that includes **whether `/track` and NDI were switched on**.
+It used to include only their targets, so the outputs came back off after a
+watchdog restart and stayed off until somebody pressed their buttons. The
+console looks perfectly healthy in that state, which is what made it dangerous:
+nothing is wrong, nothing is logged, and the client simply receives nothing.
 
 ### Thread level
 
@@ -649,10 +678,32 @@ console entirely, through the bridge file. But the tracking output, the field
 feed and the video output all live in the console, so a client consuming them
 sees a gap. There is no buffering and no handover.
 
-One second-order effect to know: when TouchDesigner's link comes back up, the
-console pushes it the phone poses from whatever configuration it loaded. A
-console that came back from a backup, or from a freshly seeded session, moves
-TouchDesigner's cloud as a side effect of reconnecting.
+They do come back on by themselves now. Until 2026-10-27 only the *targets*
+were saved, so `/track` and NDI returned switched **off** and stayed off until
+somebody noticed and pressed their buttons — which is the kind of thing nobody
+notices during a show, because the console looks healthy. The on-state is
+saved with them, and the boot switches them back on last.
+
+Two cases where they deliberately do not come back, each with its own warning
+in the log:
+
+- **The saved `/track` host does not resolve on this machine.** It stays off
+  rather than quietly sending to the default address, on the grounds that
+  sending tracking data to the wrong machine is worse than sending none.
+- **A `--config` instance.** A test or measurement console never drives the
+  client bus unless started with `--client-out`, so a copy of the show's
+  configuration cannot start publishing over the top of the show. Same rule
+  and same reasoning as `--td-link`.
+
+The gap a client still sees is the restart itself, plus the half minute
+`/track` needs to re-learn its background before it will publish anybody.
+
+One second-order effect, now narrower than it was: when TouchDesigner's link
+comes back up the console pushes it the phone poses it loaded. A console that
+came back from a **backup** therefore moves TouchDesigner's cloud as a side
+effect of reconnecting. A console that came back from a **fresh seed** no
+longer does — a seeded roster holds its poses until somebody presses Push
+poses, because a seed's six default positions are certainly not the venue's.
 
 **App distribution expiry is unresolved.** Test distribution builds expire after
 90 days. For an engagement running well beyond that, the route is either a

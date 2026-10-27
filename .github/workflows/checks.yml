@@ -1,0 +1,32 @@
+# The checks that need nothing but this repository.
+#
+# The system repository is private and is not checked out here, so the checks
+# that read the code (constants, contracts, the project version, and the two
+# generated pages) skip themselves and say so. They are run by hand before a
+# push, from a machine that has both repositories side by side.
+#
+# What this job does prove, on every push, is that no link, image or heading
+# anchor is broken and that no diagram will fail silently in the browser. Both
+# are failures a reader finds and an author never does.
+name: checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Self-check the checkers
+        run: |
+          for t in tools/check_*.py tools/gen_*.py; do
+            python3 "$t" --selftest
+          done
+      - name: Run every check
+        run: python3 tools/check_all.py --repo /not-here

@@ -21,7 +21,41 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
+def scan_block(rel, block):
+    """Every known silent-failure pattern in one diagram. Separate from main()
+    so the self-check can exercise it on a block it writes itself."""
+    problems = []
+    if "{{" in block or "{%" in block:
+        problems.append(f"{rel}: Liquid syntax inside a diagram. "
+                        "Use [[...]] for a hexagon, not {{...}}.")
+    for line in block.splitlines():
+        if "[" in line and '"' not in line and re.search(r"\[[^\]]*[(<>]", line):
+            problems.append(f"{rel}: unquoted label with punctuation: {line.strip()}")
+        # A label beginning "1. " or "- " is parsed as markdown and the node
+        # renders as "Unsupported markdown: list". The block still parses, so
+        # nothing else catches it.
+        for lbl in re.findall(r'"([^"]*)"', line):
+            if re.match(r"^\s*(\d+\.\s|[-*+]\s)", lbl):
+                problems.append(
+                    f"{rel}: label reads as a markdown list, so the node "
+                    f"renders as \"Unsupported markdown\": {lbl[:40]!r}")
+    return problems
+
+
+def demo():
+    """Each pattern must fire, and a clean diagram must not."""
+    assert scan_block("x", 'A[["ok<br/>fine"]] --> B{"and?"}\n') == []
+    assert len(scan_block("x", "A{{hex}}\n")) == 1, "Liquid/hexagon not caught"
+    assert len(scan_block("x", "A[label (with parens)]\n")) == 1, "unquoted punctuation not caught"
+    assert len(scan_block("x", 'A["1. Network"]\n')) == 1, "markdown-list label not caught"
+    assert len(scan_block("x", 'A["- item"]\n')) == 1, "markdown-list label not caught"
+    print("self-check ok")
+
+
 def main():
+    if "--selftest" in sys.argv:
+        demo()
+        return
     problems = []
 
     for p in sorted(ROOT.rglob("*.md")):
@@ -29,21 +63,7 @@ def main():
             continue
         text = p.read_text(encoding="utf-8")
         for block in re.findall(r"```mermaid\n(.*?)```", text, re.S):
-            rel = p.relative_to(ROOT)
-            if "{{" in block or "{%" in block:
-                problems.append(f"{rel}: Liquid syntax inside a diagram. "
-                                "Use [[...]] for a hexagon, not {{...}}.")
-            for line in block.splitlines():
-                if "[" in line and '"' not in line and re.search(r"\[[^\]]*[(<>]", line):
-                    problems.append(f"{rel}: unquoted label with punctuation: {line.strip()}")
-                # A label beginning "1. " or "- " is parsed as markdown and the
-                # node renders as "Unsupported markdown: list". The block still
-                # parses, so nothing else catches it.
-                for lbl in re.findall(r'"([^"]*)"', line):
-                    if re.match(r"^\s*(\d+\.\s|[-*+]\s)", lbl):
-                        problems.append(
-                            f"{rel}: label reads as a markdown list, so the node "
-                            f"renders as \"Unsupported markdown\": {lbl[:40]!r}")
+            problems += scan_block(p.relative_to(ROOT), block)
 
     cfg = ROOT / "_includes" / "mermaid_config.js"
     if cfg.exists():

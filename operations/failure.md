@@ -314,19 +314,51 @@ Status: verified by reading the code. **Not tested on a rig.**
 
 ### The console crashes
 
-Automatic: the launcher restarts it within about three seconds. The show
-state survives the restart. TouchDesigner's point cloud is unaffected.
+Automatic: the launcher restarts it within about three seconds. The show state
+survives the restart, and since 2026-10-27 that includes **whether the tracking
+and video outputs were switched on**: they come back sending. Before that they
+came back off and stayed off, with the console looking perfectly healthy, which
+is a bad way to lose an output mid-show.
 
-Cost: the outputs to other systems pause for the restart.
+Cost: the outputs pause for the restart, and the tracking output then publishes
+nobody for about half a minute while it re-learns its background. Anyone on
+stage during that half minute is learned as scenery, so clear the stage if you
+can.
+
+Two cases where an output deliberately does not come back, each logged with its
+reason: the saved tracking host does not resolve on this machine, and a console
+started with `--config` for a test, which never drives the client bus unless
+started with `--client-out`.
 
 Status: verified.
 
 ### The console's configuration file is corrupt
 
-Automatic: it loads the newest backup that parses, keeps the bad file aside
-with a timestamp, and logs an error saying so.
+Automatic: it walks back through the backups until it finds one that both
+parses **and** applies, skipping any that do not and naming each one it
+skipped. The bad file is kept aside with a timestamp, and an error says which
+backup it started from.
 
-Operator: copy another backup into place with the console stopped.
+That second word matters. A file with the right shape but one unreadable value
+— a position written `1,5` instead of `1.5` — used to skip the backups
+entirely and seed a fresh six-phone session, which was then written over the
+configuration while a good backup sat beside it. Fixed on 2026-10-27.
+
+{: .warning }
+A restore is at best a minute old, because backups are taken at most once a
+minute. Check the calibration after any restore rather than assuming it is
+where you left it.
+
+If it does end up seeding — nothing in the backups could be used — **the seeded
+roster does not push its poses to TouchDesigner**. A seed's six default
+positions are not the venue's, and the console pushes poses on every
+TouchDesigner link-up, so a seed used to move the live cloud as a side effect.
+It now holds them until somebody presses Push poses, and Rig health says so
+until then.
+
+Operator: check the roster against the rig. If it is right, Push poses. If it
+is wrong, stop the console, copy the backup you want over the configuration and
+start it again.
 
 Status: verified by deliberately breaking one and watching a six phone roster
 come back.
@@ -373,9 +405,11 @@ and a sleep mid-show costs every performer id. It is prevented by setting the
 machine up correctly, which means it is prevented by remembering to.
 
 **The outputs to other systems stop if the console stops.** TouchDesigner's
-own point cloud keeps running, so the visuals continue, but anything
-consuming the tracking output loses it until the console restarts. It does
-restart by itself, but there is a pause.
+own point cloud keeps running, so the visuals continue, but anything consuming
+the tracking output loses it until the console restarts. It restarts by itself
+and now comes back sending, so the gap is the restart plus the half minute the
+tracker needs to re-learn its background — not, as it was until 2026-10-27, for
+as long as it takes somebody to notice.
 
 **App distribution past ninety days.** Test builds expire. For a production
 running months ahead that means a re-upload roughly every quarter, or moving

@@ -69,12 +69,26 @@ remove it.
 Run the checks before pushing:
 
 ```
-python3 tools/check_diagrams.py
-python3 tools/check_links.py
-python3 tools/check_tox_version.py
-python3 tools/check_constants.py
-python3 tools/check_contracts.py
+python3 tools/check_all.py
 ```
+
+That runs all seven: the five checks and both generators' `--check` modes. The
+ones that read the system repository skip themselves when it is not beside this
+one and say so, because this repository is public and clones on its own. Run
+them individually while fixing something:
+
+```
+python3 tools/check_links.py
+python3 tools/check_diagrams.py
+python3 tools/check_constants.py --repo ../TDStage
+python3 tools/check_contracts.py --repo ../TDStage
+python3 tools/check_tox_version.py
+```
+
+Every tool takes `--selftest`, which exercises its own detection on input it
+writes itself. A checker that cannot fail is the thing most likely to be
+quietly broken, so the GitHub Actions job runs every self-check before it runs
+the checks.
 
 The link checker resolves every internal link, image and heading anchor. A
 broken link fails silently: the build succeeds and the reader finds it at the
