@@ -19,6 +19,7 @@ section. Go to [Operations](../operations/).
 |---|---|
 | [Ports and topology](ports.html) | What listens where, which surface is UDP and which is not, and what must never carry depth. |
 | [Why it is built this way](design.html) | The decisions that look arbitrary from outside: UDP with no TCP option, depth on the wire instead of points, dumb phones, receiver-side separation, and the one limit that must never be claimed away. |
+| [Dependencies and requirements](dependencies.html) | What each side needs to run, where it is declared, and what breaks without it |
 
 ## What you are integrating against
 
