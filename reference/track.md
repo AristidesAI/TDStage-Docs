@@ -168,6 +168,40 @@ Build anything identity-critical to degrade while `clustered` is 1. The exact
 semantics are still being pinned down with the client in
 [#32](https://github.com/AristidesAI/TDStage/issues/32).
 
+## Where the position actually comes from
+
+Two things about `x, y, z` are worth knowing before you build on them.
+
+**It is not the average of the points.** A body in a depth cloud drags a tail:
+the patch of wall it was just standing in front of stays briefly in the
+foreground and is attached to the body by adjacency. Averaging all of that puts
+the performer behind where they are, and the error grows with how fast they
+move. So the position is a **density core** — find the densest ten-centimetre
+cell in plan view, then average only the points within 45 cm of it. The tail is
+outside that radius and does not vote.
+
+**While two performers are merged, one of the two ids is dead reckoning.** A
+merge gives the tracker one blob where it wants two. The id that matches the
+blob gets the real density-core position. The other id — the swallowed one —
+is carried at the **offset it last had** from its neighbour, for up to ten
+seconds, so that when they separate there are still two tracks to assign and
+the split can be decided.
+
+That second position is a memory, not a measurement, and it is reported as one
+if you read the other fields:
+
+| Field | What it says while swallowed |
+|---|---|
+| velocity | exactly zero on all three axes — it is coasting |
+| confidence | a flat 0.30 |
+| `clustered` | 1 |
+
+So the rule for a receiver is the same one as everywhere else in this
+contract: **take the position, distrust the identity**, and treat zero velocity
+as "this is a prediction". Two performers walking together for ten seconds will
+produce one tracked body and one ghost holding station beside it, which is the
+honest answer to a scene nothing can resolve.
+
 ## Confidence, and what it is not
 
 It is a composite of three things, not a statistical probability:

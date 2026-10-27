@@ -49,6 +49,10 @@ CHECKS = [
      "WebConsole/track_emit.py", "ID_RESERVE_SECONDS"),
     ("reference/track.md", r"[Ww]ithin ([\d.]+) m of<br/>another performer",
      "WebConsole/track_emit.py", "CLUSTER_DISTANCE_M"),
+    ("reference/track.md", r"average only the points within (\d+) cm of it",
+     "WebConsole/track_emit.py", "CORE_R_CM"),
+    ("reference/track.md", r"for up to ([a-z]+)\nseconds, so that when they separate",
+     "WebConsole/track_emit.py", "RIDE_MAX_S"),
     # the hysteresis: a receiver acts on these two, so they must not drift
     ("reference/track.md", r"It \*\*enters\*\* at ([\d.]+) m",
      "WebConsole/track_emit.py", "CLUSTER_DISTANCE_M"),
@@ -107,6 +111,9 @@ def constant(src: str, name: str):
     is exactly the kind of number a reader copies into their own config without
     checking.
     """
+    if name.endswith("_CM"):
+        v = constant(src, name[:-3])
+        return None if v is None else round(v * 100)
     if name.startswith("--"):
         m = re.search(rf'add_argument\("{re.escape(name)}"[^)]*?default=([\d.]+)', src, re.S)
         return float(m.group(1)) if m else None
