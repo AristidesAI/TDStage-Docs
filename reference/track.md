@@ -221,9 +221,8 @@ output goes to nobody and stays there until a person acts. That is not a
 failure to diagnose, it is the setting doing what it says — but it is worth
 knowing before the first time it happens rather than during it.
 
-The button an operator presses is **Stage is empty now**. Rig health's warning
-calls the same thing "Learn now", which is worth knowing when you are looking
-for a button with that label and cannot find it.
+The button an operator presses is **Stage is empty now**, in the Live view, and
+every message that asks for it calls it by that name.
 
 ## Guarantees the console does not make
 
