@@ -32,10 +32,20 @@ receiver can die and come back without the phones noticing, and a phone can
 die and come back without the receiver needing to be told. There is no
 session to re-establish, because there was never a session.
 
-**The receiving side forks.** The bridge publishes each received frame once,
-and TouchDesigner and the console each read it independently. Neither is
-downstream of the other for point data. So no single process failure takes
-out both the visuals and the tracking output.
+**The receiving side forks, below the bridge.** The bridge publishes each
+received frame once, and TouchDesigner and the console each read it
+independently, neither downstream of the other. So TouchDesigner can die
+without touching the tracking output, and the console can die without touching
+the visuals.
+
+{: .warning }
+**Above the fork, the bridge is a single point of failure for both.** It is the
+only process listening on the port the phones send to. The console opens no
+phone-facing socket of its own in the show setup, and while TouchDesigner does
+bind its own socket when the bridge stops, it binds the port the bridge
+publishes on, not the one the phones send to. So nothing reaches either side
+until the bridge is back. The launcher restarts it in two or three seconds,
+and that is the real answer here, because there is no second path.
 
 The cost of the first choice is that nothing is guaranteed to arrive. That is
 paid for deliberately, and the reasoning is in
@@ -78,20 +88,28 @@ Work down the branch you landed on.
 
 ### The state that fools people
 
-**The roster goes blank but points are still arriving.**
+**Every phone reads healthy, and the readings are hours old.**
 
-This looks like most of the rig has died. It has not. Phone health reaches
+This is the dangerous one, because nothing looks wrong. Phone health reaches
 the console by a different route from point data, and by default that route
-goes through the port TouchDesigner owns. While TouchDesigner is down or
-restarting, health stops and point data does not.
+goes through the port TouchDesigner owns. While TouchDesigner is down, health
+stops arriving and point data does not.
+
+The console marks a phone online from **either** channel, so the point data
+alone keeps every phone green. What stops is everything that can only come
+from telemetry: thermal state, battery, frame rate. Those freeze at the last
+value TouchDesigner relayed, and **nothing in the interface marks them stale**.
+A phone climbing the thermal ladder reads `OK`, because `OK` is what it last
+said.
 
 ```mermaid
 flowchart TD
-  Q{"Roster blank, but<br/>points still arriving?"}
-  Q -- "yes" --> R["Telemetry is going to a port<br/>nothing is listening on"]
-  R --> F["Press Send telemetry here<br/>in the console"]
+  Q{"Is TouchDesigner down<br/>or restarting?"}
+  Q -- "yes" --> R["Phones still read online.<br/>That is the point data talking"]
+  R --> S["Thermal, battery and fps are<br/>frozen at their last values.<br/>Do not trust them"]
+  S --> F["Press Send telemetry here<br/>in the console"]
   F --> G["Health arrives directly,<br/>and survives the next<br/>TouchDesigner outage too"]
-  Q -- "no, points stopped too" --> H["This is not a telemetry problem.<br/>Go back to the triage tree"]
+  Q -- "no" --> H["Health is live.<br/>Go back to the triage tree"]
 ```
 
 **Restarting the console does not fix this**, and that is the mistake worth
@@ -108,9 +126,15 @@ outage entirely.
 
 ### A phone's app crashes or is killed
 
-Automatic: the phone resumes streaming when the app relaunches. The console's
-auto-recover restarts a phone that comes back without streaming, within about
-twelve seconds.
+Automatic: the phone resumes streaming when the app relaunches. If the show
+was started with **Start show**, the console's auto-recover then sends start to
+a phone that is back online but idle, within a few seconds and at most once
+every thirty seconds per phone.
+
+That qualifier matters. Auto-recover is off when the console boots, and
+**Start all does not arm it** — only Start show does, and Standby and Stop
+disarm it again. A rig started with Start all has no safety net, which is a
+reasonable choice and a bad surprise.
 
 Operator: relaunch the app. Nothing else.
 
@@ -122,11 +146,35 @@ Automatic: the other phones carry on. The dead phone's identity coasts
 briefly, then is released after three seconds rather than frozen, so the
 receiving side sees it go rather than seeing a performer stand still forever.
 
-Operator: swap in a spare and set its device id from the console. A fresh
-install refuses to stream until its id is confirmed, which prevents a spare
-silently colliding with a phone already on the rig.
+Operator: swap in a spare and set its device id from the console.
+
+{: .warning }
+The id guard is narrower than it sounds. It blocks a **fresh install** that
+still holds the untouched default id. A spare whose id was set at some point —
+in a rehearsal, last week — streams straight away and will collide silently if
+that id is already on the rig. Two phones on one id black out that id
+completely: the receiver discards both, in TouchDesigner and in the tracking
+output alike. Rig health names the colliding id; the fix is to change it on
+the phone.
 
 Status: the id guard is tested. **A spare swap has not been done on a rig.**
+
+### A phone reboots
+
+Automatic: nothing. This is the gap people assume is covered and it is not.
+
+Operator: somebody goes to the stand, unlocks the phone and opens TDStage. It
+resumes streaming by itself once the app is open, but not before: no part of
+the system can launch an app on a locked phone. The console shows the phone
+offline within about six seconds, and the tracking output keeps that performer
+only through whatever other phones can see them.
+
+A self-relaunch path exists in the app but is switched off, because it depends
+on the phone being locked into supervised single-app mode, which is still an
+open decision ([#16](https://github.com/AristidesAI/TDStage/issues/16)).
+
+Status: **gap.** Plan for a person per cluster of stands, or accept the loss of
+one view.
 
 ### A phone overheats
 
@@ -142,7 +190,11 @@ capture age 77 ms.
 
 ### The wired link routes nowhere
 
-Automatic: the stream falls back to Wi-Fi after five seconds.
+Automatic: if the adapter drops, the stream moves immediately to any other
+route that is not cellular, which is Wi-Fi **only if the phone is joined to a
+network that reaches the host**. The five seconds people remember is a
+different case: a link that is pinned to the wire and never becomes ready is
+abandoned after five seconds.
 
 Operator: re-seat the cable. A direct cable address can drift, in which case
 the console can re-teach the phone where to send. Detecting that drift rather
@@ -152,11 +204,17 @@ Status: code review and unit tests. **Not verified on a rig.**
 
 ### The receiving bridge process dies
 
-Automatic: the launcher restarts it within two or three seconds, and
-TouchDesigner picks it up again when it reappears.
+Automatic: the launcher restarts it within two or three seconds, and both
+TouchDesigner and the console pick it up again when it reappears.
 
-Status: verified. There is also a direct socket path when no bridge is
-running.
+**There is no second path while it is down.** TouchDesigner binds its own
+socket when the bridge's heartbeat goes stale, but on the port the bridge
+publishes on, not the one the phones send to, and the console opens no
+phone-facing socket at all in the show setup. The direct-socket arrangement
+exists for a rig running without a bridge, where TouchDesigner is set to the
+phones' own port. It is not a fallback that arms itself.
+
+Status: verified.
 
 ### The legacy relay is left running beside the bridge
 
@@ -184,6 +242,72 @@ survives the next TouchDesigner outage as well. Do not restart the console:
 the telemetry is not reaching it, so restarting it changes nothing.
 
 Status: verified.
+
+### The person-model worker crashes
+
+Automatic: it is restarted, after a backoff that grows to about fifteen
+seconds. A cold start can take up to ninety seconds, because it loads a machine
+learning framework and its weights.
+
+What happens meanwhile: every request for "where are the people in this image"
+answers "no opinion", which the system is built to treat as *keep everything*
+rather than *there is nobody*. The tracking output falls back to separating
+performers by geometry alone. On the Windows show machine that also loses
+hands, because the fallback hand detector is macOS only.
+
+Operator: nothing, unless it keeps happening. Rig health shows the worker's
+state and how many times it has restarted, and can restart it by hand.
+
+Status: the respawn is covered by a test that runs in the build.
+
+### The show machine goes to sleep
+
+Automatic: nothing stops it. There is no wake lock anywhere in the system.
+
+What happens: the bridge, the console and TouchDesigner all freeze while the
+phones carry on sending into nothing. On wake everything reattaches by itself
+within a few seconds, every phone and TouchDesigner flip offline and back, and
+every performer in the tracking output is released and returns under a **new
+id**. On a Mac with phones on USB cables, the cable addresses can also change
+across the sleep, which needs Autofix in the console.
+
+Operator: **turn sleep off before the rig matters**, not after. On a Mac,
+`caffeinate` on the launcher or Energy Saver; on Windows, a power plan that
+never sleeps.
+
+Status: **gap.** Nothing in the repository enforces this.
+
+### The client bus is unreachable
+
+What happens: nothing visible. The tracking output is plain UDP to a fixed
+address, so a dead host or a closed port produces no error anywhere an
+operator looks. The console keeps reporting that it is sending, and the frame
+count keeps rising, because it is sending — into nothing.
+
+Operator: if the console says it is sending and the frames are climbing, the
+console is fine. Look at the receiving machine and the network between. The
+output resumes by itself the moment the bus is reachable again, with no
+intervention here.
+
+Status: verified by reading the code. **Worth one deliberate test** with the
+client before the first show, because there is no symptom to go on otherwise.
+
+### The network between the phones and the machine drops
+
+Automatic: everything recovers by itself when the link returns. The phones
+never stop streaming — their own link is still up, so nothing on the phone
+treats this as a failure.
+
+What the client sees is the part to plan for: after about six seconds every
+phone reads offline, and after three seconds without points **every performer
+is released**. When the link returns they come back as **new ids**. A thirty
+second dropout is therefore not a thirty second gap, it is a gap plus a fresh
+cast list.
+
+Operator: nothing during. Afterwards, make sure anything downstream that holds
+per-performer state has let go of the old ids.
+
+Status: verified by reading the code. **Not tested on a rig.**
 
 ### The console crashes
 
@@ -236,6 +360,15 @@ links its issue where it has one; the full, current list is the
 snapshot onto another machine. Whether the rig runs one machine or two is
 still an open decision.
 
+**A rebooted phone needs a person.** Nothing can open an app on a locked
+phone, so a phone that reboots stays dark until somebody walks to the stand.
+The self-relaunch path in the app depends on supervised single-app mode, which
+is undecided ([#16](https://github.com/AristidesAI/TDStage/issues/16)).
+
+**Nothing stops the machine sleeping.** There is no wake lock in the system,
+and a sleep mid-show costs every performer id. It is prevented by setting the
+machine up correctly, which means it is prevented by remembering to.
+
 **The outputs to other systems stop if the console stops.** TouchDesigner's
 own point cloud keeps running, so the visuals continue, but anything
 consuming the tracking output loses it until the console restarts. It does
@@ -249,6 +382,11 @@ and source escrow the agreement asks for.
 
 ## Routine that prevents most of this
 
+- **Turn off sleep on the show machine**, before anything else. It is the
+  cheapest item on this list and the only one whose absence releases every
+  performer id mid-show.
+- Start the rig with **Start show**, not Start all, unless you have a reason:
+  Start all leaves auto-recover disarmed.
 - Take a snapshot before risky work and before travelling.
 - Run the drift check after every project save.
 - Keep the change ledger current after a working session.

@@ -25,29 +25,45 @@ labels do not change.
 **Start show and Start all are not the same button**, and that is the thing
 worth learning first.
 
-**Start show** (1) is a staggered start. It brings phones up one at a time and
-checks each one came up before moving to the next, so a phone that fails to
-start is named rather than lost in a crowd of six.
+**Start show** (1) is a staggered start. It sends start to each enabled phone
+200 ms apart, then checks all of them together six seconds later, re-sends to
+the ones not yet streaming, and names anything still down. It also arms
+auto-recover and latches "the show is running", which is what lets the console
+restart a phone that drops. Standby and Stop disarm it again.
 
-**Start all** (5) sends start to everything at once. It is faster and it tells
-you less. Use it when you already know the rig is healthy and you just want
-pictures.
+That verdict lives only as a message in the browser tab that pressed the
+button. If you walk away, you lose it.
 
-**Blackout all** (6) is not a stop. It turns the phones' screens off while they
-keep streaming, which is what a phone on a stand should look like during a
-performance: dark, and working. A lit phone screen is visible from the
-audience and it also costs frame rate, because the phone is drawing an
-interface it does not need.
+**Start all** (5) sends start to every enabled phone at once, with no check, no
+retry and no show-running latch, so a phone that drops later is nobody's
+problem. It is faster and it tells you less. Use it when you already know the
+rig is healthy and you just want pictures.
 
-**Ping all** (3) reaches every phone without changing anything. It is the
-cheapest way to answer "is this thing on the network".
+Both read "is it streaming" from telemetry, so if telemetry is not reaching
+this console every phone gets named as failed while streaming perfectly. Fix
+the telemetry port first and the start reports become trustworthy.
+
+**Blackout all** (6) is not a stop. It turns the enabled phones' screens off
+while they keep streaming, which is what a phone on a stand should look like
+during a performance: dark, and working. A lit screen is visible from the
+audience and it adds heat, and heat is what costs frame rate: a phone that
+climbs the thermal ladder drops to two thirds of its rate, then half. The
+console asks for confirmation first.
+
+**Ping all** (3) asks every phone with a known IP for a reply, disabled ones
+included, and changes nothing on them. The reply comes back over the telemetry
+path rather than directly, so silence means *either* off the network *or*
+telemetry not reaching this console. It is still the cheapest first question,
+as long as you read the answer that way.
 
 **Finish all** (4) ends calibration on every phone at once, which is the step
 people forget after walking the markers.
 
-**Telemetry port** (2) is where the phones send health. If this is wrong, the
-phones stream perfectly and read as dead. See
-[Troubleshooting](troubleshooting.html).
+**Telemetry port** (2) is where **this console listens** for health. It is not
+a setting on the phones, and editing it moves nothing: the phones keep sending
+wherever they were told to, which only Send telemetry here or a pushed profile
+changes. It has to match. If it does not, the phones stream perfectly and read
+as dead. See [Troubleshooting](troubleshooting.html).
 
 ## Finding the phone somebody changed
 
@@ -64,16 +80,27 @@ are actually reporting, and names the ones that are offline rather than
 quietly leaving them out of the comparison. **Parity needs two reporting
 phones.** A green page with five phones offline means nothing was compared.
 
-**Only differences** (3) hides every setting the phones already agree on. On a
-healthy rig that leaves an empty list, which is the fastest possible answer.
+**Only differences** (3) hides every setting the phones already agree on. An
+empty list means every *reporting* phone agrees, which is not the same as every
+phone. A setting only counts as differing among the phones that report it, so
+an offline phone, or one on an older build, can never make a row appear. Read
+the summary line (2) first: it names who could not be compared.
 
 To fix a drifted rig: pick the phone you trust as the reference (4), then
 **Match every phone to this one** (5).
 
+It sends only the settings that actually differ, and only to phones that have
+that control, so a phone running the other app is not sent something it does
+not understand. Device ids and the stream and telemetry hosts are never
+copied, for the obvious reason. Link and UDP port **are**, as part of the
+stored profile.
+
 {: .warning }
-Matching writes every setting to every enabled phone. If the reference phone
-is the one that drifted, you have just spread the problem to the whole rig.
-Look at the differences before you match, not after.
+Two things to know before pressing it. If the reference phone is the one that
+drifted, you have just spread the problem to the whole rig: look at the
+differences first, not after. And a phone that reports nothing — offline, or an
+older build — is sent every value blind, because "no answer" is not treated as
+"agrees".
 
 ## Markers, and the mistake that does not announce itself
 
@@ -83,32 +110,43 @@ A phone calibrates by looking at a printed marker whose real-world size it has
 been told. It solves for where it is standing from the size the square appears
 to be against the size it was told to expect.
 
-So the number in **Printed size** (1) has to match the square that came out of
-your printer, measured with a ruler.
+{: .warning }
+**Measure the whole image, not the black square.** Printed size is the side of
+the entire marker image including its white margin, which is what the four crop
+marks mark out: measure between the crop-mark centres. The black square inside
+is about 89 % of that, so ruling the black square and typing what you read
+makes every phone solve against a marker 11 % too small. The screenshot above
+was captured when this page and the console's own tooltip both said "black
+square"; both have since been corrected.
 
-**It does not fail loudly if it is wrong.** A wrong size solves perfectly
-cleanly and produces a stage that is the wrong scale, consistently, in every
-axis. Every distance the system reports is then out by the same ratio, which
-is exactly the kind of error that survives a casual look at the output and
-gets discovered during a rehearsal.
+| Printed on | Between the crop marks | The black square alone |
+|---|---|---|
+| A4 at true size | **195 mm** | about 174 mm |
+| A3 at true size | **280 mm** | about 249 mm |
 
-| Printed on | The square measures |
-|---|---|
-| A4 at true size | 195 mm |
-| A3 at true size | 280 mm |
+**It does not fail loudly if it is wrong**, and what it does instead is worth
+knowing precisely, because the obvious guess is wrong. The declared size does
+not rescale the stage. It only tells the phone how far away the marker is, so
+the phone places *itself* at the wrong distance along its own line of sight.
+Depth is measured by the LiDAR and stays metric, so inside one phone's cloud
+every distance is still correct.
 
-The console tells you which it has assumed (5), in the form
-`all phones at 280 mm, prints on A3`. Read that line against the paper you
-actually loaded.
+The result is therefore not a stage that is uniformly too small. It is a set of
+clouds that are each shifted, by `(declared ÷ true − 1)` times that phone's
+distance to its marker, and therefore **by different amounts in different
+directions**. The symptom is phones disagreeing with each other: a performer
+smeared into two bodies, or a floor that will not sit flat.
 
 Order of work: set the size (1), **Apply to all phones** (2) so every phone
 is solving against the same number, then export (3) or print (4).
 
-{: .note }
-Applying writes the size to the roster and sends it to the phones. Loading a
-stage layout also sets a rig-wide size from the layout's own sheet size, so if
-you loaded a plan this may already be correct. Confirm it anyway: the plan can
-only tell you what it assumed, not what your printer did.
+{: .warning }
+**A loaded stage layout does not reach the phones.** It sets the size in the
+console's roster only and sends nothing. Line (5) reads that roster, so it will
+say `every phone 280 mm` while each phone still holds whatever it was last
+sent — a phone sent 195 mm, calibrating on a 280 mm print, is out by 30 %.
+Press **Apply to all phones** (2), or Sync markers, after loading a plan. The
+console's own log line after a layout load says the same thing.
 
 ## Sending the tracking output
 
@@ -121,16 +159,24 @@ the console's own picture and is not what anyone downstream receives.
 beside it. Nothing is emitted until that is on, which is worth checking before
 telling anyone their receiver is broken.
 
-**Record /track** (6) writes the same output to a file. That file is what
-turns an impression into a number: it can be scored afterwards for time to
-acquire, identity losses and position error. See
+**Record /track** (6) writes a trace of each emitted frame to a file: host and
+capture time, which device frames fed it, and each track's id, plan position,
+clustered flag and whether it was coasting. It is not a copy of the OSC bundle
+— no heights, velocities or hands — and it only writes while **Send /track** is
+on.
+
+That file is what turns an impression into a number: it can be scored
+afterwards for time to acquire, identity losses and position error. See
 [Evidence and claims](../operations/evidence.html).
 
 **Hands** (7) decides whether hand positions ride in the bundle.
 
-**Start simulator** (2) runs synthetic phones, so the whole chain can be
-exercised with no hardware present. Useful for proving a receiver before a
-rig exists.
+**Start simulator** (2) runs synthetic phones for two minutes, so the whole
+chain can be exercised with no hardware present. Useful for proving a receiver
+before a rig exists. Two things catch people out: it stops after 120 seconds
+unless you start it again, and it only reaches TouchDesigner when the bridge
+or the fan-out is running. Without one it feeds this console alone, and says
+so in the log.
 
 ### The console telling you what it cannot do
 
