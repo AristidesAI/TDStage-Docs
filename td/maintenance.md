@@ -70,7 +70,7 @@ working copy is re-saved.**
 TD/TDStageConductor.tox         <- the working copy, always the latest
 TD/TDStageConductor_v01.tox     <- history
 ...
-TD/TDStageConductor_v81.tox     <- the highest number at the time of writing
+TD/TDStageConductor_v82.tox     <- the highest number at the time of writing
 ```
 
 List the directory before picking a number:
@@ -135,9 +135,9 @@ for byte with the repository file of the same name.
 
 ```
 python3 TD/newtox/tox_drift.py                            # the working copy
-python3 TD/newtox/tox_drift.py TD/TDStageConductor_v81.tox
+python3 TD/newtox/tox_drift.py TD/TDStageConductor_v82.tox
 python3 TD/newtox/tox_drift.py --diff                     # print the differing lines
-python3 TD/newtox/tox_drift.py --extract /tmp/v81-dats    # every DAT's text as files
+python3 TD/newtox/tox_drift.py --extract /tmp/v82-dats    # every DAT's text as files
 ```
 
 Run it after every numbered save. The result you want is **0 differ and 0 in
