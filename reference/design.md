@@ -99,21 +99,42 @@ At 30 fps over a gigabit link with roughly 940 Mbit/s usable. These are
 bytes times frame rate. The transport was then measured separately, at the
 bottom of this page.
 
-| What is sent | Bytes per cell | Eight phones at 256×192 | **Eight phones at 320×240** | Share of the link |
-|---|---:|---:|---:|---:|
-| Coordinates and colour, unprojected on the phone | 15 | 1,416 Mbit/s | **2,212 Mbit/s** | 235 per cent. Does not fit. |
-| Depth, confidence and colour as a grid | 6 | 566 Mbit/s | **885 Mbit/s** | 94 per cent. Does not leave room. |
-| **Depth and confidence as a grid (the show setting)** | 3 | 283 Mbit/s | **442 Mbit/s** | 47 per cent |
-| Depth alone as a grid | 2 | 189 Mbit/s | **295 Mbit/s** | 31 per cent |
+| What is sent | Bytes per cell | Eight phones at 256×192 | **Eight phones at 320×240** | On the wire, framed | Share |
+|---|---:|---:|---:|---:|---:|
+| Coordinates and colour, unprojected on the phone | 15 | 1,416 Mbit/s | **2,212 Mbit/s** | — | 235 per cent. Does not fit. |
+| Depth, confidence and colour as a grid | 6 | 566 Mbit/s | **885 Mbit/s** | **937 Mbit/s** | 94 per cent. Does not leave room. |
+| **Depth and confidence as a grid (the show setting)** | 3 | 283 Mbit/s | **442 Mbit/s** | 469 Mbit/s | 47 per cent |
+| Depth alone as a grid | 2 | 189 Mbit/s | **295 Mbit/s** | 313 Mbit/s | 31 per cent |
+
+The two right-hand columns are two **bases**, and saying which one a figure uses
+avoids an argument later. The 320×240 column is payload at the IP layer:
+cells × bytes × frame rate, compared against the roughly 940 Mbit/s a gigabit
+link carries once its own overhead is taken out. The framed column adds what
+Ethernet charges per packet — 38 bytes of preamble, header, checksum and
+inter-frame gap, plus the UDP, IP and TDP4 headers — and is compared against
+the full 1,000 Mbit/s line rate.
+
+They agree to within half a percentage point, which is the useful part: the
+conclusion does not depend on which basis you pick. For a claim about whether
+something fits on a cable, the framed number is the honest one, because that is
+what the cable actually carries.
 
 The first row does not fit on a gigabit network at all, which is the argument
 for sending a grid. The chosen row fits twice over.
 
 The second row is the one that changed character when the grid did. At 256×192
 colour on a full rig looked like a 60 per cent load, which is a decision about
-taste; at 320×240 it is 94 per cent of the usable link, which is not a decision
-anyone should take during a show. **Colour is for three phones and for
-measurement, not for eight phones live.**
+taste; at 320×240 it is 937 Mbit/s of framed traffic on a 1,000 Mbit/s line,
+which is not a decision anyone should take during a show. **Colour is for three
+phones and for measurement, not for eight phones live.**
+
+Nobody has run eight real phones with colour. The bridge is measured lossless
+to 61,000 packets per second and that configuration offers about 76,000, so
+there are two ceilings in play and no evidence about which gives first. What to
+do about it — a phone-side colour rate with a receiver hold, colour on a subset
+of phones, or 2.5 GbE and a second network card — is open in
+[#42](https://github.com/AristidesAI/TDStage/issues/42). A load test at the
+real grid is ready and waiting for the show machine to be free.
 
 The work does not disappear, it moves. The receiver regenerates the points
 from the grid on the GPU, where unprojecting around 614,000 cells is

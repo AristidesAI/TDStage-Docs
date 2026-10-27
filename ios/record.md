@@ -223,10 +223,16 @@ Wire cost per phone, **calculated from the wire format** at 30 fps and the
 | depth+conf | 230 520 | 55.3 Mbit/s | 442 Mbit/s |
 | depth+conf+rgb | 460 920 | 110.6 Mbit/s | 885 Mbit/s |
 
-Eight phones on `depth+conf` is about 47 per cent of a gigabit link. **Eight
-phones on `+conf+rgb` is 94 per cent, which is not a show configuration** — it
-is also about 76,000 packets per second, above what the receiving bridge has
-been measured to carry. Colour is for three phones and for measurement.
+Those are payload at the IP layer. Adding what Ethernet charges per packet
+makes them 313, 469 and 937 Mbit/s against a 1,000 Mbit/s line, which is the
+basis to use for a claim about fitting on a cable.
+
+Either way: eight phones on `depth+conf` is about 47 per cent of a gigabit
+link. **Eight phones on `+conf+rgb` is 94 per cent, which is not a show
+configuration** — it is also about 76,000 packets per second, above what the
+receiving bridge has been measured to carry. Colour is for three phones and for
+measurement. The options are open in
+[#42](https://github.com/AristidesAI/TDStage/issues/42).
 
 {: .note }
 Figures of 283 and 566 Mbit/s appear in older notes and in the system

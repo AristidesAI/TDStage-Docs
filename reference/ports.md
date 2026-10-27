@@ -56,7 +56,9 @@ above about 30,000. So the show setting fits the bridge with room, and **colour
 on eight real phones is above what the bridge was measured to carry.** The
 arithmetic here is from the wire format and the measured grid; the ceilings are
 measurements. Nobody has yet run eight real phones with colour to see which
-gives first.
+gives first — the packet ceiling or the link, which that configuration also
+fills to 937 Mbit/s of framed traffic on a 1,000 Mbit/s line. Open as
+[#42](https://github.com/AristidesAI/TDStage/issues/42).
 
 A receiver that does not drain on a dedicated thread with a raised socket
 buffer will lose packets as buffer overflow, which looks like network loss and
