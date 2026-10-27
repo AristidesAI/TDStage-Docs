@@ -140,6 +140,23 @@ nothing left for a burst. That is a cabling decision rather than a software
 one, which is why it is open as [#42](https://github.com/AristidesAI/TDStage/issues/42): a phone-side colour rate, colour
 on a subset of phones, or 2.5 GbE and a second card.
 
+### What a show without colour gives up
+
+This is the part that makes the decision rather than the megabits, and it is
+easy to miss, because "colour" sounds like appearance.
+
+The console's person vision reads the phones' colour plane. Without it there
+are **no person masks**, so performers are separated by geometry alone, and
+**no hands**, because the wrist detector works on a colour image. The system
+keeps tracking and keeps publishing positions — the mask stage is built to fail
+open, so a phone with no mask contributes all of its points rather than none —
+but two of the things that make the tracking good are simply absent.
+
+So depth-and-confidence is not "the same thing, smaller". It is a different
+product: positions without appearance, and bodies separated by shape instead of
+by who they look like. Worth knowing before the link budget decides it for
+you.
+
 {: .note }
 Those bridge figures were measured over loopback. That is the right way to find
 the software's own ceiling, and it skips a real network card's receive path and

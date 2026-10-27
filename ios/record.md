@@ -238,6 +238,14 @@ for a burst. Colour is for three phones and for measurement until that is
 solved, and the options are open in [#42](https://github.com/AristidesAI/TDStage/issues/42).
 
 {: .note }
+**Dropping colour costs more than colour.** The console's person masks and its
+hand tracking both read the colour plane, so a depth-and-confidence rig
+separates performers by geometry alone and publishes no hands. Tracking
+continues either way — the mask stage fails open — but two of the things that
+make it good are gone. That is usually the real argument in this decision, not
+the megabits.
+
+{: .note }
 Figures of 283 and 566 Mbit/s appear in older notes and in the system
 repository's `CLAUDE.md`. They are the same arithmetic at **256×192**, which is
 what the simulator sends and what everything here was originally computed at.
