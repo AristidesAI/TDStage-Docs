@@ -201,12 +201,12 @@ Rotate. The gizmo is forced off while the console is locked.
 
 | Section | Controls |
 |---|---|
-| (top) | **Auto setup coverage** optimises every enabled phone's position and aim and its marker for maximum coverage and multi phone overlap of the quoted volume, in one undo step. **Load Stroud plan (6 phones)** and **(3 phones)** set phone poses and marker positions from the measured coverage study in `Tools/coverage/stroud_layout.json`, and also set one rig wide marker size from the layout's sheet size. Both ask first, and undo reverts. |
+| (top) | **Auto setup coverage** optimises every enabled phone's position and aim and its marker for maximum coverage and multi phone overlap of the quoted volume, in one undo step. **Load plan (6 phones)** and **(3 phones)** set phone poses and marker positions from a measured coverage study held in the system repository, and also set one rig wide marker size from the layout's sheet size. Both ask first, and undo reverts. |
 | **TouchDesigner** | The link state line, plus **Ping**, **Retry** and **Push poses**. |
 | **Selected** | The selected phone's or marker's numbers, with **Open** (its device page) and **Ping**. |
 | **Options** | **LiDAR beams**, **Range split at 7 m** (two zones against one uniform zone), **Max-range plane**, **Beyond-range reach (RGB)**, **Marker plan**, **Labels & text**, **Floor grid**, **Person A (scale figure)** with a pose slider, **Person B (occlusion)** with a pose slider. |
 | **Visual tuning** | In-range brightness, Beyond-range brightness, Range-plane opacity, Shadow strength, Label size, and the backdrop: dark, black, white, or a free colour picker. |
-| **Venue** and **Coverage study** | One visibility checkbox and one opacity slider per model layer. The `BAND_` layers are Mathias's coverage study. |
+| **Venue** and **Coverage study** | One visibility checkbox and one opacity slider per model layer. The `BAND_` layers are the coverage study supplied for the production. |
 | **Per-phone frustums** | **All on**, then one solo button per phone. |
 
 The two person figures and the quoted volume are stored in the config and are
