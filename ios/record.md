@@ -262,14 +262,19 @@ and over a cable in Finder.
 Write rate at 256×192 and 30 fps, **calculated from the wire format** and then
 divided by the compression ratios above:
 
-| Plane set | Uncompressed | Compressed, expected |
-|---|---|---|
-| depth | 3.0 MB/s | 0.8 to 1.6 MB/s |
-| depth+conf | 4.4 MB/s | 0.9 to 1.5 MB/s |
-| depth+conf+rgb | 8.8 MB/s | 1.4 to 2.0 MB/s |
+| Plane set | Uncompressed | Compressed, best case | Compressed, assume this |
+|---|---|---|---|
+| depth | 3.0 MB/s | 0.8 MB/s | 1.5 MB/s |
+| depth+conf | 4.4 MB/s | 0.9 MB/s | 2.2 MB/s |
+| depth+conf+rgb | 8.8 MB/s | 1.4 MB/s | 4.4 MB/s |
 
-The headroom figure on the page assumes only 2× compression, deliberately, so
-that "about N minutes left" never over-promises.
+The best case uses the simulated ratios above. The column to plan with assumes
+only 2×, which is what the harshest synthetic noise produced and therefore the
+safer assumption for a real stage.
+
+The headroom figure the app shows assumes the same 2×, deliberately, so that
+"about N minutes left" never over-promises. No take has yet been recorded on a
+real phone and measured against these figures (**not yet verified**).
 
 ---
 

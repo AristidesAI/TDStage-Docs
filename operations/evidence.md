@@ -35,6 +35,10 @@ The table is generated. Do not edit it by hand:
 python3 Tools/requirements_check.py --write
 ```
 
+**Do not run it on a machine with a live console.** One of its rows runs the
+environment doctor, so on a show machine it inspects a rig that is in use.
+Generate the table on a development machine instead.
+
 That writes `Notes/Requirements-Conformance.md` with the date on it. As of
 2026-10-27 it read 14 PASS, 4 BUILT, 0 FAIL, 7 NEEDS-RIG. Re-run it before
 quoting any of those, because they move.

@@ -67,6 +67,22 @@ def readable(pattern: str) -> str:
     return s.strip()
 
 
+def load_age(repo: pathlib.Path):
+    """Read AGE_FIX: where capture latency is being spent, and what to do.
+
+    A separate table from FIX_HINTS and a different shape. These are not log
+    messages but stages of the capture path, each with the fix for that stage
+    being the slow one. The console names the worst stage; this says what to
+    do about it.
+    """
+    src = (repo / "WebConsole" / "server.py").read_text(encoding="utf-8")
+    start = src.index("AGE_FIX = {")
+    end = src.index("FIX_HINTS = [")
+    ns: dict = {}
+    exec(src[start:end], ns)                          # noqa: S102 - our own source
+    return ns["AGE_FIX"]
+
+
 def load_hints(repo: pathlib.Path):
     """Read FIX_HINTS out of server.py without importing the console.
 
@@ -82,21 +98,32 @@ def load_hints(repo: pathlib.Path):
     return ns["FIX_HINTS"]
 
 
-def render(hints) -> str:
+def render(hints, age) -> str:
     rows = ["| Symptom | What to do |", "|---|---|"]
     for pattern, fix in hints:
         sym = readable(pattern).replace("|", "\\|")
         fx = fix.replace("|", "\\|")
         rows.append(f"| {sym} | {fx} |")
-    return HEADER + "\n".join(rows) + "\n" + FOOTER
+
+    age_rows = ["", "## Where capture latency is going", "",
+                "When the console reports a phone's frames arriving late, it names",
+                "the stage of the capture path that is slowest. Each stage has its own",
+                "fix, because the cause is different in each case.", "",
+                "| Slowest stage | What it means and what to do |", "|---|---|"]
+    for stage, fix in age.items():
+        age_rows.append(f"| `{stage}` | " + " ".join(fix.split()).replace("|", "\\|") + " |")
+
+    return HEADER + "\n".join(rows) + "\n".join(age_rows) + "\n" + FOOTER
 
 
 def demo():
     assert readable(r"^thermal|capture age") == "thermal / capture age"
     assert readable(r"commit\(s\) behind") == "commit(s) behind"
     assert readable(r"GB free") == "GB free"
-    out = render([(r"a|b", "do the thing")])
+    out = render([(r"a|b", "do the thing")], {"hop": "cool it"})
     assert "| a / b | do the thing |" in out
+    assert "| `hop` | cool it |" in out
+    assert "Where capture latency is going" in out
     print("self-check ok")
 
 
@@ -112,7 +139,7 @@ def main():
     repo = pathlib.Path(a.repo).expanduser().resolve()
     if not (repo / "WebConsole" / "server.py").exists():
         sys.exit(f"no console source under {repo}. Pass --repo <path to TDStage>.")
-    page = render(load_hints(repo))
+    page = render(load_hints(repo), load_age(repo))
     if a.check:
         current = OUT.read_text(encoding="utf-8") if OUT.exists() else ""
         if current != page:
@@ -121,7 +148,8 @@ def main():
         return
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(page, encoding="utf-8")
-    print(f"wrote {OUT} ({len(load_hints(repo))} symptoms)")
+    print(f"wrote {OUT} ({len(load_hints(repo))} symptoms, "
+          f"{len(load_age(repo))} latency stages)")
 
 
 if __name__ == "__main__":

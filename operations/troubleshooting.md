@@ -71,6 +71,21 @@ here is what an operator sees at the desk.
 | F1 note | Run the F1 bus on a different port from TD's telemetry (9000), or on another machine. |
 | -> 4\d\d | The UI sent a request the server refused; the reply above says why. Reload the page if the UI is out of date. |
 | -> 5\d\d | Server-side exception: the traceback is in logs/console.log. Report it with the request line above. |
+## Where capture latency is going
+
+When the console reports a phone's frames arriving late, it names
+the stage of the capture path that is slowest. Each stage has its own
+fix, because the cause is different in each case.
+
+| Slowest stage | What it means and what to do |
+|---|---|
+| `delivery` | The capture framework itself is late (ARKit or AVFoundation): a hot phone delivers late. Blackout the screen and cool the phone; on TDStage AR the AVFoundation capture path delivers sooner (no ARKit confidence). |
+| `prep` | Depth and colour preparation on the phone is slow: drop the rgb plane (depth+conf); on TDStage AR also person gating. Under thermal pressure the GPU and CPU clock down. |
+| `hop` | The main thread is busy when a frame is ready: blackout the screen (SwiftUI stops redrawing) and close any on-phone page with live stats. |
+| `main` | Main-actor work per frame (marker detection, skeleton) is high: turn markers/skeleton off outside calibration. |
+| `queue` | The previous frame is still being sent: the link is slow or saturated. Check Wi-Fi vs Ethernet, and the planes (rgb doubles the bytes). |
+| `pack` | Packing the frame is slow: drop the rgb plane; under thermal pressure the CPU clocks down. |
+| `socket` | The socket takes the datagrams late: Wi-Fi contention, or the wired adapter is saturated or on the wrong VLAN. Check /device/link on the phone's page and the switch port. |
 
 ## When none of these match
 
