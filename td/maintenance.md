@@ -19,7 +19,7 @@ working copy is re-saved.**
 TD/TDStageConductor.tox         <- the working copy, always the latest
 TD/TDStageConductor_v01.tox     <- history
 ...
-TD/TDStageConductor_v76.tox     <- the highest number at the time of writing
+TD/TDStageConductor_v78.tox     <- the highest number at the time of writing
 ```
 
 List the directory before picking a number:
@@ -84,9 +84,9 @@ for byte with the repository file of the same name.
 
 ```
 python3 TD/newtox/tox_drift.py                            # the working copy
-python3 TD/newtox/tox_drift.py TD/TDStageConductor_v76.tox
+python3 TD/newtox/tox_drift.py TD/TDStageConductor_v78.tox
 python3 TD/newtox/tox_drift.py --diff                     # print the differing lines
-python3 TD/newtox/tox_drift.py --extract /tmp/v76-dats    # every DAT's text as files
+python3 TD/newtox/tox_drift.py --extract /tmp/v78-dats    # every DAT's text as files
 ```
 
 Run it after every numbered save. The result you want is **0 differ and 0 in
@@ -98,6 +98,10 @@ plain text files, readable and diffable without TouchDesigner.
 `toeexpand` exits 1 even when it worked, on current TouchDesigner. The tool
 judges it by its output, not its exit code, so do not be alarmed.
 
+Give `--extract` a path **outside** the repository. Expanding a tox writes a
+`.tox.dir` folder and a `.tox.toc` beside it, and left in `TD/` those show up
+as untracked files that look like someone's work in progress.
+
 ### A worked example
 
 Run on 2026-10-27 against the working copy:
@@ -108,10 +112,25 @@ TD/TDStageConductor.tox: 32 DATs with a repo copy identical, 1 differ,
   DIFFERS  TDStageConductor/tdp4_receiver vs TD/newtox/tdp4_receiver.py (53 lines)
 ```
 
-The repository's receiver is ahead of the tox's copy by one commit. The fix is
-to load the repository file into the DAT, not to copy the DAT back. Which
+The repository's receiver was ahead of the tox's copy by one commit. The fix
+is to load the repository file into the DAT, not to copy the DAT back. Which
 direction is correct is a judgement the tool cannot make for you; it only tells
 you that a judgement is needed.
+
+That is the whole value of running it. The missing commit was the device-id
+collision naming, so a rig with two phones sharing an id would have been warned
+by the console and told nothing by TouchDesigner, and nobody would have known
+why the two disagreed.
+
+Loading the repository file and saving produced v77 and then v78, and the same
+command now reads:
+
+```
+TD/TDStageConductor.tox: 33 DATs with a repo copy identical, 0 differ,
+                         0 DATs with text and no repo copy
+```
+
+That is what a clean result looks like.
 
 ### Hot-swapping a module DAT in a running tox
 

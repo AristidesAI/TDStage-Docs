@@ -117,7 +117,6 @@ take is one file with one geometry in its header.
 | Control | Options | Default |
 |---|---|---|
 | Planes | Depth, +conf, +conf+rgb | +conf |
-| Depth grid | 256×192, 320×240, max | 256×192 |
 | Capture rate | 5 to 60 fps, in steps of 5 | 30 fps |
 
 Below them, an estimate of the write rate and the headroom in minutes.
@@ -138,12 +137,13 @@ Wire cost per phone, **calculated from the wire format** at 256×192 and 30 fps:
 Eight phones on `depth+conf` is about 30 per cent of a gigabit link. Eight
 phones on `+conf+rgb` does not leave comfortable room on one.
 
-{: .warning }
-**The Depth grid picker currently does nothing to the captured grid.** The
-format selector in the capture code accepts the target and deliberately ignores
-it, so the phone captures and sends 256×192 whatever this picker says. The
-value is stored, reported in telemetry, and carried in a profile, but it is not
-a bandwidth lever or a thermal lever today. Do not plan against it.
+{: .note }
+**There is no longer a Depth grid picker.** It was removed on 2026-10-27,
+because the format selector in the capture code accepted the target and
+deliberately ignored it: the phone captured and sent 256×192 whatever the
+picker said. A control that does nothing is worse than no control, because it
+gets planned against. The key still exists, is reported in telemetry and rides
+in a profile, but it is not a bandwidth or thermal lever.
 
 ### Capture rate
 

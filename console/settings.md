@@ -226,6 +226,13 @@ Rates, polls and freshness windows across the ingest and camera view paths.
 | `snapshotMaxAge` | 2.0 s | 0.5 to 5.0 | safe | A device with no frame for this long vanishes from `/api/cloud`. **The browser view only** |
 | `personMode` | `off` | `off`, `motion`, `vision`, `combined` | safe | Which signal filters the Live view cloud. The motion engine keeps learning in every mode |
 
+{: .warning }
+**Consensus can be chosen but not saved.** The console offers a Consensus
+mode and applies it, but the saved settings cannot hold the value, so any
+restart puts the rig back on whatever was saved, silently. The console
+restarts itself after a crash, so this can happen without anyone touching
+it. Re-select Consensus after any restart until this is fixed.
+
 ---
 
 ## Three things about this schema that will trip you up
@@ -281,3 +288,14 @@ If that section is malformed, the console logs `saved settings ignored`, runs on
 defaults, and tells you to fix or delete the block and restart. Settings are not
 undoable: the undo stack covers poses, markers, the person figures and the
 roster, not these.
+
+## What a tick costs
+
+The engine's own work is about 15 ms per tick with eight devices in frame,
+down from about 29 ms before the 2026-10-27 optimisation. *Measured,
+simulation.* Eight real phones have never been run, and simulated devices do
+not get hot or drop frames, so treat this as a ceiling on the code's cost and
+not as a rig figure.
+
+That matters when choosing `segTick`. A period shorter than the work takes
+does not make the engine faster, it only makes it late every tick.
