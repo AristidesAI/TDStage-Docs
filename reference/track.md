@@ -126,7 +126,9 @@ flowchart TD
   B -- "yes" --> D["Published with a new id"]
   D --> E{"Still matched<br/>this frame?"}
   E -- "yes" --> F{"Within 0.7 m of<br/>another performer?"}
-  F -- "no" --> G["clustered 0<br/>Identity is as good as it gets"]
+  F -- "no" --> G{"Clear of everyone by 0.9 m<br/>for 0.3 s?"}
+  G -- "yes" --> G1["clustered 0<br/>Identity is as good as it gets"]
+  G -- "not yet" --> H
   F -- "yes" --> H["clustered 1<br/>Identity is provisional"]
   E -- "no" --> I["Coasting: position held,<br/>velocity exactly 0,<br/>confidence 0.30"]
   I --> J{"Back within 3 s?"}
@@ -152,8 +154,15 @@ state where you should stop doing that.
 
 {: .warning }
 `clustered` is the field most likely to be misread. It does not mean "two
-people are close together", it means **this system cannot currently guarantee
-which of them is which**. Sustained physical contact between performers is not
+people are close together", it means **this id's position is real, but which
+body it belongs to may be wrong**. Positions stay usable — for forces, fields,
+anything spatial. What should hold or fade is anything keyed to *who* a
+performer is: a personal colour, a per-person score.
+
+It **enters** at 0.7 m and **leaves** only after 0.9 m of separation held for
+0.3 s. That gap is deliberate: two performers hovering either side of a single
+threshold would otherwise flicker the flag at frame rate, and a receiver would
+act on the flicker rather than on the situation. Sustained physical contact between performers is not
 resolvable by any markerless system, so during it the ids may be exchanged.
 Build anything identity-critical to degrade while `clustered` is 1. The exact
 semantics are still being pinned down with the client in

@@ -49,6 +49,13 @@ CHECKS = [
      "WebConsole/track_emit.py", "ID_RESERVE_SECONDS"),
     ("reference/track.md", r"[Ww]ithin ([\d.]+) m of<br/>another performer",
      "WebConsole/track_emit.py", "CLUSTER_DISTANCE_M"),
+    # the hysteresis: a receiver acts on these two, so they must not drift
+    ("reference/track.md", r"It \*\*enters\*\* at ([\d.]+) m",
+     "WebConsole/track_emit.py", "CLUSTER_DISTANCE_M"),
+    ("reference/track.md", r"leaves\*\* only after ([\d.]+) m of separation",
+     "WebConsole/track_emit.py", "CLUSTER_RELEASE_M"),
+    ("reference/track.md", r"separation held for\n([\d.]+) s",
+     "WebConsole/track_emit.py", "CLUSTER_HOLD_S"),
     ("operations/failure.md", r"stayed back for\s*\n?(\w+) seconds",
      "WebConsole/server.py", "RECOVERY.graceSeconds"),
     ("operations/failure.md", r"at most once every (\w+) seconds",
