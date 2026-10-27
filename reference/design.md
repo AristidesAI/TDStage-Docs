@@ -337,7 +337,7 @@ synthetic streams, not from phones.
 
 | Figure | Value | Label |
 |---|---|---|
-| GPU merge path, frame rate held | 60 fps at 8, 12 and 16 streams | Measured, simulation |
+| GPU merge path, frame rate held | 60 fps at 8, 12 and 16 streams, on a development Mac with the person model idle and no content rendering | Measured, simulation |
 | Transport loss up to 16 streams | 0 incomplete frames, at 573 Mbit/s | Measured, simulation |
 | Bridge to TouchDesigner delay | 9.5 ms median, 15.3 ms at the 95th percentile | Measured, simulation |
 | Bridge receive capacity | 114,500 packets per second with no drops, 55 % of one core (twelve phones of 320×240 with colour). An earlier 61,000 was the highest load then tried, not a limit | Measured 2026-10-27, loopback |

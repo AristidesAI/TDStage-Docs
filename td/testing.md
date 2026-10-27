@@ -331,7 +331,7 @@ place:
 
 | Figure | Value |
 |---|---|
-| GPU merge path, TouchDesigner frame rate | 60 real frames per second at 8, 12 and 16 streams, geometric or learned |
+| GPU merge path, TouchDesigner frame rate | 60 real frames per second at 8, 12 and 16 streams, geometric or learned. **Development Mac, person model idle, no content rendering** — headroom, not a show figure |
 | CPU merge path at 8 streams, learned | 55 to 59 TouchDesigner frames per second, merge worker saturated at 27.7 merges per second, 38 ms each |
 | Transport | 0 incomplete frames up to 16 streams, 573 Mbit/s |
 | Bridge to TouchDesigner latency | p50 9.5 ms, p95 15.3 ms |

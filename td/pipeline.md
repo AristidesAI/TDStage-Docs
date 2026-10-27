@@ -414,3 +414,10 @@ Measured, simulation, 2026-10-26, depth and confidence, with the bridge in
 place: the GPU path held 60 real frames per second at 8, 12 and 16 streams,
 while the CPU path at 8 streams saturated its merge worker at 27.7 merges per
 second, 38 ms each. There is no multi-phone rig measurement of either.
+
+{: .warning }
+**Read those as headroom on a quiet machine, not as show figures.** They were
+taken on a development Mac with the person model idle and no content
+rendering — which is three of the things a show machine does at the same time.
+The number that matters for a venue is the same test on the show machine with
+its real load, and nobody has run it.
