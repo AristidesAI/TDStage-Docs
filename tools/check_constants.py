@@ -73,6 +73,9 @@ CHECKS = [
     ("console/resilience.md", r"given (\w+) seconds before it counts as failed",
      "WebConsole/yolo_seg.py", "START_TIMEOUT_S"),
 
+    ("console/guide.md", r"reaches \*\*serious\*\* is capped at (\d+) fps",
+     "TDStage/ShowSettings.swift", "stage.thermalSeriousFPS"),
+
     # Ports. A reader copies these into their own configuration, and a wrong
     # one fails silently on UDP: nothing arrives and nothing complains.
     ("console/running.md", r"\| `--http PORT` \| `(\d+)`",
@@ -111,6 +114,9 @@ def constant(src: str, name: str):
     is exactly the kind of number a reader copies into their own config without
     checking.
     """
+    if name.startswith("stage."):
+        m = re.search(rf'"{re.escape(name)}"\s*:\s*([\d.]+)', src)
+        return float(m.group(1)) if m else None
     if name.endswith("_CM"):
         v = constant(src, name[:-3])
         return None if v is None else round(v * 100)

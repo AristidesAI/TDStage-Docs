@@ -52,8 +52,15 @@ the telemetry port first and the start reports become trustworthy.
 while they keep streaming, which is what a phone on a stand should look like
 during a performance: dark, and working. A lit screen is visible from the
 audience and it adds heat, and heat is what costs frame rate: a phone that
-climbs the thermal ladder drops to two thirds of its rate, then half. The
-console asks for confirmation first.
+reaches **serious** is capped at 25 fps, and at **critical** it halves its
+nominal rate with a floor of 10. The console asks for confirmation first.
+
+{: .note }
+That 25 is a setting rather than a ratio, and it was raised deliberately: the
+rung used to be a fraction of the nominal rate, which took a hot 30 fps phone
+down to 20 ([#31](https://github.com/AristidesAI/TDStage/issues/31)). An
+absolute floor keeps a hot phone useful instead of letting a thermal problem
+become a tracking problem.
 
 **Ping all** (3) asks every phone with a known IP for a reply, disabled ones
 included, and changes nothing on them. The reply comes back over the telemetry

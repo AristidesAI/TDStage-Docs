@@ -250,13 +250,12 @@ somewhere confident and wrong.
 
 {: .warning }
 **A finished solve is not proof that every phone moved.** A refused phone is
-left exactly where it was, and today it says so only in the Log and in the
-solve's own result — there is no row in Rig health and no red anywhere to catch
-your eye. So a solve can report itself finished with two phones still sitting
-at whatever positions they had before, which on a fresh roster means the
-defaults. **Read each phone's status**, in the result or in the Log, and treat
-"the align finished" as meaning nothing on its own. The Live view's alignment
-panel is where this is meant to end up, with a status for each phone.
+left exactly where it was, so a solve can report itself finished with two
+phones still at whatever positions they had before — on a fresh roster, the
+defaults. Rig health now names them: which phones were left, why each one was
+refused, and what to try, including placing just those phones with walk
+calibration. Read that row rather than treating "the align finished" as an
+answer.
 
 Three things the grading is looking for, each worth recognising on a get-in:
 

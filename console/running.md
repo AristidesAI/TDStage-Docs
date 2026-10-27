@@ -251,6 +251,13 @@ rules already prevent, but simply by saving its own idea of the roster over the
 show's file. Two consoles on one file was never a configuration anyone wanted;
 now it is one that cannot happen.
 
+**The launchers stop rather than retrying.** Double-click the show launcher
+while the show console is already running and you get one line saying it was
+not started, that another console holds this configuration, where to find it,
+and that nothing was changed. The window then waits for you rather than
+looping. A crash or a watchdog restart is unaffected, because a dead process
+releases the lock and the relaunch takes it.
+
 To run a second console deliberately, give it its own file with `--config`,
 which is what you want anyway — its phone profiles move with it.
 
