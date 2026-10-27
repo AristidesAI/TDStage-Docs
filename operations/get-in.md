@@ -253,12 +253,14 @@ What it does not catch, which matters as much as what it does:
 So run it a second time with a pair of phones at ninety degrees to the first,
 which covers the other axis and breaks the cancelling case.
 
-A console-side version of both halves is proposed in
-[#41](https://github.com/AristidesAI/TDStage/issues/41): a passive check that
-compares what each phone thinks the centroid of one person is, and a separate
-button that compares the agreed position against a marked spot whose stage
-coordinates you know. The second is the one that can prove correctness rather
-than agreement. Until that exists, the eye is the instrument.
+**The console can now do both halves for you** ([#41](https://github.com/AristidesAI/TDStage/issues/41),
+built 2026-10-27). It compares what each phone thinks the centroid of that one
+person is, which catches disagreement; and given a marked spot whose stage
+coordinates you know, it compares the agreed position against that spot, which
+is the half that can tell you the whole rig is offset rather than merely
+self-consistent. Use it with the marked spot if you have one, because agreement
+alone cannot prove correctness — which is the same reason this test needs a
+second pair at ninety degrees.
 
 The walking test is still the one that catches coverage problems. A rig can
 pass every other check and still have a gap that only shows when someone walks

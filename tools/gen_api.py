@@ -86,6 +86,8 @@ WHAT = {
     "/api/markers/size": "Set the printed marker size. Must match the markers you actually printed.",
     "/api/venue/layout": "Load a stage layout. Sets positions, labels, and one rig-wide marker size derived from the smallest sheet in the layout. It writes the roster; it does NOT push the size to the phones, so Apply to all phones is still needed.",
     "/api/align/rig": "Solve the rig alignment.",
+    "/api/align/job": "How the running alignment solve is getting on. Read only.",
+    "/api/rig/calib": "The one-person calibration check: with a single person on stage, do the phones agree where they are? Read only. Pass `x` and `z` to compare the agreed position against a spot whose stage coordinates you know, which is the half that can show the whole rig is offset rather than merely self-consistent.",
     "/api/range": "Working range.",
     "/api/scene": "Scene settings.",
     "/api/td": "Link to TouchDesigner.",

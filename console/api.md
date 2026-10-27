@@ -31,11 +31,12 @@ with JSON.
 on its own port, 9001 by default. The tracking output is OSC over UDP on port
 7000, configured through `POST /api/track`.
 
-Routes found in the source: 21 GET, 32 POST.
+Routes found in the source: 23 GET, 32 POST.
 
 | Path | Verb | What it is for |
 |---|---|---|
 | `/` | GET | The console's web interface. |
+| `/api/align/job` | GET | How the running alignment solve is getting on. Read only. |
 | `/api/align/rig` | POST | Solve the rig alignment. |
 | `/api/autofix` | POST | Run the automatic fixer against a device. |
 | `/api/cloud` | GET | The point cloud, as binary, long-polled. Query: `seq`, `max`, `labels=1`, `fmt=i16`. Off the local network this is capped to 5 Hz and 20,000 points. |
@@ -69,6 +70,7 @@ Routes found in the source: 21 GET, 32 POST.
 | `/api/redo` | POST | Redo it. |
 | `/api/rgb` | GET | Which devices have a camera image, and how old each one is. |
 | `/api/rig` | GET | The facts that span phone, console, relay and TouchDesigner in one place: relay status, cable link, this machine's address, the listener and hands. A facts dump, not a problem list. |
+| `/api/rig/calib` | GET | The one-person calibration check: with a single person on stage, do the phones agree where they are? Read only. Pass `x` and `z` to compare the agreed position against a spot whose stage coordinates you know, which is the half that can show the whole rig is offset rather than merely self-consistent. |
 | `/api/scene` | POST | Scene settings. |
 | `/api/settings` | GET and POST | Read the tunables (GET) or change them (POST). |
 | `/api/sim` | POST | Start or stop simulated phones. |

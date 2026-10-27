@@ -139,6 +139,21 @@ That qualifier matters. Auto-recover is off when the console boots, and
 disarm it again. A rig started with Start all has no safety net, which is a
 reasonable choice and a bad surprise.
 
+Two more things end the watching, both deliberate:
+
+**A phone you stopped stays stopped.** If the console stopped a phone, auto-
+recover leaves it alone until something starts it again — the console, or the
+phone itself. Otherwise stopping one phone to look at it would turn into a
+fight with the supervisor.
+
+**"The show is running" expires.** The latch is saved, so a watchdog restart
+keeps it, but a console that was down for **more than half an hour** boots with
+auto-recover disarmed and says so. The age comes from a heartbeat file the
+console touches every ten seconds. The reasoning is that a restart seconds
+later is the same show, and a restart the next morning is not — and a
+supervisor that silently starts phones because of yesterday's latch is worse
+than one that waits to be asked. Press Start show when the show should run.
+
 Operator: relaunch the app. Nothing else.
 
 Status: covered by an automated interface test. **Not verified on a rig.**
@@ -355,14 +370,24 @@ default positions are not the venue's, and the console pushes poses on every
 TouchDesigner link-up, so a seed used to move the live cloud as a side effect
 of reconnecting. It now holds them, and Rig health says so.
 
-{: .warning }
-The hold is all-or-nothing, and it ends sooner than you would expect. **Any**
-saved pose edit, on **any** phone, marks the whole roster as yours — so
-correcting one phone's height releases the other five phones' default positions
-to TouchDesigner at the next link-up. Press Push poses when the roster really
-is the show's, and until then treat a pose edit on a seeded roster as
-publishing all of it. A per-phone version of this is being built; this page
-will say so when it lands.
+The hold is **per phone**, and the rule is worth knowing exactly, because it
+decides what your next click publishes.
+
+| What you do | What it releases |
+|---|---|
+| Save an edit that **moves or turns** one phone — its position or its yaw | That phone only. The others stay held |
+| Edit a phone's pitch, roll or field of view | Nothing. Those are not part of what TouchDesigner stores |
+| Click a phone in the stage view without dragging it | Nothing. The value has not changed |
+| **Push poses** | Every phone |
+| A rig align, or a venue layout that places phones | The phones it placed |
+
+Rig health names the phones still held, and the held set is saved with the
+configuration, so a restart does not quietly release them.
+
+The same hold covers three cases, not just a seed: every phone of a seeded
+roster, every phone of a roster restored from a backup, and any slot added with
+the **+** button. In each one, nobody has confirmed where that phone actually
+is.
 
 Operator: check the roster against the rig. If it is right, Push poses. If it
 is wrong, stop the console, copy the backup you want over the configuration and

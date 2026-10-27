@@ -355,15 +355,17 @@ skipping any that do not and naming each one it skipped.
 
 Two consequences of the seed path that remain, and are now deliberate:
 
-- **A seeded roster does not push poses to TouchDesigner by itself.** A seed's
-  six default positions are certainly not the venue's, and the console pushes
-  poses on every TouchDesigner link-up, so a seed used to move the live cloud
-  as a side effect of reconnecting. It now holds them and says so in Rig
-  health. The hold is **all-or-nothing**: Push poses ends it, and so does any
-  saved pose edit on any single phone, which releases the other five phones'
-  untouched defaults along with the one you corrected. Treating that as a
-  per-phone confirmation is the mistake to avoid; a per-phone version is being
-  built.
+- **A phone whose pose nobody has checked is held back from TouchDesigner.**
+  The console pushes poses on every link-up, so an unconfirmed position used to
+  move the live cloud as a side effect of reconnecting. The hold covers every
+  phone of a seeded roster, every phone of a roster restored from a backup, and
+  any slot added with **+**. It is released **per phone**, by saving an edit
+  that moves or turns that one — its position or its yaw, compared against what
+  it was. A pitch, roll or field-of-view edit releases nothing, because those
+  are not what TouchDesigner's registration stores, and neither does a click
+  that does not actually change a value. Push poses releases everything. The
+  held set is saved with the configuration, so a restart does not release it,
+  and Rig health names who is still held.
 - **The newest backup is still a minute old at worst.** Backups are taken at
   most once a minute, so a restore loses whatever was saved since. Check the
   calibration after any restore rather than assuming it is the state you left.
@@ -704,11 +706,10 @@ The gap a client still sees is the restart itself, plus the half minute
 
 One second-order effect, now narrower than it was: when TouchDesigner's link
 comes back up the console pushes it the phone poses it loaded. A console that
-came back from a **backup** therefore moves TouchDesigner's cloud as a side
-effect of reconnecting. A console that came back from a **fresh seed** does not
-do it on its own, because a seed's six default positions are certainly not the
-venue's — but see the all-or-nothing caveat above: one saved pose edit releases
-the whole seed.
+came back from a **backup** no longer does so blindly: every phone in a
+restored roster is held until somebody confirms it, exactly as in a seed. What
+reaches TouchDesigner on a link-up is the set of phones whose positions a
+person has actually checked since.
 
 **App distribution expiry is unresolved.** Test distribution builds expire after
 90 days. For an engagement running well beyond that, the route is either a
