@@ -37,8 +37,21 @@ except ImportError as e:                    # console must boot without numpy;
 ```
 
 `_IMPORT_ERR` is carried all the way to `GET /api/live`, so the Live view
-answers "numpy missing" instead of answering nothing. `WebConsole/server.py`
-does the same for the five client output modules, in one block:
+answers "numpy missing" instead of answering nothing.
+
+{: .warning }
+**That particular message can never actually be shown**, and the gap between
+the intent and the fact is the useful part of this section. `server.py`
+imports the tracking and video-output modules *unwrapped*, and both import
+numpy the same way, so a console without numpy does not boot at all — it dies
+on the import, before any of this careful degradation gets a chance to run.
+Verified by blocking numpy and running `server.py --help`:
+`ModuleNotFoundError` at the bare `import track_emit`. Pillow missing does
+boot, as the table below says.
+
+`WebConsole/server.py` wraps five other modules in one block — settings, the
+RGB stream, and the three person-model paths, which are the ones that really
+are optional:
 
 ```python
 try:
@@ -57,9 +70,9 @@ fail for any reason at all.
 
 | Missing | What stops | What still works |
 |---|---|---|
-| numpy | the whole Live point cloud, every mask path, the camera views | roster, calibration, `/ctl`, telemetry, markers, profiles, logs |
+| numpy | **everything: the console does not start.** The tracking and video-output modules import it unwrapped | nothing — fix the install |
 | the TDP4 receiver modules | ingest of point frames into the console | everything that does not need points, including control of every phone |
-| `settings.py` | the Settings page, and the `settings` section of the saved configuration | every module keeps its own compiled in defaults |
+| `settings.py` | the Settings page — and worse, **the first save after such a boot erases the saved tunables**, because the configuration is rewritten whole and without that section. They survive only in the backups | every module keeps its own compiled in defaults |
 | `rgb_stream.py` | `/api/rgb/*`: every camera view, JPEG, PNG, MJPEG and overlay | the point cloud and the masks themselves |
 | Pillow | JPEG encoding inside `rgb_stream`, so the streams | the stdlib PNG debug grab |
 | `person_obs.py` (pyobjc) | Apple Vision instance masks and body pose | YOLO, which is the primary model anyway |
@@ -96,7 +109,8 @@ health panel surfaces the same facts in the browser.
 
 The person segmentation model does not run inside the console. It runs in
 `WebConsole/yolo_worker.py`, as a separate operating system process, under a
-different interpreter, talking over a unix domain socket. Its own header gives
+different interpreter, talking over a local socket — a unix socket on macOS
+and Linux, a named pipe on the Windows show machine. Its own header gives
 three reasons, and they are different in kind:
 
 1. **The interpreters cannot be shared.** The console's virtual environment has
@@ -144,7 +158,7 @@ flowchart LR
   LOG["Parent log file"]
 
   OBS -- "frame request" --> LINK
-  LINK -- "length-prefixed, unix socket" --> MODEL
+  LINK -- "length-prefixed, local socket<br/>(named pipe on Windows)" --> MODEL
   MODEL -- "labels, keypoints" --> LINK
   MODEL -. "stdout and stderr chatter" .-> LOG
   LINK -. "process died: back off, respawn" .-> MODEL
@@ -165,6 +179,12 @@ stall the observer, it must simply leave the backend down and fail open".
 Respawns are backed off, `BACKOFF_S = (0.5, 1.0, 2.0, 4.0, 8.0, 15.0)`, so a
 worker that cannot start (missing weights, broken environment) settles at one
 attempt every fifteen seconds instead of forking a process every tick.
+
+A start is given ninety seconds before it counts as failed, which is generous
+on purpose: loading the model library and its weights really can take that
+long on a cold machine. So a worker that *hangs* rather than failing fast
+retries somewhere between fifteen and a hundred and five seconds, not every
+fifteen.
 
 Without the split, the failure is simple to describe: a native fault in the
 model library ends the console, and with it the roster, the control path, the
@@ -209,13 +229,24 @@ renders each `log(..., "warn"|"error", ...)` message with its placeholders
 blanked, and fails if any message has no hint and no `fix=`:
 
 ```
-check_fix_hints: 57 warn/error messages, 0 without a fix
+check_fix_hints: 60 warn/error messages, 0 without a fix
 ```
 
-It runs as the first line of the self test step in
-`.github/workflows/windows-console.yml` and exits 1 on a miss, which fails the
-build. Adding a new warning to the console without writing its fix does not
-merge.
+It runs inside the self test step of
+`.github/workflows/windows-console.yml` and exits 1 on a miss, which turns the
+run red.
+
+{: .note }
+Red, not blocked. That workflow runs on pushes to `main`, and work here lands
+on `main` directly, so an unhinted warning is caught **after** the commit
+rather than before it. Treat the check as a thing to run yourself before
+pushing, not as a gate that will stop you.
+
+The gate also has a blind spot worth knowing: it reads `server.py` as text and
+only sees calls whose level and message are literals. The autofix path logs
+through a variable level, so its messages — "phone offline, pinging it",
+"heal storm in progress", "watchdog is STILL healing" — are outside the check
+and arrive without a fix. So do messages printed by the other modules.
 
 That turns a nicety into a rule: **an operator is never shown a problem without
 a next step**. The operator in a show is often not the person who wrote the
@@ -339,7 +370,7 @@ device roster from backups in scratch console probes (recorded in
 Both launchers restart the console if it exits. `WebConsole/windows/run.bat`:
 
 ```bat
-rem Watchdog: the show machine runs unattended and is operated remotely,
+rem Watchdog: the show machine runs unattended and is operated from Sydney,
 rem so a console that exits is restarted after 3 s. Close the window to stop.
 :again
 python server.py --http 9080 --listen 9001 --tdp4-port 0 %*
@@ -364,8 +395,11 @@ Each long lived job runs on its own daemon thread: the telemetry listener, the
 TouchDesigner link, the staleness sweep, the cable watch, the health sampler,
 the recovery supervisor, the simulator watch, the bridge reader, the
 segmentation engine and the camera view rebuild. There is no task queue and no
-event loop, so a wedged thread stops exactly one job and the rest keeps
-answering. The staleness sweep runs every two seconds, decides whether each
+event loop, so a thread that wedges **outside** the shared locks stops exactly
+one job and the rest keeps answering. One that wedges while holding the
+server-wide lock, or the point store's, stalls everything that takes it —
+which includes the state the browser reads, and logging itself. That is not
+hypothetical: the lock ordering note below was earned by exactly that. The staleness sweep runs every two seconds, decides whether each
 phone is online from **either** evidence channel, and carries a lock ordering
 note earned the hard way:
 
@@ -485,6 +519,12 @@ def _apply(groups):
 Errors are collected and returned to the caller, which reports them in the
 Settings response. The console keeps running on the values it has.
 
+That holds when somebody changes a setting. **At boot it does not:** the
+startup path applies everything from the saved configuration and discards the
+errors, then logs that settings were applied. A hook that fails only at boot
+is reported nowhere, so if a tunable seems not to be taking effect after a
+restart, re-save it from the Settings page and watch what comes back.
+
 ---
 
 ## 7. Failures are named, not silent
@@ -551,6 +591,12 @@ None means "no opinion" — the caller MUST keep every point. A model that
 finds nobody never blanks the stage.
 ```
 
+Two deliberate exceptions, which are easier to recognise when you know they
+exist. In consensus mode the caller asks for an empty answer to be meaningful,
+so a fresh "nobody" there really is a no vote. And the tracking output is fail
+**closed** until its background has matured: it publishes nobody rather than
+publishing everybody, for the first half minute.
+
 The same rule is built into the YOLO link rather than left to the caller:
 
 ```python
@@ -590,10 +636,15 @@ not seconds. Whether the rig ships with one machine or two is still an open
 decision.
 
 **The tracking outputs stop while the console restarts.** The launcher brings
-the console back in about three seconds, and the point cloud in TouchDesigner
-is unaffected because it does not pass through the console at all. But the
-tracking output, the field feed and the video output all live in the console,
-so a client consuming them sees a gap. There is no buffering and no handover.
+the console back in about three seconds, and the point frames do bypass the
+console entirely, through the bridge file. But the tracking output, the field
+feed and the video output all live in the console, so a client consuming them
+sees a gap. There is no buffering and no handover.
+
+One second-order effect to know: when TouchDesigner's link comes back up, the
+console pushes it the phone poses from whatever configuration it loaded. A
+console that came back from a backup, or from a freshly seeded session, moves
+TouchDesigner's cloud as a side effect of reconnecting.
 
 **App distribution expiry is unresolved.** Test distribution builds expire after
 90 days. For an engagement running well beyond that, the route is either a
@@ -609,8 +660,10 @@ the board as [#40](https://github.com/AristidesAI/TDStage/issues/40).
 
 **Most of the fallbacks are verified in code, not on the rig.** The distinction
 is in the "Verified" column of `Notes/Fallbacks.md` and it is worth taking
-seriously. Config corruption recovery, concurrent saves, the worker respawn and
-the fix hint gate are verified by tests and probes that run every build. The
+seriously. The worker respawn and the fix hint
+gate run in the build. Config corruption recovery and concurrent saves were
+verified once, by scratch-console probes on 2026-10-27, and nothing re-runs
+them. The
 spare phone swap, the profile push on a real phone, the heat test and the
 wired adapter rebuild are **designed and not yet seen working on the rig**. Any
 of them could be wrong in a way that only a stage will show.
