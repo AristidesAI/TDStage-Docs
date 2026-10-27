@@ -630,14 +630,16 @@ runs; NDI just reports unavailable.
 
 ## A restored config looks wrong
 
-{: .warning }
-**Editing a kept `.corrupt` file by hand: watch the value types.** The boot
-check tests the file's shape, not its values, so a wrong-typed device field
-passes it. The console then reports **Restored** and goes on to kill the
-telemetry listener when the TouchDesigner link comes up, which reads as a
-network fault rather than as a bad edit. Write numbers with a decimal point
-and no thousands separators (`1.5`, never `1,5`), and `true` or `false` for
-switches, never `null`.
+{: .note }
+**Editing a kept `.corrupt` file by hand: watch the value types.** Write
+numbers with a decimal point and no thousands separators (`1.5`, never
+`1,5`), and `true` or `false` for switches, never `null`. A wrong type is now
+caught as the configuration loads: the console names the device and the key,
+seeds a fresh session, and keeps your file. It used to load such a value as
+good and then end the telemetry listener when the TouchDesigner link came up,
+which presented as a network fault with no connection to the edit that caused
+it. If you are running a console from before 2026-10-27, that is the failure
+you are looking at.
 
 **What you see.** After a restore, poses or the marker plan are not what you
 expected, and nothing complains.
