@@ -61,6 +61,21 @@ CHECKS = [
      "WebConsole/yolo_seg.py", "BACKOFF_S[-1]"),
     ("console/resilience.md", r"given (\w+) seconds before it counts as failed",
      "WebConsole/yolo_seg.py", "START_TIMEOUT_S"),
+
+    # Ports. A reader copies these into their own configuration, and a wrong
+    # one fails silently on UDP: nothing arrives and nothing complains.
+    ("console/running.md", r"\| `--http PORT` \| `(\d+)`",
+     "WebConsole/server.py", "--http"),
+    ("console/running.md", r"\| `--tdp4-port PORT` \| `(\d+)`",
+     "WebConsole/server.py", "--tdp4-port"),
+    ("console/running.md", r"\| `--sim-port PORT` \| `(\d+)`",
+     "WebConsole/server.py", "--sim-port"),
+    ("console/running.md", r"\| `--f1-port PORT` \| `(\d+)`",
+     "WebConsole/server.py", "--f1-port"),
+    ("console/running.md", r"\| `--f1-hz RATE` \| `([\d.]+)`",
+     "WebConsole/server.py", "--f1-hz"),
+    ("reference/track.md", r"to a host and port you give it \((\d+) by convention\)",
+     "WebConsole/track_emit.py", "CONTROL_PORT"),
 ]
 
 
@@ -78,8 +93,16 @@ def source_state(repo: pathlib.Path, rel: str, working_tree=False):
 
 
 def constant(src: str, name: str):
-    """The value of a module constant, a dict entry (`DICT.key`), or one element
-    of a tuple constant (`NAME[-1]`)."""
+    """The value of a module constant, a dict entry (`DICT.key`), one element of
+    a tuple constant (`NAME[-1]`), or an argparse default (`--flag`).
+
+    Ports live in argparse defaults rather than in named constants, and a port
+    is exactly the kind of number a reader copies into their own config without
+    checking.
+    """
+    if name.startswith("--"):
+        m = re.search(rf'add_argument\("{re.escape(name)}"[^)]*?default=([\d.]+)', src, re.S)
+        return float(m.group(1)) if m else None
     if name.endswith("]"):
         base, idx = name[:-1].split("[")
         m = re.search(rf"^{re.escape(base)}\s*=\s*\((.*?)\)", src, re.M | re.S)
