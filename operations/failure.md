@@ -350,11 +350,19 @@ minute. Check the calibration after any restore rather than assuming it is
 where you left it.
 
 If it does end up seeding — nothing in the backups could be used — **the seeded
-roster does not push its poses to TouchDesigner**. A seed's six default
-positions are not the venue's, and the console pushes poses on every
-TouchDesigner link-up, so a seed used to move the live cloud as a side effect.
-It now holds them until somebody presses Push poses, and Rig health says so
-until then.
+roster does not push its poses to TouchDesigner by itself**. A seed's six
+default positions are not the venue's, and the console pushes poses on every
+TouchDesigner link-up, so a seed used to move the live cloud as a side effect
+of reconnecting. It now holds them, and Rig health says so.
+
+{: .warning }
+The hold is all-or-nothing, and it ends sooner than you would expect. **Any**
+saved pose edit, on **any** phone, marks the whole roster as yours — so
+correcting one phone's height releases the other five phones' default positions
+to TouchDesigner at the next link-up. Press Push poses when the roster really
+is the show's, and until then treat a pose edit on a seeded roster as
+publishing all of it. A per-phone version of this is being built; this page
+will say so when it lands.
 
 Operator: check the roster against the rig. If it is right, Push poses. If it
 is wrong, stop the console, copy the backup you want over the configuration and

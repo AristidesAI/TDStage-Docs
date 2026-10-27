@@ -355,11 +355,15 @@ skipping any that do not and naming each one it skipped.
 
 Two consequences of the seed path that remain, and are now deliberate:
 
-- **A seeded roster does not push poses to TouchDesigner.** A seed's six
-  default positions are certainly not the venue's, and the console pushes poses
-  on every TouchDesigner link-up, so a seed used to move the live cloud as a
-  side effect of reconnecting. It now holds them until somebody presses Push
-  poses, or saves a pose edit, and says so in Rig health until then.
+- **A seeded roster does not push poses to TouchDesigner by itself.** A seed's
+  six default positions are certainly not the venue's, and the console pushes
+  poses on every TouchDesigner link-up, so a seed used to move the live cloud
+  as a side effect of reconnecting. It now holds them and says so in Rig
+  health. The hold is **all-or-nothing**: Push poses ends it, and so does any
+  saved pose edit on any single phone, which releases the other five phones'
+  untouched defaults along with the one you corrected. Treating that as a
+  per-phone confirmation is the mistake to avoid; a per-phone version is being
+  built.
 - **The newest backup is still a minute old at worst.** Backups are taken at
   most once a minute, so a restore loses whatever was saved since. Check the
   calibration after any restore rather than assuming it is the state you left.
@@ -701,9 +705,10 @@ The gap a client still sees is the restart itself, plus the half minute
 One second-order effect, now narrower than it was: when TouchDesigner's link
 comes back up the console pushes it the phone poses it loaded. A console that
 came back from a **backup** therefore moves TouchDesigner's cloud as a side
-effect of reconnecting. A console that came back from a **fresh seed** no
-longer does — a seeded roster holds its poses until somebody presses Push
-poses, because a seed's six default positions are certainly not the venue's.
+effect of reconnecting. A console that came back from a **fresh seed** does not
+do it on its own, because a seed's six default positions are certainly not the
+venue's — but see the all-or-nothing caveat above: one saved pose edit releases
+the whole seed.
 
 **App distribution expiry is unresolved.** Test distribution builds expire after
 90 days. For an engagement running well beyond that, the route is either a
