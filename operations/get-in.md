@@ -289,6 +289,56 @@ follows the principles in Darien Brito's
 every answer with a reason and a fix rather than a bare pass, report overlap
 for every pair, and only polish a match that is already good.
 
+### Walking the stage instead
+
+Cloud matching has one failure no amount of care fixes: **two phones that face
+each other share no surfaces at all.** The back phone looking at the front row
+and the front phone looking back see opposite sides of the same room, and
+nothing in one view appears in the other. That is not an edge case on this rig,
+it is the normal arrangement for covering a stage from both sides.
+
+So there is a second solver that matches something every phone can see at once,
+from any side: **one person walking.** Each phone reports where it thinks that
+person is, frame by frame, in its own levelled frame. Line two phones' paths up
+in time, and the shape of the walk gives the heading and the offset between
+them — no shared scenery required.
+
+Because latency differs per phone, the paths are first slid against each other
+in time to find the best fit: fifty milliseconds at walking pace is six
+centimetres, which is worth correcting before fitting anything.
+
+**The procedure:**
+
+1. **Learn the empty stage first.** The collector waits for this and says so.
+2. Start the walk recording.
+3. **Walk for about twenty seconds, where every phone can see you.** A loop
+   through the middle of the stage, not a line along one edge.
+4. Stop, then solve.
+
+A recording you forget about stops itself after two minutes.
+
+Graded per phone exactly as the cloud solve is, on different evidence — how
+many samples matched, how well they fit, the time offset it found, and how far
+the walk actually spanned. The most common failure is the one the name gives
+away: **the walk was too short**. A walk of less than a metre across gives it
+nothing to fit a heading to, and the fix is to walk a proper loop rather than
+to re-run the solve.
+
+### Using both on one rig
+
+They compose, and this is the arrangement worth knowing, because neither
+solver covers a whole rig on its own:
+
+1. **Run the cloud solve first.** It places every phone that shares scenery
+   with a neighbour.
+2. **Run the walk solve for the phones it refused**, by listing them.
+
+Every phone whose pose has already been checked stays exactly where it is and
+is reported as `FIXED` — the walk places only the phones you listed, into the
+frame the others already define. A pose nobody has confirmed is never used as a
+root, so a seeded or restored position cannot quietly become the thing the rest
+of the rig is measured against.
+
 ## 5. Verification before you release the rig
 
 Do not call a rig built until all of these pass:

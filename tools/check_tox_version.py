@@ -28,7 +28,27 @@ TD = ROOT.parent / "TDStage" / "TD"
 VER = re.compile(r"TDStageConductor_v0*(\d+)\.tox|\bv0*(\d+)\b")
 
 
-def versions_on_disk(td=TD):
+def versions_on_disk(td=TD, working_tree=False):
+    """The numbered versions, COMMITTED unless asked otherwise.
+
+    An untracked .tox is work in progress: another session saves one, has not
+    written its CHANGELOG entry yet, and the docs cannot say what changed in it.
+    Reading the filesystem made this check fail on somebody else's unfinished
+    save, which is noise rather than drift - the same reason the generators read
+    `git show HEAD:` instead of the checkout.
+    """
+    if not working_tree:
+        import subprocess
+        try:
+            out = subprocess.run(["git", "-C", str(td.parent), "ls-tree", "-r",
+                                  "HEAD", "--name-only"],
+                                 capture_output=True, text=True, check=True).stdout
+            got = sorted(int(m.group(1)) for line in out.splitlines()
+                         if (m := re.search(r"TDStageConductor_v0*(\d+)\.tox$", line)))
+            if got:
+                return got
+        except Exception:
+            pass
     return sorted(int(m.group(1))
                   for f in td.glob("TDStageConductor_v*.tox")
                   if (m := re.search(r"_v0*(\d+)\.tox$", f.name)))
@@ -51,7 +71,7 @@ def versions_in_docs(root=ROOT):
 
 
 def main():
-    disk = versions_on_disk()
+    disk = versions_on_disk(working_tree="--working-tree" in sys.argv)
     if not disk:
         print(f"TDStage project not found beside the docs ({TD}) - skipping")
         return

@@ -156,6 +156,12 @@ like an obvious second entry and are not: the app builds them by interpolation,
 is not there. A check that cries wolf gets switched off, which costs more than
 never having written it.
 
+Everything that reads the system repository reads it at **HEAD**, including
+the project-version check, which counts committed `.tox` files rather than what
+is on disk. An untracked save is somebody's work in progress with no changelog
+entry yet, and the documentation cannot say what changed in it. `--working-tree`
+opts into the checkout on every one of them.
+
 `tools/check_tox_version.py` covers the one number no generator owns: the
 TouchDesigner project's version. Several pages quote it, and a new saved version
 usually means some saved parameter default moved with it, so a stale number is

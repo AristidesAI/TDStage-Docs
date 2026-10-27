@@ -196,6 +196,35 @@ A violation is counted and reported in the console rather than sent. If you
 find one of these broken on the wire, it is worth reporting as a bug rather
 than defended against.
 
+## What a placement change does to you
+
+Moving a phone, or a phone rejoining the stream, changes what that phone
+contributes to a scene the tracker has already learned. The handling is worth
+knowing because it is **per phone**, and because one setting turns it into
+something much blunter.
+
+**Normally:** that phone's points are left out for about thirty seconds while
+its view is re-learned. **Every other phone keeps tracking, and performer ids
+survive** — you lose one view's contribution, not the cast list. If you would
+rather not wait, telling the console the stage is empty ends it immediately.
+
+**With the background frozen** (an option for keeping a performer who stands
+still from fading into the scenery): a real move clears the frozen background
+outright, and **nothing is published at all** until somebody tells the console
+the stage is empty again. The console says so in Rig health. This is the
+trade: freezing buys you a performer who can stand still indefinitely, and
+costs you an automatic recovery from moving a phone.
+
+{: .warning }
+If you move a stand during a show with the background frozen, the tracking
+output goes to nobody and stays there until a person acts. That is not a
+failure to diagnose, it is the setting doing what it says — but it is worth
+knowing before the first time it happens rather than during it.
+
+The button an operator presses is **Stage is empty now**. Rig health's warning
+calls the same thing "Learn now", which is worth knowing when you are looking
+for a button with that label and cannot find it.
+
 ## Guarantees the console does not make
 
 **Delivery.** It is UDP. A gap is normal and is not a disconnection. There is
