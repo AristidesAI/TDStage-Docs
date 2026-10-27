@@ -79,6 +79,7 @@ healthy until someone asks for the feature.
 | `torch`, `torchvision` | **Not** in `requirements.txt`, installed by `install.bat` from the PyTorch index | imported inside `yolo_worker.py` and `seg_gpu.py` | The YOLO worker cannot start at all. Deliberately excluded from `requirements.txt` so that pip does not pull a CPU build from PyPI over a CUDA build. |
 | `pyobjc-framework-Vision`, `pyobjc-framework-Quartz` (`>=10`) | `requirements.txt`, macOS only via a `sys_platform` marker | `vision_seg.py`, `person_obs.py`, `hand_track.py` | Apple Vision person masks, body pose and hand tracking. On anything other than macOS this is the normal state and the YOLO path covers it. |
 | `cyndilib` | Commented out of `requirements.txt`; `install.bat` attempts it separately and carries on if it fails | `ndi_out.py` | Video-over-IP output of the finished view. Nothing else. |
+| `mediapipe` 1.1.1 | `requirements.txt` (as a comment) and `windows/install.bat` | `yolo_worker.py`, fail open | Hand landmarks on the cross-platform path. Without it hands fall back to the body pose's wrists. Installed with `--no-deps`: see below. |
 | `mcap`, `mcap-ros2-support` | `requirements.txt` | not imported by the console | The MCAP exporter tool. No console feature depends on them. |
 | `lz4` (`>=4.0,<5`) | `requirements.txt` | not imported by the console | Reading version 1 take files. Version 2 takes use a shuffle and deflate codec from the standard library and are unaffected. |
 | `opencv-python` | Not declared; arrives as an `ultralytics` dependency | `hlib.py`, `hlib_grid.py`, `tox_dats/rgb_lib.py`, all guarded | Plan-view clustering in the shared isolation library when it runs outside TouchDesigner, and the hand overlay circles in the RGB view. |
@@ -110,6 +111,7 @@ path.
 |---|---|---|
 | `yolo26n-seg.pt` | 6.7 MB | Person instance masks. Without it `AVAILABLE` goes false. |
 | `yolo26n-pose.pt` | 7.9 MB | Body pose. Optional: with no pose weights the pose option simply cannot be turned on. |
+| `hand_landmarker.task` | 7.8 MB | MediaPipe hand landmarks (Apache-2.0, Google). Optional, and needs `mediapipe`. |
 
 ### Install commands that work
 
@@ -146,6 +148,38 @@ the interpreter the worker will actually use**, the model files, whether the
 ports are free, the firewall rules with the exact commands to add the missing
 ones, this machine's addresses, and whether any phone telemetry arrives. Exit
 code 0 means no failures.
+
+### MediaPipe is installed without its dependencies, deliberately
+
+`mediapipe` pulls `opencv-contrib-python`, which breaks the
+`opencv-python` that `ultralytics` needs in the same environment. Both live in
+one virtualenv here, so MediaPipe is installed with its dependency resolution
+switched off:
+
+```
+pip install --no-deps "mediapipe==1.1.1" "absl-py>=2.3,<3"
+```
+
+The Windows installer does exactly that, and warns rather than failing if it
+does not take: hands then fall back to the body pose's wrists. The model is
+bundled as `models/hand_landmarker.task`, so there is no download at a venue.
+
+`--no-deps` means pip will not tell you if a future MediaPipe needs something
+new. That is the cost of keeping both libraries in one environment, and it is
+a deliberate trade rather than an oversight.
+
+### Running the Windows vision path on a Mac
+
+`TDSTAGE_VISION=portable` turns Apple Vision off even where it exists, so a
+Mac runs the same path the show machine runs: YOLO instance masks and body
+pose plus MediaPipe hand landmarks, all inside the worker process.
+
+```
+TDSTAGE_VISION=portable python3 server.py --http 9080 --listen 9001
+```
+
+Worth knowing before a get-in: it is the only way to test what the show
+machine will actually do without being in front of the show machine.
 
 ### Declared against actual: the mismatches
 
