@@ -17,6 +17,7 @@ section. Go to [Operations](../operations/).
 
 | Page | Answers |
 |---|---|
+| [The tracking output](track.html) | **Start here if you are writing the receiver.** Every message and argument, the coordinate frame, what an id promises, and the guarantees made and not made. |
 | [Ports and topology](ports.html) | What listens where, which surface is UDP and which is not, and what must never carry depth. |
 | [Why it is built this way](design.html) | The decisions that look arbitrary from outside: UDP with no TCP option, depth on the wire instead of points, dumb phones, receiver-side separation, and the one limit that must never be claimed away. |
 | [Dependencies and requirements](dependencies.html) | What each side needs to run, where it is declared, and what breaks without it |
@@ -29,7 +30,7 @@ the shapes are.
 
 | You want | Surface | Shape |
 |---|---|---|
-| Performer positions, live, into a show control system | OSC over UDP | Small typed messages, fire and forget, no delivery guarantee |
+| Performer positions, live, into a show control system | OSC over UDP | Small typed messages, fire and forget, no delivery guarantee. Documented message by message on [The tracking output](track.html). |
 | Performer positions into something that speaks web protocols | A websocket over TCP | A connected stream. The console reports how many clients are attached. |
 | Roster, settings, health, control, anything a person would press | HTTP | Request and response, from a browser or a script |
 | A picture of the cloud, for a video-native system | Video over IP | An image. A picture of the data, not the data. |
