@@ -62,6 +62,13 @@ down to 20 ([#31](https://github.com/AristidesAI/TDStage/issues/31)). An
 absolute floor keeps a hot phone useful instead of letting a thermal problem
 become a tracking problem.
 
+**A hot phone now sheds colour before it sheds frame rate.** By default the
+colour plane comes off the wire at *serious*, ahead of any rate cut, which is
+the right order: colour costs that phone half its bandwidth and is sampled by
+the person model about nine times a second anyway, while frame rate is what
+tracking is made of. It comes back when the phone cools, on the same hold as
+the rate.
+
 **Ping all** (3) asks every phone with a known IP for a reply, disabled ones
 included, and changes nothing on them. The reply comes back over the telemetry
 path rather than directly, so silence means *either* off the network *or*

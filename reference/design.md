@@ -178,6 +178,24 @@ The options, with their link loads and what each gives up, are in
 Ari's; this page's job is to make sure it is taken knowing that the model's
 appetite for colour is smaller than the wire's.
 
+Two things make reduced-rate colour work rather than merely cost less, and both
+were built because sending colour intermittently used to break something:
+
+- **A frame without colour keeps the colours it had.** Each point borrows the
+  phone's last real image, up to a second old and on the same grid. Without
+  that, every point of a colourless frame was **black**, so the coloured cloud,
+  the video output and the appearance colours the tracker uses would have
+  blinked black on every such frame — which is precisely what sending colour
+  less often was supposed to protect.
+- **A phone that is moving gets slightly stale colours** for up to that second,
+  because the held image is pinned to the grid rather than to the scene. On a
+  phone on a stand this is invisible; it is worth knowing before anybody hand
+  holds one.
+
+**A hot phone does this by itself.** The thermal ladder sheds the colour plane
+before it cuts frame rate, so a phone in trouble halves its own bandwidth and
+keeps its rate, and picks colour back up when it cools.
+
 {: .note }
 Those bridge figures were measured over loopback. That is the right way to find
 the software's own ceiling, and it skips a real network card's receive path and
