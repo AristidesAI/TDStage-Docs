@@ -48,7 +48,10 @@ def _font(size):
 def annotate(src, dst, marks, caption=None, scale=2):
     """Draw numbered boxes on `src` and write `dst`.
 
-    `marks` is a list of (x, y, w, h, label). `scale` upsamples first so the
+    `marks` is a list of (x, y, w, h, label) or (x, y, w, h, label, (dx, dy)),
+    where the optional pair nudges the number badge away from its default
+    top-left corner. Dense panels need it: two badges on adjacent controls
+    overlap each other and the label underneath. `scale` upsamples first so the
     strokes and numerals stay crisp on a high-density screen; a screenshot
     taken at 800px wide is otherwise unreadable once a browser scales it.
     """
@@ -61,7 +64,10 @@ def annotate(src, dst, marks, caption=None, scale=2):
     box_w = max(2, round(1.5 * scale))
     f_num = _font(int(19 * scale))
 
-    for (x, y, w, h, label) in marks:
+    for mark in marks:
+        # An optional 6th element nudges the badge, for clusters of controls
+        # too close together for the default corner placement to stay legible.
+        (x, y, w, h, label), nudge = mark[:5], (mark[5] if len(mark) > 5 else (0, 0))
         x, y, w, h = x * scale, y * scale, w * scale, h * scale
         # Dim nothing: a screenshot is evidence, so the original pixels stay
         # readable and the annotation sits on top of them.
@@ -69,8 +75,8 @@ def annotate(src, dst, marks, caption=None, scale=2):
                             outline=ACCENT, width=box_w)
         # The badge hangs off the top-left corner, clamped into frame so a
         # control at the very edge still gets a visible number.
-        cx = max(r + 2, x - r // 2)
-        cy = max(r + 2, y - r // 2)
+        cx = max(r + 2, x - r // 2 + nudge[0] * scale)
+        cy = max(r + 2, y - r // 2 + nudge[1] * scale)
         d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=SHADOW, outline=ACCENT,
                   width=box_w)
         tb = d.textbbox((0, 0), label, font=f_num)
@@ -116,7 +122,8 @@ def demo():
     src = pathlib.Path(tempfile.mkdtemp()) / "in.png"
     Image.new("RGB", (200, 120), (30, 30, 30)).save(src)
     dst = src.parent / "out.webp"
-    size = annotate(src, dst, [(20, 20, 60, 30, "1")], caption="x", scale=2)
+    size = annotate(src, dst, [(20, 20, 60, 30, "1"),
+                               (90, 20, 60, 30, "2", (0, 40))], caption="x", scale=2)
     assert dst.exists(), "no output written"
     assert size[0] == 400, size
     px = Image.open(dst).convert("RGB").getdata()

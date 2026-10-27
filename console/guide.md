@@ -110,6 +110,43 @@ stage layout also sets a rig-wide size from the layout's own sheet size, so if
 you loaded a plan this may already be correct. Confirm it anyway: the plan can
 only tell you what it assumed, not what your printer did.
 
+## Sending the tracking output
+
+![The Live view client output panel, with eight controls numbered](../assets/screens/console-live-client-output.webp)
+
+This is the panel another system is waiting on. The stage view beside it is
+the console's own picture and is not what anyone downstream receives.
+
+**Send /track** (3) starts the tracking output to the host (4) and port (5)
+beside it. Nothing is emitted until that is on, which is worth checking before
+telling anyone their receiver is broken.
+
+**Record /track** (6) writes the same output to a file. That file is what
+turns an impression into a number: it can be scored afterwards for time to
+acquire, identity losses and position error. See
+[Evidence and claims](../operations/evidence.html).
+
+**Hands** (7) decides whether hand positions ride in the bundle.
+
+**Start simulator** (2) runs synthetic phones, so the whole chain can be
+exercised with no hardware present. Useful for proving a receiver before a
+rig exists.
+
+### The console telling you what it cannot do
+
+Look at **8**. The video output is reporting itself unavailable, and the line
+under it gives the reason: a module is missing.
+
+That is the system working as designed rather than failing. The console boots
+with optional pieces absent instead of refusing to start, so a missing video
+library costs you the video output and nothing else. The alternative, a
+console that will not start because one optional dependency is absent, is
+worse at 6pm on a show day.
+
+The cost of that choice is that a dead feature can look like a bug. Which is
+why the reason is printed next to it, and why
+[Rig health](troubleshooting.html) exists.
+
 ## Where to go next
 
 - [Running the console](running.html) for installation and the command line
