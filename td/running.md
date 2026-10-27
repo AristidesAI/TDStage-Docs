@@ -27,7 +27,7 @@ numbered snapshots, so the file in the repository is the working hub.
 `TD/` also holds numbered snapshots, `TDStageConductor_v01.tox` through to the
 current highest number. These are history. Always work from
 `TDStageConductor.tox`, which is re-saved alongside each new snapshot. On
-2026-10-27 the working copy was byte-identical to `TDStageConductor_v80.tox`,
+2026-10-27 the working copy was byte-identical to `TDStageConductor_v81.tox`,
 checked by checksum.
 
 ## The topology

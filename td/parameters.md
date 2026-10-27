@@ -21,7 +21,7 @@ it is read, which is often the thing you actually want to know:
 paths side by side, and where each parameter bites.
 
 One caveat on the generated list: `tox_params_live.md` was generated at v63 and
-the working copy has moved on since (v80 at the time of writing). A multi-component parameter is printed there as its X
+the working copy has moved on since (v81 at the time of writing). A multi-component parameter is printed there as its X
 component alone. The operator or shader that **reads** a parameter is the real
 contract, and that is what the tables below were checked against.
 
@@ -169,13 +169,23 @@ reach for when the cloud is right but sitting slightly wrong.
 | `Trimrx`, `Trimry`, `Trimrz` | Cloud Rotate X/Y/Z (deg) | Float | 0.0 | Get-in |
 | `Trimreset` | Reset Cloud Offset/Rotate | Pulse | - | Get-in |
 
-Saved working copy: `Trimy` 0.25, the rest zero.
+Saved working copy: all zero, since v81.
+
+{: .warning }
+`Trimy` was 0.25 until v81, and it is the second half of the same bench pair as
+`Flooroffset`. On the GPU path it is baked into every pose, so every
+stage-frame stream — the simulators, and any marker-calibrated phone — sat a
+quarter of a metre above the floor. v80 cleared `Flooroffset` and left this
+one, which is the lesson: a bench artefact is rarely a single parameter, and
+clearing the one you noticed is not the same as clearing them all. `Trimreset`
+zeroes the whole group in one pulse, which is the safe thing to do before a
+numbered save.
 
 ### Stage volume and segmentation
 
 | Parameter | Label | Type | Default | When | Path | What it does |
 |---|---|---|---|---|---|---|
-| `Floorcut` | Ground Cutoff Height (m) | Float | 0.06 | Get-in | both | Points below this height are floor. On the GPU path this is the Y minimum of the crop, and a band just under it is kept flagged so feet are not lost. Saved working copy: 0. |
+| `Floorcut` | Ground Cutoff Height (m) | Float | 0.06 | Get-in | both | Points below this height are floor. On the GPU path this is the Y minimum of the crop, and a band just under it is kept flagged so feet are not lost. Saved working copy: 0.06 since v81; it was 0, which combined with the lifted floor above meant nothing was cut at all. |
 | `Geoceiling` | Ceiling Cutoff (m) | Float | 2.4 | Get-in | both | Points above this are ceiling, trussing and lights. On the GPU path this is the Y maximum of the crop. Saved working copy: 4. |
 | `Segmode` | Segmentation Mode | Menu `off` / `geometric` / `learned` | `off` | Get-in | both | `off` passes the full cloud, for setup and inspection. `geometric` cuts floor, ceiling and stage box, then density and clustering, and works from the first frame on a levelled cloud with nothing learned. `learned` subtracts the learned background first and is the sharpest, but needs a `Learnbg` pass on an empty stage. Saved working copy: `geometric`. |
 
@@ -290,7 +300,7 @@ rather than trusting this table.
 | `Mergegpu` | on |
 | `Segmode` | geometric |
 | `Stalesecs` | 0.28 |
-| `Floorcut` | 0 |
+| `Floorcut` | 0.06 |
 | `Geoceiling` | 4 |
 | `Learnframes` | 450 |
 | `Mergeprecut` | off |
@@ -306,7 +316,7 @@ rather than trusting this table.
 | `Levelframes` | 56 |
 | `Levelrecentre` | off |
 | `Levelmaxtilt` | 53.1 |
-| `Trimy` | 0.25 |
+| `Trimy` | 0 |
 | `Handsrate` | 30 |
 | `Regdevice` | 1 |
 | `Regyaw` | 0 |
@@ -339,7 +349,10 @@ console, returned early and did nothing at all. A phone would land in the wrong
 place and the one control an operator would reach for was inert.
 
 v80 cleared the table, set `Regdevice` back to 1, zeroed the `Align` knobs and
-put `Posesource` back on `console`. The lesson generalises past this one file:
+put `Posesource` back on `console`. **v81 then found two more**: `Trimy` was
+still 0.25, lifting every stage-frame point a quarter of a metre, and
+`Floorcut` was 0 so that lifted floor was never cut either. Two rounds to clear
+one bench session. The lesson generalises past this one file:
 
 {: .warning }
 Anything you nudge by hand on a bench is saved into the component. Zero the

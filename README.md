@@ -73,6 +73,7 @@ python3 tools/check_diagrams.py
 python3 tools/check_links.py
 python3 tools/check_tox_version.py
 python3 tools/check_constants.py
+python3 tools/check_contracts.py
 ```
 
 The link checker resolves every internal link, image and heading anchor. A
@@ -128,6 +129,18 @@ rewording a sentence would switch its check off silently, which is exactly the
 failure the file exists to prevent — re-point the entry at the new wording
 instead. Like the generators, it reads the committed code unless you pass
 `--working-tree`.
+
+`tools/check_contracts.py` checks the tables that are really **sets**, where
+the whole value is that nothing is missing from either side. The `/ctl` verbs
+are the case today: an integrator sends what that table says, so a verb in the
+app and not on the page is a capability nobody knows about, and a verb on the
+page and not in the app is an instruction that silently does nothing.
+
+Only lists the code states **literally** belong in it. The telemetry paths look
+like an obvious second entry and are not: the app builds them by interpolation,
+`osc.send("\(ns)/calib/pose", ...)`, so matching the literal reports drift that
+is not there. A check that cries wolf gets switched off, which costs more than
+never having written it.
 
 `tools/check_tox_version.py` covers the one number no generator owns: the
 TouchDesigner project's version. Several pages quote it, and a new saved version
