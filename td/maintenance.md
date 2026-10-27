@@ -253,10 +253,27 @@ learned background for that phone is wrong.
 ./Tools/backup_state.sh [destination]
 ```
 
-Writes a snapshot to `~/TDStage-Backups/<time>/`: both repositories as
-verified git bundles, uncommitted work as patches, the console configuration
-and its rotating backups, the tox, the TouchDesigner learned state, and a
-manifest with checksums and restore steps.
+Writes a snapshot to `~/TDStage-Backups/<time>/` containing:
+
+- both repositories as **verified** git bundles, which clone with no network
+- uncommitted work as a binary-safe patch (`git diff --binary --full-index`,
+  so a modified tox restores rather than arriving corrupt)
+- an archive of untracked files, which a patch alone would miss
+- the console configuration with its rotating backups, the profiles and the log
+- the working tox and the newest numbered one
+- the TouchDesigner learned state from the platform's application-support
+  folder, with a warning when that folder is empty
+- a manifest carrying a checksum for every file and the restore steps
+
+Restoring means cloning the bundle, applying the patch if there is one, and
+extracting the untracked archive if there is one. **Verified on macOS against
+a dirty tree.**
+
+{: .warning }
+On the Windows show machine this needs Git Bash, and until the repository
+pins shell scripts to LF line endings a default Git for Windows checkout
+breaks the script on its first line. Run it from a checkout made with
+`core.autocrlf=false`.
 
 Run it before anything you might want to undo.
 

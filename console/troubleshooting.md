@@ -6,6 +6,16 @@ nav_order: 6
 
 # Troubleshooting the console
 
+
+{: .warning }
+**Editing a kept `.corrupt` file by hand: watch the value types.** The boot
+check tests the file's shape, not its values, so a wrong-typed device field
+passes it. The console then reports **Restored** and goes on to kill the
+telemetry listener when the TouchDesigner link comes up, which reads as a
+network fault rather than as a bad edit. Write numbers with a decimal point
+and no thousands separators (`1.5`, never `1,5`), and `true` or `false` for
+switches, never `null`.
+
 ## Read the generated page first
 
 The console raises about fifty named problems of its own, each with the fix it
