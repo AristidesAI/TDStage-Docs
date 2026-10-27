@@ -28,13 +28,25 @@ a leftover to remove, not a choice to offer.
 
 ## Current topology
 
-```
-phones ──UDP :9003──▶ bridge ──shared memory──▶ TouchDesigner
-   │                    │
-   │                    └──UDP :9013──▶ console
-   │
-   ├──UDP :9000──▶ telemetry
-   └◀─UDP :9010──  control
+```mermaid
+flowchart LR
+  P1["iPhone 1<br/>LiDAR depth"]
+  P2["iPhone 2"]
+  PN["iPhone n"]
+  BR{{"tdp4_bridge.py<br/>binds :9003"}}
+  SHM[("shared memory<br/>read as port 9004")]
+  TD["TouchDesigner<br/>merge, clean, fuse"]
+  CO["Web console<br/>:9013"]
+  OUT["Visual output"]
+  CLI["Other systems<br/>OSC :7000"]
+
+  P1 -- "TDP4 / UDP :9003" --> BR
+  P2 --> BR
+  PN --> BR
+  BR --> SHM --> TD --> OUT
+  BR -- ":9013" --> CO --> CLI
+  P1 -. "telemetry :9000" .-> TD
+  CO -. "control :9010" .-> P1
 ```
 
 The bridge receives the phones in its own process and hands TouchDesigner

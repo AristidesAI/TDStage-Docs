@@ -9,6 +9,12 @@ search:
   heading_level: 2
   previews: 2
 heading_anchors: true
+
+# Diagrams. just-the-docs renders ```mermaid fenced blocks when this is set;
+# without it they fall back to plain code blocks, which is a silent failure
+# rather than a visible one, so check a page after changing the version.
+mermaid:
+  version: "11.4.1"
 back_to_top: true
 back_to_top_text: "Back to top"
 
