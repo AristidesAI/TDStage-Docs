@@ -136,17 +136,30 @@ the phone places *itself* at the wrong distance along its own line of sight.
 Depth is measured by the LiDAR and stays metric, so inside one phone's cloud
 every distance is still correct.
 
-The direction is predictable. ARKit works out how far away the marker is from
-how big you said it is against how big it looks, so **declaring it too small
-makes the phone believe it is standing closer to its marker than it is**.
-Everything that phone contributes is then placed too close to that marker,
-shifted along its own line of sight by `(1 − declared ÷ true)` times its
-distance to the marker: about 11 % of 6 m is two thirds of a metre.
+The direction is predictable, and it is the opposite of what most people
+guess. ARKit works out how far away the marker is from how big you said it is
+against how big it looks, so **declaring it too small makes the phone believe
+it is standing nearer its marker than it is** — 11 % of its distance to it.
 
-So the result is not a stage that is uniformly too small. It is a set of clouds
-each pulled toward its own marker by a different amount, in a different
-direction. The symptom is phones disagreeing with each other: a performer
-smeared into two bodies, or a floor that will not sit flat.
+The phone's own depth readings are still true metres, so it then lays its
+points out from a starting position that is too near. The whole cloud moves
+rigidly **away from the phone**, along its line of sight toward the marker, by
+`(1 − declared ÷ true)` times the phone-to-marker distance. About 0.66 m for a
+phone 6 m from its marker.
+
+That has one consequence that reads as nonsense until you have followed the
+arithmetic: the patch of floor where the marker actually sits lands 0.66 m
+**beyond** the marker, not nearer it. The phone starts 0.66 m too close and
+then adds the full measured range.
+
+So the result is not a stage that is uniformly too small, and the floor does
+not tilt — a rigid translation cannot tilt anything. What you get is each
+phone's cloud sliding in its own direction. **Two phones facing each other
+across the stage slide in opposite directions, so their copies of one performer
+separate by the sum of both shifts** — about 1.3 m for two phones 6 m out. The
+symptom to look for is one performer appearing twice, not a blur. A phone
+mounted high and looking down also drops its cloud, by 11 % of the height it
+has on the marker.
 
 Order of work: set the size (1), **Apply to all phones** (2) so every phone
 is solving against the same number, then export (3) or print (4).
