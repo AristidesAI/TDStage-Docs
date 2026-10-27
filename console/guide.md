@@ -14,9 +14,14 @@ pasted into a call sheet, or read on a phone where the caption has wrapped
 somewhere else.
 
 {: .note }
-Screens were captured at a narrow browser width so nothing is cut off. The
-console reflows, so a wide window puts the same controls on fewer rows. The
-labels do not change.
+**About these screens.** They were captured on 2026-10-27 at a narrow browser
+width so nothing is cut off; the console reflows, so a wide window puts the
+same controls on fewer rows. Since then the console has had a visual pass —
+plainer buttons, labelled control rows, explanations moved into hover text — so
+the chrome around the controls looks different from what you see here. Every
+control named on this page still exists, in the same place, under the same
+label. One caption burned into the markers screen is now wrong, and is called
+out where it matters.
 
 ## Starting the array
 
