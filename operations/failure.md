@@ -126,19 +126,33 @@ outage entirely.
 
 Automatic: the phone resumes streaming when the app relaunches. If the show
 was started with **Start show**, the console's auto-recover then sends start to
-a phone that is back online but idle.
-
-{: .warning }
-**It comes back with its screen lit** ([#49](https://github.com/AristidesAI/TDStage/issues/49)).
-Blackout lives only in the app's memory, so a phone that crashed, rebooted or
-was relaunched by the watchdog rejoins the cloud at full brightness, and the
-console's auto-recover sends it start and nothing else. Nothing darkens it and
-nothing warns. After any relaunch during a show, press **Blackout all** again,
-or the audience sees the phone before you do. It does so only once the phone has
+a phone that is back online but idle. It does so only once the phone has
 stayed back for twelve seconds without dropping again, and
 at most once every thirty seconds per phone. A phone that flaps restarts that
 twelve second clock each time, so the console waits for a phone that is back
 and staying back instead of chasing one that is still coming and going.
+
+{: .warning }
+**On the builds the phones have today, it comes back with its screen lit**
+([#49](https://github.com/AristidesAI/TDStage/issues/49)). Blackout used to
+live only in the app's memory, so a phone that crashed, rebooted or was
+relaunched by the watchdog rejoined the cloud at full brightness, and nothing
+darkened it or warned. That is fixed in code on both sides, after the current
+TestFlight builds. The app now saves the blackout as `stage.blackout` and goes
+dark again when it auto-resumes, which is a relaunch with the show flag still
+set or a profile's `autoStart`; an app opened by hand with neither comes up
+lit. The console remembers which screens you want dark (Start show and
+Blackout set it, Wake clears it, and after a console restart an armed show
+counts as wanting them dark), re-sends blackout to a phone its auto-recover
+restarts unless you woke that phone, and while the show is armed raises the
+Rig health row **Screen lit during the show** for a phone streaming lit that
+nobody woke on purpose. **The
+archives of 2026-11-03, TDStage 1.0 (2) and TDStage AR 1.1 (4), were exported
+before that fix**, so a phone on build 2 or build 4 or older still relaunches
+lit, and only the console's re-send darkens it, only if the show was armed. On
+those builds, after any relaunch during a show, press **Blackout all** again,
+or the audience sees the phone before you do. Which build a phone actually has
+is on the [install page](../ios/install.html).
 
 That qualifier matters. Auto-recover is off when the console boots, and
 **Start all does not arm it**. Only Start show arms it, and Standby and Stop
@@ -253,7 +267,10 @@ this rig) and the phone goes on streaming to the address it learned, which no
 longer exists. Nothing on either end reports an error; the stream simply stops.
 
 **The console watches for this and says so**, naming the old address and the
-new one, with the fix attached. Press **Autofix** on that phone: the console
+new one, with the fix attached. With more than one phone on a cable, every
+cable is watched on its own and each affected phone gets its own row (since
+2026-11-03; before that only the first cable was watched), and `GET /api/rig`
+lists the cables the console can see, one entry per link. Press **Autofix** on that phone: the console
 sends it a message over the cable, and the phone learns the new address from
 where that message came from. The re-teaching is one click rather than
 automatic, on purpose, because the recovery rules exist to stop the console

@@ -109,14 +109,23 @@ environment variables have to be set, and they are **Ari's key**, so nobody
 else can push the upload button.
 
 Each run stamps the build with its archive date, which is what the phones then
-report.
+report. `--no-bump` runs the same archive and export without touching the build
+number. The script also passes the short git hash of HEAD into the build, as
+the `TDStageGitCommit` key in its Info.plist, which the phone reports as the
+commit on `/device/app`; when the app source has uncommitted changes the script
+says so, because then the hash is not the whole story. An Xcode Archive gets
+neither stamp, so that phone reports an empty commit as well as the missing
+date described above.
 
 {: .note }
 Two signed builds were exported on 2026-11-03, both stamped that date:
 **TDStage AR 1.1 (4)** was uploaded that evening, so it stops launching on
 2027-02-01 and Rig health starts warning on 2027-01-17. **TDStage 1.0 (2)** is
 exported and signed but not uploaded; its ninety days do not start until
-somebody uploads it.
+somebody uploads it. Both archives predate two app fixes committed later the
+same day, the watchdog's 30 s hold on a withheld relaunch and blackout
+surviving a relaunch, so a tester on 1.1 (4) still sees a relaunched phone come
+back lit.
 
 ---
 
@@ -161,10 +170,19 @@ warning.
 The guard is on the *flag*, not on the number, so phone 1 is reachable: the
 banner's own confirm button clears it without changing anything.
 
+The refusal is reported as well as shown. The phone writes `START refused:
+Device ID N was never set on this phone` to its `/device/rec/note` telemetry, so
+a Start pressed in the console is answered with the reason rather than with
+silence. Setting or confirming the id clears the note.
+
 Give each phone its own id, 1 to 9, before it leaves base. Use the **Device ID**
 stepper on the LIVE page, or push it from the console. If the phone really is
 phone 1, press the banner's own confirm button: the point is that a person
 chose, not that the number changed.
+
+The stepper applies the network settings the moment the number changes, so
+changing the id on a phone that is already streaming re-points the stream and
+the telemetry namespace at once, with no stop and start.
 
 Write the id on the phone's case, or on its mount.
 
@@ -183,12 +201,28 @@ on 9003, telemetry on 9000, control on 9010.
 
 There is nothing to connect. The phone starts sending when you press START.
 
+Nobody types the phone's address into the console either: it learns one from
+the source address of the telemetry the phone sends it. The phone also
+advertises its control listener over Bonjour as `_tdlidar-ctl._udp`, so a
+receiver on the same network that browses for that service finds every phone
+and its control port. [The control surface](ctl.html) has the listener's
+details.
+
 A phone can learn the address of a console on a USB cable, but it cannot work
 it out alone: both ends of a cable pick a random link-local address, and a
 discovery broadcast needs an entitlement the app does not have. The phone reads
-the address off the first command packet it receives, so the console has to
-send to the phone once (its **Send telemetry here** button) before the
+the address off the source of a command packet that arrives over the cable, so
+the console has to send to the phone once (its **Send telemetry here** button) before the
 **Cable** option in the LIVE page's Link picker points anywhere.
+
+Cable is one of four choices in that picker: Auto, Ethernet, Cable and Wi-Fi,
+with a **Prefer Ethernet (PoE / cable)** toggle shown under Auto only. The
+Ethernet choice, for a phone on a PoE adapter, learns the show machine's address
+the same way, from a command packet's source address, and until it has one the caption
+under the picker says what is missing: no Ethernet adapter with an address, or
+Ethernet up but the show machine's address on it unknown, with the console's
+**Send telemetry here** or a typed TD/Mac Host as the fix. [The LIVE
+page](live.html#link) describes each choice and what the Link line then reads.
 
 ---
 
@@ -224,6 +258,13 @@ replaying, orange while a start is armed, and otherwise green when the socket
 is up and red when it is not. A blacked-out phone that is quietly recording
 still says so.
 
+Blackout is remembered, under `stage.blackout`: a phone that auto-resumes
+after a crash, a reboot or a watchdog relaunch goes dark again if it was dark
+when the app died, while a phone you open by hand at the stand comes up lit.
+The console's half of this, which builds carry the fix, and what to do on the
+builds that do not, are under
+[a phone's app crashes](../operations/failure.html#a-phones-app-crashes-or-is-killed).
+
 ---
 
 ## Before you call a phone ready
@@ -255,7 +296,12 @@ given id fills that row.
 Run only one of them at a time on a given phone. Both want the same rear LiDAR
 and the same ports.
 
-Takes are interchangeable between them. Both export the take type under one
+Takes are interchangeable between them. Both apps also expose their
+`Documents/Takes` folder in the Files app and in Finder over the cable
+(`UIFileSharingEnabled` in each `Info.plist`; this app also sets
+`LSSupportsOpeningDocumentsInPlace`), which is how a take leaves a phone at a
+get-in with no build and no cable tool; the steps are on [the RECORD
+page](record.html#getting-a-take-off-a-phone). Both export the take type under one
 identifier, `aristides.lintzeris.tdstage.take`, with the same conformances,
 description and filename-extension tag, so a take recorded in either app opens
 into either app.

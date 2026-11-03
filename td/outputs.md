@@ -60,9 +60,24 @@ three phones pile up on top of each other at the origin. The hub applies a
 console roster when `Posesource` is `console` or from the Align page knobs
 otherwise, and then the stage level solve and the manual trim.
 
+Both sources write the same `registration` table, so switching `Posesource`
+changes nothing about the output's shape. It changes who may write the table.
+On `manual` the hub ignores every `/tdstage/pose` and `/tdstage/tilt` the
+console pushes (the link's status line counts them under `ignored`) and the
+Align knobs are the only writer; on `console` a pushed pose overwrites whatever
+the knobs set. Check which source is live before wiring content against the
+cloud. The saved working copy ships with `Posesource` on `console`.
+
 The full transform, per phone, is `Trim . Reg . Floor . Level . E`.
 [How the pipeline is built](pipeline.html#where-the-per-device-registration-is-applied)
 has the terms and where each one is applied.
+
+The console's tilt correction rides the same table. `/tdstage/tilt` lands as
+the `pitch` and `roll` columns of `registration`; a row with both at zero, or a
+table without the columns, tilts nothing. Both merge paths and the hands
+library apply a nonzero row about that phone's camera, so a hand marker lands
+on the point the cloud shows. The pipeline page, linked above, has where the
+tilt sits among the terms.
 
 So a point you read from `out_pop` is already in the space your content works
 in. Do not transform it again. The hub does the alignment once so that nothing
@@ -91,6 +106,16 @@ Read these three attributes and ignore everything else:
 Both chains carry all three, under the same names, so content written against
 them works on either path.
 
+The saved working copy ships with `Segmode` on `geometric` (the default is
+`off`), so on the CPU path `DeviceId` is a track id out of the box.
+
+On the GPU path with `Gpufuse` on (its default), every kept point inside the
+crop box that lands in the same `Fusevox` voxel becomes one point: `P` is the
+mean position and `Color` the mean colour of the points that fell in it. The
+fusion never writes `DeviceId`, so the fused point carries the phone of the one
+point that survives to represent the voxel, the lowest-indexed point in it. A
+voxel with fewer than `Gpufusemin` points is dropped.
+
 ### Attributes you will also see on the GPU path
 
 The GLSL POP chain carries working attributes that later stages read and the
@@ -112,8 +137,19 @@ On the CPU path, `Maxpoints` caps the output. The emit strides evenly over the
 merged cloud to stay under the budget, so the cloud thins rather than being
 truncated.
 
+Before that budget, the union is strided down to 300,000 points whatever
+`Maxpoints` says, and segmentation may run on a worker thread;
+[the CPU path, stage by stage](pipeline.html#the-cpu-path-stage-by-stage) has
+both. While the worker runs, the CHOP goes empty (one sample) rather than
+showing a frozen cloud that looks live, whenever the worker's newest result is
+from another `Segmode`, the worker has failed, or the result is older than one
+second or three times `Stalesecs`, whichever is longer.
+
 On the GPU path the count is whatever survives the crop, cleanup and fusion.
-`Maxpoints` does not apply.
+`Maxpoints` does not apply. The console's health line takes its point count
+from `out_pop` on this path, once per `Healthhz`, with `numPoints(delayed=True)`:
+the previous tick's count, so the readback never stalls the GPU that is also
+drawing the show.
 
 ## `out_merged`: the cloud as channels
 
@@ -152,8 +188,18 @@ stays live rather than going black.
 - `grid`: `rgb_grid`, a four by two layout of all eight slots
 - `1` to `8`: that slot alone
 
-Slot size is `Rgbw` by `Rgbh`, 320 by 240 by default. `Rgbmap` decides whether
+Slot size is `Rgbw` by `Rgbh`, 320 by 240 by default. `rgb_grid` renders at
+1280 by 480, the eight slots four across and two down. `Rgbmap` decides whether
 slot N means the Nth live phone or device id N.
+
+`Rgbactive` off freezes all eight slots at their last image; nothing redraws
+until it is on again. A slot goes black when its phone's newest grid is more
+than two seconds old. Each image is turned by 0, 90, 180 or 270 degrees so it
+reads upright: a phone clamped upside down streams a correct cloud and an
+inverted picture, and the turn is derived per phone from the extrinsic in the
+frame header, or forced per device by the console's `/tdstage/rgbrotate`
+override. With `Handsshowrgb` on, each detected hand is ringed in cyan on its
+slot.
 
 This is the output to look at when you are aiming a phone or checking what one
 camera sees.
@@ -165,9 +211,9 @@ components through `cam1`:
 
 | Component | What it draws |
 |---|---|
-| `geo_pc` | The point cloud, as point sprites. Material `mat_points`, size from `Pointsize`, sprite texture `dot_tex`. |
-| `geo_floor` | The floor plane, when `Floorviz` is on |
-| `geo_hands` | Hand markers, when `Handsshow3d` is on |
+| `geo_pc` | The point cloud, as point sprites. Material `mat_points`, size from `Pointsize` (3 by default, 8 in the saved working copy), sprite texture `dot_tex`. |
+| `geo_floor` | The floor plane, when `Floorviz` is on (off by default, on in the saved working copy). It is drawn at height `Floorcut`, the ground cutoff, not at zero. |
+| `geo_hands` | Hand markers, when `Handsshow3d` is on. Spheres of radius `Handssize`, 0.06 m by default. |
 
 This is an operator view, not a show output. It exists so a person can see
 whether the rig is working. `Autoframe`, on by default, keeps the camera on the
@@ -201,6 +247,17 @@ at `Handsurl` and turns each hit back into the stage point the merge already
 produced. If the console is not running, this output carries only the `active` = 0
 sample and the cloud is unaffected.
 
+`Handsactive` gates all of it. Off, the poller stops, the stored hands clear
+and the CHOP carries the `active` = 0 sample; the saved working copy ships with
+it off. The poll runs at `Handsrate`, 15 Hz by default and 30 in the saved
+working copy, and detections older than one second are discarded. Each hit
+becomes the stage point of the measured depth cell nearest the 20th-percentile
+depth within `Handsdepthwin` pixels (7) of the detected pixel, so a hand in
+front of a torso does not average back onto the torso. A hand whose window
+holds fewer than three measured cells is dropped from the CHOP and counted as a
+miss in `Handsstatus`. Positions are smoothed per hand with `Handssmooth`, 0.4
+by default and 0 for none.
+
 ## Taking the cloud into other TouchDesigner work
 
 Three ways, in order of preference.
@@ -232,6 +289,12 @@ it as a named source at 960 by 540, 30 frames per second by default (the
 console's `output.ndi*` settings). Any NDI receiver,
 including TouchDesigner's own NDI In TOP, sees it. It is a rendered visual
 feed.
+
+Both client outputs, NDI and the tracking stream, start off in a fresh console;
+the show console restores each as it last saved it, and a test instance
+(`--config`, or a web port other than 9080) keeps both off unless started with
+`--client-out`. The rule is under
+[a second instance drives nothing until you ask it to](../console/running.html#a-second-instance-drives-nothing-until-you-ask-it-to).
 
 **Bulk depth never rides NDI.** NDI compresses through a lossy DCT video codec.
 Packing depth into pixels and sending it through NDI quantises the exact values

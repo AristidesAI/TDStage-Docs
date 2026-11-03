@@ -81,6 +81,15 @@ stale for ever while the thread ran and the socket drained. The signature of
 that fault is packets and stale counts rising in lockstep with completed frames
 flat.
 
+The rule itself has two arms. A frame id below the high-water mark is a
+restart when the gap is larger than `RESTART_GAP`, 300 frames (about ten
+seconds at 30 fps), or when the device had gone quiet for longer than
+`RESTART_IDLE`, 1.0 s of data silence, and the packet opens a new slot rather
+than completing one already open. A packet that finishes an open slot after a
+stall is the same stream continuing. A restart wipes both in-flight slots,
+counts them as `dropped_incomplete`, clears the delivered id and the
+high-water mark, and increments `restarts`.
+
 ### What landing does, and what it skips
 
 `udp_pc_exec` turns each assembled frame into a grid dictionary: the depth
@@ -146,12 +155,29 @@ With `Mergegpu` on, `out_merged` is **empty by design**. The Script CHOP emits
 one empty sample. That is not a fault, and it is the state the saved component
 ships in.
 
+The saved component, `TDStageConductor_v87.tox` (the working copy is the same
+file), carries the state the "ships as" sentences on this page rest on:
+`Mergegpu` is saved on, `Segmode` is saved `geometric`,
+`Posesource` is not in the saved file at all, so it sits at its default,
+`console`, and `Geoceiling` is saved at 4 m against its 2.4 m default. The
+full list of saved values that differ from their defaults is in
+[What the saved file ships with](parameters.html#what-the-saved-file-ships-with).
+
 The one exception is a background learn. The learned grid is built by the CPU
 pipeline, so `gpu_exec` force-cooks `merged` for the duration of a learn even
 on the GPU path. That is also why a rig running entirely on the GPU still
 needs a `Learnbg` pass on an empty stage: the two paths **share** the learned
 background. The CPU pipeline learns it with `hlib` at 5 cm voxels, and the GPU
 path consumes the same grid as an R8 texture.
+
+Measure Alignment is the other thing that works around `merged` standing down.
+Its snapshot is thirty cooks of `merged` after the pulse, and on the GPU path
+nothing cooks `merged`, so until 2026-10-28 the pulse waited for ever. Now
+`status_exec` takes the snapshot instead, one frame per `onFrameEnd`, through
+`merged_callbacks._collect_gpu`, which registers each live phone's points
+exactly as the CPU path's per-device step would. It runs only while a snapshot
+is wanted, only with `Mergegpu` on, and not while a learn is already forcing
+`merged` to cook. After the thirtieth frame the align worker launches.
 
 ### The GPU path, stage by stage
 
@@ -178,11 +204,29 @@ GPU without a uniform per phone:
 | 7 | The device tint |
 
 `keep` is a custom float on every point: 0 rejected, 1 kept, and **2 for a
-point in the floor band just under `Floorcut`**. The shader stashes the band
-rather than discarding it so that `gpu_clean` can rescue feet, which would
-otherwise be cut off the bottom of every performer.
+point in the floor band just under `Floorcut`**. The band is a fixed 0.08 m,
+the `w` component of the `uMin` uniform rather than a parameter (see
+[which parameter the crop box reads](parameters.html#which-parameter-the-crop-box-actually-reads));
+anything lower than `Floorcut` minus 0.08 m is gone. The shader stashes the
+band rather than discarding it so that `gpu_clean` can rescue feet, which would
+otherwise be cut off the bottom of every performer: a band point is kept when
+its plan cell belongs to a component that survived the cluster gate.
 
-Three cook decisions, two in `gpu_exec` and one in the atlas builder, each fix a measured problem:
+`gpu_clean`'s own thresholds are fixed in the component, not on a page, so an
+operator turning `Densitymin` or `Minclusterpts` is tuning against them.
+Density is counted in cells of four times `Fusevox` (10 cm at the default
+0.025 m); a point in a cell with fewer than `Densitymin` points is dropped. The
+plan-view cluster cell is 0.06 m, a cell is occupied with two or more points,
+the occupancy is dilated 3 by 3 and labelled into 8-connected components, and
+a component is kept when it has at least 20 plan cells **and** at least
+max(`Minclusterpts`, 0.5 per cent of the points that passed the density gate).
+The hash grid's origin is `Cropmin` minus 0.5 m in X and Z and minus 0.1 m in
+Y, and its plan extent is `Cropmax - Cropmin + 1` over 0.06, plus two cells,
+on each of X and Z. When the point count is no more than that plan grid's cell
+count plus one, or `Gpuclean` is off, the shader passes everything through,
+which is why the point budget below is raised to make room for it.
+
+Four cook decisions, three in `gpu_exec` and one in the atlas builder, each fix a measured problem:
 
 - The atlases are force-cooked at frame start. A Script TOP has no cook
   dependency on the Python state it reads, so without this the GLSL chain
@@ -196,6 +240,16 @@ Three cook decisions, two in `gpu_exec` and one in the atlas builder, each fix a
   TouchDesigner cooks at 60. Rebuilding both atlases from zeros every frame
   cost 2.4 ms of numpy on the main thread at eight streams (measured,
   simulation, 2026-10-26).
+- `gpu_count`, the TOP whose texel count sets how many threads every GPU POP
+  runs, is re-cooked **only** when the atlas size changes, judged against the
+  TOP's actual size rather than a remembered one, because a re-cook makes
+  `gpu_tp` rebuild its points at about 80 ms. Its row count is raised above the
+  atlas's `N*H + N` so that `gpu_clean`'s plan grid, `nx` times `nz` cells
+  plus two, held in per-point attributes, fits inside the point count; with
+  fewer points than plan cells `gpu_clean` passes everything through,
+  silently (red team, 2026-10-27). The threads past the atlas write
+  `keep = 0`, the rows are capped at 16,384, and the raise is logged once,
+  not every frame.
 
 ### The CPU path, stage by stage
 
@@ -208,6 +262,19 @@ registration table and the Level page trim, then segments according to
 | `off` | Crop, voxel dedup and the output budget only |
 | `geometric` | `hlib_grid.isolate_geometric`: floor cut, ceiling, stage box, density, clustering. Nothing learned, so it works from the first frame on a levelled cloud |
 | `learned` | An `hlib` background-stencil subtract, then the floor map, clustering and fusion. Needs a `Learnbg` pass first |
+
+Three limits sit in front of that. Landing decimates each phone's CPU points
+to about 40,000 by even striding, in `udp_pc_exec._land`, so the union never
+starts from full grids. `Fuserate`, 30 Hz by default, caps real fusions:
+cooked again within 0.98 of `1/Fuserate` since the last one, the CHOP
+re-emits that fusion (or a newer worker result that has finished since) rather
+than recomputing, because phones deliver about 30 views a second while the
+CHOP cooks at 60. And after the union and the trim, more than 300,000 points
+are strided down below that before any processing. `Fusionmode` `grid` or
+`merged` replaces the point union with the angle-weighted merge on the full
+organized grids, `merged` fusing as well, and falls through to the point path
+when no device has a grid yet. Both parameters are described on
+[the parameters page](parameters.html#merge-path).
 
 Segmentation runs on a latest-wins worker thread when `Mergethread` is on, so
 TouchDesigner's frame rate stops following the phone count. It costs about one
@@ -250,6 +317,13 @@ G = Trim . Reg . Floor . Level . E
 
 When the console has sent a pitch and roll tilt for a device, that tilt is
 applied per device between `Floor` and `Reg`, about the camera.
+
+The same table decides membership. A device whose `registration` row has
+`enabled` = 0 is dropped before merging on **both** paths, and so is a device whose
+last frame is older than `Stalesecs` (0.5 s by default, 0.28 s in the saved
+component). On the GPU path that pair of tests is what admits a phone to the
+atlas at all, and the atlas stops at `MAXDEV`, sixteen phones, in device-id
+order.
 
 The CPU path applies the same terms in the same order, in `merged_callbacks`
 and `level_ops` rather than in a matrix row.
@@ -330,7 +404,14 @@ bridge fault:
   checksum is the upgrade if a torn frame is ever seen.
 - A heartbeat in the header, with a two-second freshness window, is what hands
   the socket over in either direction without either process knowing about the
-  other. See [Running the hub](running.html#handover).
+  other. The bridge rewrites it every 0.5 s, together with the metadata block
+  (receiver stats, its own `evicted` and `oversize` counters, slot count and
+  bind port, and the roster), and sleeps a millisecond when no new frame
+  arrived. See [Running the hub](running.html#handover).
+- The file is sized once: sixteen slots of 512 KB. A frame larger than a slot
+  is refused and counted as `oversize`; a seventeenth device takes the slot
+  written longest ago and counts as `evicted`. The table in
+  [Running the hub](running.html) has the reasons.
 
 ### Why depth crosses the wire as a grid
 
@@ -465,3 +546,15 @@ normalisation fix that prompted the question, and the offline grid test still
 covers them. If the fusion ever moves to a surface where angle matters more
 than it does here, the measurement is `Tools/fuse_weight_ab.py` and it can be
 re-run rather than re-argued.
+
+The one refinement the show path does carry is `Gpusmooth`, off by default. The
+mean of a 2.5 cm voxel removes duplicates but not noise: depth noise runs along
+each phone's ray and scatters samples across voxels, so half of them hold one
+point. With smoothing on, `gpu_fuse` moves each voxel's mean **along the
+normal** of a plane fitted to its 3 by 3 by 3 neighbourhood, never sideways,
+and only where that neighbourhood holds four or more points and is clearly
+flat (smallest eigenvalue under 0.25 of the middle one); a voxel that fails
+the test keeps its plain mean, so no point is lost. Measured in TouchDesigner
+against the six-phone `merge_sim`, static: median error 9.0 to 6.0 mm, body
+median 10.7 to 8.4 mm, 42 per cent of voxels moved, 60 cooks a second at
+twelve streams either way. It stays off until real takes decide.

@@ -14,7 +14,8 @@ sensor data.
 ![What a synthetic phone sends as its colour plane, at 256 x 192: human_sim4's walkers before (top) and after (bottom) the 2026-10-27 sim_people rendering.](../assets/img/merge-sim-people.webp)
 
 Every command below matches the script's own argument parsing as of
-2026-10-27, and the self-tests on this page passed on that date.
+2026-10-27 (`human_sim4.py` and `wire_fixture_test.py` as of 2026-11-03), and
+each self-test row carries the date it last passed.
 
 Run them from the repository root. The scripts add their own directory to the
 import path, so `python3 TD/newtox/<script>.py` works from anywhere in the
@@ -22,7 +23,7 @@ tree.
 
 ## Which one do I run?
 
-There are five senders and seven self-tests, and picking the wrong one wastes an
+There are seven senders and nine self-tests, and picking the wrong one wastes an
 afternoon proving something you were not asking about. Start from what you are
 testing, not from what is convenient to launch.
 
@@ -34,6 +35,7 @@ flowchart TD
   TK["take_play.py<br/>recorded takes as devices"]
   SIM["tdp4_sim.py<br/>N synthetic phones"]
   MS["merge_sim.py<br/>one shared world"]
+  HS["human_sim4.py<br/>walkers with limbs,<br/>one shared world"]
   Q2{"Is TouchDesigner<br/>in the test?"}
   BE["tdp4_bench.py<br/>the receiver alone"]
   PORT["Send to the port that is<br/>actually bound: the bridge's<br/>--port, or the tox's Udpport"]
@@ -44,6 +46,8 @@ flowchart TD
   Q0 -- "real sensor data" --> TK
   Q1 -- "no: load, reassembly, drops" --> SIM
   Q1 -- "yes: merge, fusion, coverage" --> MS
+  Q1 -- "yes, judged on a body with limbs" --> HS
+  HS --> PORT
   SIM --> Q2
   Q2 -- "no" --> BE
   Q2 -- "yes" --> PORT
@@ -102,7 +106,14 @@ Seven synthetic plus one real phone is a full eight-stream show load.
 
 The sim prints its own arithmetic before it starts: frame bytes, packets per
 frame, per-device and aggregate Mbit/s. Those are computed from the frame size,
-not measured.
+not measured. At the default 256x192 grid with depth and confidence a frame is
+147,576 bytes in 102 packets, 35.9 Mbit/s per device at 30 frames per second
+and 287 Mbit/s for eight devices. At the iPhone 17 Pro's 320x240 the same
+planes are 230,520 bytes in 159 packets, 56.1 Mbit/s per device, 449 Mbit/s for
+eight and 897 Mbit/s for sixteen. A show-rig load test
+([#42](https://github.com/AristidesAI/TDStage/issues/42)) has to offer the
+320x240 figure, so pass `--grid 320x240`; the default grid understates the rig
+by a factor of 1.56.
 
 ### What `tdp4_sim.py` cannot test
 
@@ -131,7 +142,7 @@ python3 TD/newtox/merge_sim.py <host> <port> <seconds> [options]
 |---|---|---|
 | `--devices N` | 6 | Cameras |
 | `--fps N` | 30 | Frames per second |
-| `--preset P` | `ring` | Camera layout. `--rig show` is an alias for the planned rig layout. |
+| `--preset P` | `ring` | Camera layout. `ring` spaces the cameras round the stage; `proscenium` puts every camera on the audience side, the real venue constraint, so upstage surfaces are seen by nobody; `pair` alternates the cameras between two viewpoints; `bad` clusters them at a nearly common viewpoint, so multi-view buys almost nothing and a merge that scores well there is not being tested; `show` is the show's own layout from `show_rig.py`, where height and radius do not apply. `--rig` is an alias of `--preset`. |
 | `--scenario S` | `cross` | What the performers do |
 | `--planes P` | `depth+conf` | Plane mask |
 | `--reg-error M` | 0.0 | Per-device registration error, metres, one sigma |
@@ -148,6 +159,54 @@ A static one-frame world, looped, which is what the scoring tool expects:
 ```
 python3 TD/newtox/merge_sim.py 127.0.0.1 9003 120 --devices 6 --frames 1 --scenario cross
 ```
+
+The same world is available in-process, with no socket: `from merge_sim import
+MergeWorld, CamRig, render_frame`, then `MergeWorld(scenario='cross', seed=7)`,
+`CamRig(6, preset='ring', reg_error=0.0)` and `render_frame(world, rig, t=0.4)`,
+which returns every device's depth, confidence and colour planes for that
+instant together with the ground truth. `CamRig` carries a true pose and a
+believed pose per camera; `reg_error` injects a rigid error of that size
+between them, in metres, one sigma per device. `fuse_weight_ab.py` renders
+through `render_frame`, `temporal_test.py` through the single-camera
+`render_view` and `apply_noise`, and `td_merge_score.py` scores a dumped cloud
+against `MergeWorld`'s signed distance field; none of them goes over the wire.
+
+### Walkers with limbs: `human_sim4.py`
+
+`merge_sim.py`'s performers are ellipsoids, and ellipsoids fuse into an
+ellipsoid however wrong the fusion is. `human_sim4.py` sends the 17-joint
+articulated walker from `TD/human_sim.py` over the live TDP4 wire instead,
+rasterised into each phone's organized depth grid through a z-buffer, so every
+phone sees only its own side of a body that self-occludes and the fusion has
+something to disagree about. The colour plane at the top of this page is its
+output. The scene is in stage coordinates: a floor raked 0.5 degrees, a back
+wall at z = -2, two prop boxes and N walkers. The phone extrinsics come from
+`tdp4_sim.device_extrinsic` and are exact, so a fusion error is the hub's, not
+the sim's. Frames are rendered on demand rather than precomputed, and the walk
+loops every 31.416 seconds. Nothing in it is a second implementation: the
+walker is imported from `human_sim`, the wire from `tdp4_sim`.
+
+```
+python3 TD/newtox/human_sim4.py <host> <port> <seconds> [options]
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--devices N` | 8 | Phones |
+| `--people N` | 2 | Walkers; at least one |
+| `--fps N` | 30 | Frames per second |
+| `--planes P` | `depth+conf` | `depth`, `depth+conf` or `depth+conf+rgb` |
+| `--rig ring\|show` | `ring` | `ring` puts the phones round the stage aimed at centre. `show` is the layout the show will use (`show_rig.py`): N-1 phones in a row on the audience side, one column of the stage each, plus one upstage centre facing the performers' backs, so most of the stage is seen by one phone. |
+| `--sit P` | off | Walker P stops once a lap and sits, `--sit-at` seconds into the lap (5.0) for `--sit-s` seconds (6.0), then catches up. A sit that cannot be drawn is refused with the argument named. |
+| `--costume own\|same` | `own` | `same` dresses every walker alike, so appearance cannot tell them apart |
+| `--bg-keep F`, `--body-keep F` | 1.0 | Fraction of static cells and of body cells returned |
+| `--procs auto\|threads\|fork` | `auto` | `auto` is one forked process per phone where fork exists, since the ray-cast people are many small numpy calls and eight threads share one interpreter lock, and threads elsewhere (Windows) |
+| `--selftest` | | Offline checks of the walk, no sockets; see the self-tests table below |
+
+Positional defaults are `127.0.0.1`, port 9003, 60 seconds. The startup print
+gives the walk clock in wall time, so a `/track` trace can be scored against the
+walkers' true positions. The console's Scene picker runs this script as
+**Walkers (articulated)** ([console UI](../console/ui.html#simulator-synthetic-phones)).
 
 ## Scoring the merge: `td_merge_score.py`
 
@@ -194,7 +253,7 @@ python3 TD/newtox/take_play.py <host> <port> <seconds> <take> [take ...] [option
 | `seconds` | 0 means until the takes end, or forever with `--loop` |
 | `--loop` | Restart each take when it ends |
 | `--speed N` | Playback speed multiplier, default 1.0 |
-| `--device-ids` | Comma list, one id per take. Default: the id stored in each take's header. |
+| `--device-ids` | Comma list, one id per take. Default: the id stored in each take's header, or 101 plus the take's position in the list when that header id is 0. |
 
 Two takes as two devices, looping forever, into a running bridge:
 
@@ -208,6 +267,13 @@ per second replays at 18 even though its header says 30. The tool prints both
 and tells you the `--speed` value that would force the nominal rate. A replay
 that looks slow is usually faithful, and the recording is the thing to
 question.
+
+The one field a replay does not carry verbatim is the frame's `captureMicros`.
+`take_play.py` overwrites it with the Mac clock at send time, so the clock keeps
+moving, and it has no switch for that. Capture age measured by a receiver from a
+replay is therefore the age of the replay path, not of the recording. The
+phone's own player rewrites the stamp the same way by default and can be told
+not to; see [the playback page](../ios/playback.html#more-playback-controls).
 
 **Corollary that must not be broken:** the hub and the console must never need
 to know whether a stream is live or replayed. If a fix requires a receiver-side
@@ -260,6 +326,18 @@ Per second it prints complete frames per device, dropped incomplete frames,
 stale packets, aggregate Mbit/s and mean reassembly latency. Then a per-device
 summary table, then one line of JSON totals.
 
+The summary's columns are `device`, `frames`, `fps`, `packets`, `MB`, `drop`,
+`stale`, `unco` and `lat_ms`. `unco` is `frames_unconsumed`: complete frames
+that a newer frame replaced before anything read them. The bench drains the
+receiver every 20 ms the way the hub does, which is what keeps that count
+honest. The JSON line is the last line on stdout and carries `seconds`, `port`,
+`devices`, `packets`, `bytes`, `frames_complete`, `dropped_incomplete`,
+`stale_packets`, `frames_unconsumed`, `mbit_s`, `mean_latency_ms`,
+`fps_per_device` and `roster`. The Windows CI workflow reads that last line with
+`ConvertFrom-Json` and fails the run unless, on one of two attempts, the
+fan-out delivered at least 90 per cent of the `frames_complete` a direct run
+did.
+
 Point a sim at it:
 
 ```
@@ -273,24 +351,28 @@ as TouchDesigner on that port.
 ## Self-tests
 
 These need no GPU and no TouchDesigner, and no sockets apart from the bridge
-self-test's own loopback ports. Run them after touching the wire format, the
-shaders or the receiver.
+self-test's own loopback ports, which it takes from 59473 upward: real UDP
+sockets on 59474 and 59476, memory-mapped files keyed by 59473, 59474 and
+59477. It never touches 9003 or 9004, so it can run beside a live bridge. Run
+them after touching the wire format, the shaders or the receiver.
 
 | Command | What it checks |
 |---|---|
 | `python3 TD/newtox/tdp4_bench.py --selftest` | Pack, fragment, reassemble, parse. Field round-trips, depth and confidence and colour plane equality through half-float, out-of-order arrival, a missing packet, a stream restart after a lossy run, the TDPH hello. 26 checks; all passed 2026-10-27. |
 | `python3 TD/newtox/tdp4_bridge.py --selftest` | The bridge round trip: packets, through the bridge's own loop, into the memory-mapped file, out through the reader. Includes a torn write, a slot eviction at seventeen devices, a bad payload, a layout mismatch, and the `--shm-port` republish. Passed 2026-10-27. |
+| `python3 TD/newtox/wire_fixture_test.py` | Two frames a real iPhone 18 Pro put on the wire, through `tdp4_receiver`. The fixture `TD/newtox/testdata/real-iphone18-2frames.tdp4rec` holds frames 300 and 301 of a 916-frame take (TDStage 1.0, iOS 26.6, 2026-09-07) exactly as the phone sent them, since a take is the assembled frame. Each must parse as a 256 x 192 depth, confidence and colour frame of the spec's length, with a real room's depth, intrinsics and a principal point in range, a proper rotation, raw AVFoundation confidence of 0 and 2 only, and confidence 0 exactly where depth is invalid; then each is cut into 1452-byte datagrams with 20-byte headers and reassembled byte for byte, with nothing dropped. 23 checks; passed 2026-11-03. This is the only receiver test fed bytes a phone packed rather than Python. |
 | `python3 TD/newtox/glsl_parity_test.py` | Shader constants and the pose-row layout against their numpy references. A shader edited without its reference fails here instead of on the rig. Passed 2026-10-27. |
 | `python3 TD/newtox/temporal_test.py` | The static-surface temporal depth filter against the merge simulator: on a still scene the depth error must fall at least 2.5 times; on moving performers the body error must stay within one millimetre of raw. |
 | `python3 TD/newtox/pipeline_test_grid.py` | The organized-grid pipeline offline: wire round trip, isolation purity, angle-aware fusion collapsing a two-phone overlap, and the weighted-fuse mechanism. All of this is the CPU path. |
 | `python3 Tools/fuse_weight_ab.py` | Weighted fusion against plain fusion on an exact synthetic surface. This is the measurement behind the show path keeping a plain mean: weighted came out a few tenths of a millimetre better at the median and slightly worse at the 90th percentile. |
 | `python3 TD/pipeline_test.py` | The older point-based isolation pipeline, offline. |
+| `python3 TD/newtox/human_sim4.py --selftest` | The walk, no sockets. Over 24 two-lap walks with two, three and four walkers, with and without a sitter, no walker's root moves more than 3 cm a frame, pairs still pass 0.45 m apart, every walk is periodic, six sits that cannot be drawn are refused by `configure()` and by the command line, each naming the argument, and a run log's scenario line restores the walker count and walk version. Passed 2026-11-03. |
 
 {: .note }
 **What none of these check** ([#50](https://github.com/AristidesAI/TDStage/issues/50)):
 the phone's own fragmenter against this receiver. The bench packs and
-fragments in Python, and the wire fixture of two real iPhone frames holds the
-assembled frame, captured before fragmentation, which the test re-splits with
+fragments in Python, and the wire fixture of two real iPhone frames
+(`wire_fixture_test.py`) holds the assembled frame, captured before fragmentation, which the test re-splits with
 the receiver's own packet header. So the 20-byte packet header the phone
 writes (packet index, packet count, payload length, flags) has no
 cross-language check, and a regression in the Swift fragmenter would pass
@@ -318,6 +400,12 @@ longer interprets telemetry itself; it relays it to the console.
 TDP2 and TDP3 formats. Nothing in the system listens on TCP any more. They are
 kept for the record. Do not use them to test the hub.
 
+`TD/human_sim.py` is a third: the articulated-walker scene over TDP2 and TCP
+:9002, retired as a sender on 2026-10-26 because nothing has listened on that
+port since tox v32. The file stays because its walker and body generators are
+still imported, by `human_sim4.py` above and by `TD/pipeline_test.py`, both of
+which load it without running its socket main.
+
 ## Traps
 
 **Two sims at once with the same device ids.** Both default to 101 upwards, so
@@ -327,8 +415,9 @@ them different ids (`tdp4_sim.py --first-id 201`; `merge_sim.py` has no such
 flag), and diff the counters per run.
 
 **Testing in learned segmentation mode overwrites learned state.** A learn
-writes into the application support directory. Back that up before running a
-sim in `learned` mode. See [Maintenance](maintenance.html).
+writes `learned_bg.npz` into the application support directory. Back that up
+before running a sim in `learned` mode. The directory on each platform is in
+[Where learned state lives](maintenance.html#where-learned-state-lives).
 
 **TouchDesigner's own frame rate is not what you think.** In realtime mode
 TouchDesigner skips timeline frames to stay on the wall clock, so anything
@@ -359,4 +448,9 @@ place:
 | Transport | 0 incomplete frames up to 16 streams, 573 Mbit/s |
 | Bridge to TouchDesigner latency | p50 9.5 ms, p95 15.3 ms |
 
-Do not present any of these as a rig number.
+Do not present any of these as a rig number. They were also sent at the spec's
+256x192 grid: `tdp4_sim.py` had no other grid until `--grid` arrived on
+2026-10-27, and 573 Mbit/s sits beside the 574.5 Mbit/s it computes for sixteen
+devices at 256x192, far from the 897 Mbit/s of 320x240. The rig's phones stream
+320x240, where the same arithmetic gives 897 Mbit/s for sixteen streams and
+449 Mbit/s for eight.

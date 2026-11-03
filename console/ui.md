@@ -76,7 +76,7 @@ Left to right.
 | **n/m online** | Phones online out of the roster. |
 | **TD** indicator | The TouchDesigner conductor bus. Green dot and an fps reading when the link is up, "TD offline" otherwise. |
 | **Listen** indicator and **Start** / **Stop** | The telemetry listener. It reads `listening :<port>`, `bind failed`, or `stopped`. Stopped means no phone health, no pongs and no auto recover. Stopping asks first. |
-| **Lock** | Show mode. Blocks **every** control send and config edit from the browser. Read only diagnostics still work. The Rig health panel uses a plain fetch on purpose, so a padlock never stops you seeing why something is broken. |
+| **Lock** | Show mode. Blocks **every** control send and config edit from the browser. Read only diagnostics still work. The Rig health panel uses a plain fetch on purpose, so a padlock never stops you seeing why something is broken. The gate has one exemption: `POST /api/dev/shot`, the development screenshot hook, which writes a posted image to `dev-shot.png` or `.jpg` beside the server. No button on the page calls it, and the Log's request trace skips it when it succeeds, because its body is an image. |
 | **Sun / moon** | Light or dark theme. |
 | **Find** | Searches every control on the current page by its label and by its hover explanation. It opens the folded section the control is in, scrolls to it and flashes it. Cmd-K or `/` opens it; Cmd-Enter presses the match. |
 | **?** | Keyboard shortcuts. |
@@ -108,7 +108,6 @@ Five panels, then the device cards.
 | **Ping all** | `/tdlidar/ctl/ping` to every phone in the roster, enabled or not. The log records each pong; the round trip is in the device page's telemetry (clock offset / rtt). |
 | **Sync markers** | Sends each phone its marker ids and marker size, for every phone that has a known IP. |
 | **Calibrate all** / **Finish all** | Starts and finishes marker calibration on every enabled phone. |
-| **Check calibration** | With exactly one person on stage, asks `/api/rig/calib` whether the phones agree where that person is. A disagreement over 15 cm names the phone and points at the marker size, because a size read off the black square instead of the crop marks shifts a phone's whole cloud along its line to the marker. Tick the spot option and give the taped mark's position to also test correctness, since agreement alone cannot see an error every phone shares. The method and its limits are in [Rig get-in](../operations/get-in.html#the-one-person-test). |
 | **Start all** | `/tdlidar/ctl/start` to every enabled phone, with no stagger and no verification. Use Start show in the top bar for a real start. |
 | **Stop all**, **Blackout all**, **Wake all** | As the top bar buttons. |
 | **Lock all poses** | Locks every enabled phone's current attitude as its mounted pose. From then on "moved since lock" and the movement alarm measure against it. Do this after the get in. |
@@ -197,6 +196,33 @@ references to the old module while new work ran on the new one. Recovery and
 deployment are different operations, so they have different mechanisms. See
 [Running the console](running.html#restarting-to-pick-up-a-code-change).
 
+**Calibration, one person on stage** sits under the services: a **Person**
+picker and a **Check calibration** button. With exactly one person on stage, it
+asks `GET /api/rig/calib` whether the phones agree where that person is.
+A disagreement over 15 cm names the phone and points at the marker size, because
+a size read off the black square instead of the crop marks shifts a phone's
+whole cloud along its line to the marker. The picker chooses the spot. **anywhere
+(agreement)** sends no position and tests agreement only, which cannot see an
+error every phone shares. **on stage centre** sends `x=0, z=0`. **on marker N**,
+one entry per marker in the plan with its label, sends that marker's planned
+position (x as planned, z as minus the plan's y), so standing on the taped mark
+also tests correctness. Errors under about 5 cm are invisible. The result line
+is coloured by state and its hover carries the method's limits and, on a
+warning, the fix; a second line lists every phone as `#id N cm off`, `too few
+points (n)`, or with `← check` after a suspect. It is a plain fetch like
+Re-check, read only, so the padlock does not stop it, and a console on older
+code answers `this console has no calibration check yet`. The method and its
+limits are in [Rig get-in](../operations/get-in.html#the-one-person-test).
+
+Four of the session rows carry Fix lines worth knowing before you need them:
+
+| Row | When it appears | Fix |
+|---|---|---|
+| **Console code changed since it started** (warn) | Files changed on disk after the console booted; the row names up to six of them and the boot time. The page is already the new one, so panels that need the new code answer `unknown endpoint` or show nothing until the console restarts. | Restart the console between runs: `Tools/show_mac.sh` on the Mac, `show.bat` on the show machine. TouchDesigner's cloud is unaffected; the client outputs (`/track`, F1, NDI) pause while it restarts. |
+| **USB cable address moved** (error) | A phone is still streaming to the Mac's old cable address, and the row gives the old and new addresses and when it moved. Nothing arrives from it until it is re-taught. | Click **Autofix** on that phone, or Link over cable: either re-teaches the phone the new address. |
+| **TestFlight build expiring** (warn from 75 days) / **TestFlight build about to stop working** (error from 85 days) | Named phones with their build date and age. TestFlight builds stop working 90 days after upload. | Run `Support/testflight.sh --upload` in both repos, then update the phones from TestFlight. |
+| **Phone(s) N shed colour for heat** (warn) | Their thermal ladder took the colour plane off the wire before lowering the frame rate (`stage.thermalColourAt`). Depth keeps its rate, but no fresh camera image reaches the console from them: their person masks and hand tracking stop about 1.5 s later, and consensus counts them as abstaining. Colour comes back on its own once they cool, after a 45 s hold. | Cool the phones: blackout their screens, shade them, add airflow. To keep colour at any temperature, `/ctl set stage.thermalColourAt 0`; the frame rate then drops first instead. |
+
 **Why the first row is sometimes about `config.json`.** The panel's check list
 begins with how the session started. If the console could not use `config.json`
 and fell back to a backup, or seeded a new session, that is the first row you
@@ -261,7 +287,7 @@ Rotate. The gizmo is forced off while the console is locked.
 |---|---|
 | (top) | **Auto setup coverage** optimises every enabled phone's position and aim and its marker for maximum coverage and multi phone overlap of the quoted volume, in one undo step. Under **Stroud plan**, four buttons set phone poses and marker positions from a layout held in the system repository: **Front + back · 6** and **Front + back · 3** (the show rig shape) and **Side rows · 6** and **Side rows · 3** (the coverage study's side rows). Each also sets one rig wide marker size from the layout's sheet size. All ask first, and undo reverts. |
 | **TouchDesigner** | The link state line, plus **Ping**, **Retry** and **Push poses**. |
-| **Selected** | The selected phone's or marker's numbers, with **Open** (its device page) and **Ping**. |
+| **Selected** | What the selection is. For one phone: its name, position, yaw and pitch, its live points and fps (or online / offline), how many simulated points it sees while Person A is visible, an inline **FOV** pair (h × v, 20 to 120 degrees in 0.5 steps) that writes `fovH` and `fovV` to the roster the moment a field changes, then **Open** (its device page) and **Ping**. For a marker: its id, label and position, and a reminder that Move saves to the plan and print sheet. For several items: the count, each phone's position and each marker's id; Move and Rotate act on the whole group and rotation orbits its centre. For a person figure: position, yaw and pose. For the **Quoted show volume**: `12 × 4 × 8 m` and its offset in x, y, z; Move slides the acting volume, and Auto setup then fits the phone array to wherever it sits. |
 | **Options** | **LiDAR beams**, **Range split at 7 m** (two zones against one uniform zone), **Max-range plane**, **Beyond-range reach (RGB)**, **Marker plan**, **Labels & text**, **Floor grid**, **Person A (scale figure)** with a pose slider, **Person B (occlusion)** with a pose slider. |
 | **Visual tuning** | In-range brightness, Beyond-range brightness, Range-plane opacity, Shadow strength, Label size, Phone size, Sim point size, Marker locator size, Venue opacity, Grid opacity, and the backdrop: dark, black, white, or a free colour picker. |
 | **Venue** and **Coverage study** | One visibility checkbox and one opacity slider per model layer. The `BAND_` layers are the coverage study supplied for the production. |
@@ -282,7 +308,13 @@ gravity levelling puts it, which means a desk cloud sits at the stage origin
 rather than at the planned mount.
 
 **Over the canvas**: Perspective / Top-down / Front, and a pill that says
-whether data is arriving.
+whether data is arriving. It reads `waiting for data`, or `LIVE · N phones · F
+fps`, where the fps is the rate at which frames reach this browser (a smoothed
+gap between frames), not the phones' capture rate. When the streams stop it
+clears the clouds and goes back to `waiting for data` after 3 s. Off the show
+LAN it adds `· remote`, and its hover gives the cap the console applies to that
+client, read from the `X-Cloud-Remote` header (`5 Hz, 20000 points`); see
+[Running the console](running.html#the-off-lan-cap).
 
 **Floating over the canvas, bottom right**: the camera overlay card. One tab per
 live phone, the camera frame with the person mask and wrists drawn on it, and a
@@ -470,7 +502,7 @@ puts the rgb plane on the wire.
 | Control | What it does |
 |---|---|
 | **Colour ON for all phones** | Sets `stage.udpPlanes = depth+conf+rgb` on every phone in the roster, enabled or not. Each phone then costs about 71 Mbit/s instead of 35. |
-| **Send telemetry here** | Points every phone's telemetry at this console. Phones default to port 9000, which TouchDesigner holds, so with TD running the console gets no telemetry at all and every phone reads offline. This is the fix for that. |
+| **Send telemetry here** | Points every phone's telemetry at this console. Phones default to port 9000, which TouchDesigner holds and relays to this console; when that relay is missing (the tox not running, its console link off, or the console not yet found) every phone reads offline or without health. This is the fix for that, and afterwards health no longer depends on TouchDesigner. |
 | **MJPEG stream** | One long lived multipart stream for the phone shown in the camera overlay card, instead of a 5 Hz still refresh; the other tiles stop refreshing while it is on, because browsers allow about six sockets per origin and the event stream and cloud poll already hold most of them. |
 
 ### Visual tuning, Venue, Coverage study
@@ -497,6 +529,25 @@ telemetry, never from what this console last sent.
 | **Only differences** switch | Hides the rows where every reporting phone agrees. |
 | **Reference phone** picker and **Match every phone to this one** | Copies every setting the reference phone reports to each other enabled phone that reports a different value. Settings a phone does not have are skipped. Device id, playback device id and destination hosts are never copied. Asks first, and names the phones and the change count. |
 | Per row: a control, a parity badge, and **Make all match** | Sends the value shown in that row to the phones that report something else, and to the phones that report nothing, which cannot be checked. |
+
+Between the parity panel and the setting groups sit two panels that are not
+settings. **Control, every enabled phone** is the transport for the whole rig,
+each button sending the same `/tdlidar/ctl/` verb to every enabled phone:
+
+| Row | Buttons |
+|---|---|
+| **Stream** | **Start** (`/ctl/start`). **Stop** asks first, stops the stream (telemetry and `/ctl` stay up) and disarms auto recover, which would otherwise restart them. |
+| **Screens** | **Blackout** (screens off, capture keeps running) and **Wake**. |
+| **Check** | **Ping** (each pong is logged) and **IMU report** (a one shot attitude report from every phone). |
+| **Record** | **Record** starts every phone recording its live wire to a take now; **Stop recording** closes the takes. An **armed in** field (3 s by default, 0 to 60) feeds **Arm record** (`/ctl/rec/startat`, a shared second start after that delay) and **Cancel arm** (`/ctl/rec/cancel`, which cancels an armed record or play). |
+| **Replay** | A take name field and **Arm play** (`/ctl/rec/playat` with the delay and the name; each phone plays its own copy of that take, and a blank name is refused). **Pause** and **Resume** (`/ctl/rec/pause` 1 and 0) freeze and continue every replay on its current frame, **Stop replay** ends them, and **Refresh takes** asks every phone for its take list, shown on each device page. |
+
+**Phones** is a state table with one row per enabled phone: **Phone** (a link to
+its page), **State** (the phone's own reported state, or streaming / idle /
+offline), **Source** (`live` or `PLAYBACK`), **Take** (the recorder's state and
+the take name), **Armed** (what is armed and in how many seconds), **Replay**
+(frame index of total, and `paused`), and **Phone says** (the phone's own note
+about its recording or replay).
 
 ---
 
@@ -571,6 +622,11 @@ Click a phone in the rail to open its side drawer; double click to open the full
 page at `#/device/<id>`. The page header has the phone's name, an **enabled**
 switch, and badges for streaming, OSC, calibrating, thermal and battery.
 
+The drawer opens beside the rail, 620 px wide by default and never wider than
+the viewport minus the rail. Drag its right edge to resize it, between 380 and
+980 px; the console remembers the width. Its header has **Full page**, which
+closes the drawer and opens the same phone at `#/device/<id>`.
+
 The left column shows the phone's assigned marker at a readable size, with a
 caption that reads `aim phone at marker #N` or `● seeing marker #N`.
 
@@ -626,10 +682,20 @@ byte identical to a live phone on the wire by design. The `live` / `playback`
 badge is the only thing that tells you which you are looking at. Without it you
 can debug a rehearsal against a recording and never know.
 
-Controls: a take name field, **Record**, a take list with **Refresh takes** and
-**Delete take** (asks first), transport buttons, frame stepping, in and out trim
-points, rename, cancel an armed record or play, and an arm delay for recording
-or replaying on every phone in the roster at once.
+The **State** line carries the recorder state badge, the `live` / `PLAYBACK`
+badge and the take name, then a stats line with frames, seconds, MB, dropped
+frames and GB free on the phone. The rows below send the `/tdlidar/ctl/rec/`
+verbs listed in [the /ctl reference](../ios/ctl.html#recording):
+
+| Row | Controls |
+|---|---|
+| **Record** | A take name field (blank uses the phone's auto name), **Record** (`rec/start`, with the name if given), **Stop**, and **Refresh takes** (`rec/list`). |
+| **Play** | The take picker, **Play** (`rec/play` with the take, loop and speed; TouchDesigner and the console see it as live), a **loop** box on by default, a **speed** field from 0.25 to 4 in 0.25 steps where 1 is as recorded, **Pause** and **Resume** (`rec/pause` 1 and 0), and **Stop replay** (`rec/stopplay`). |
+| (play line) | What the phone reports back: `ARMED: <label> in N s`, then `frame i / n · s / d s`, the loop count, `PAUSED`, and `trim in–out` when a trim is set, or `no replay running`. Below it, in amber, `phone says:` with the phone's own note. These come from the phone's `/rec/play`, `/rec/arm` and `/rec/note` replies, so the line shows what the phone is doing, not what was sent. |
+| **Frame** | **Prev** and **Next** step one frame (`rec/step` -1 and 1) either side of a scrub bar that is the phone's own: release it to jump the replay to that frame (`rec/seek`). Disabled while no replay runs. |
+| **Trim** | **Set in here**, **Set out here** and **Clear trim** (`rec/trim in`, `out`, `clear`): replay from, or up to, the frame now playing, or the whole take again. |
+| **Take** | A new name field and **Rename take** (`rec/rename old new`, refused for a take that is recording or playing, and the list is refreshed afterwards), and **Delete take**, which asks first and removes the take from the phone with its IMU file. |
+| **Armed** | An **in** delay (3 s by default, 0 to 60), **Arm record (all)** (`rec/startat` to every phone in the roster) and **Arm play (all)** (`rec/playat` with the selected take, to every phone in the roster), and **Cancel arm** for this phone (`rec/cancel`). An armed start is a shared second start, not a frame lock: an OSC f32 cannot carry a unix time, so it is a delay from receipt. |
 
 ### Recovery / failsafe
 
@@ -681,8 +747,11 @@ will often predate the change by a fraction of a second.
 
 The console sends Device ID and UDP port as one key profile documents rather
 than bare `/ctl/set` messages, because identity and ports never move on a bare
-set. A stored console profile still holds the old value until you re store it,
-or the next profile push puts the old one back.
+set. When the console holds a stored profile for the phone, the new value is
+folded into it, the profile is re-stored (its revision moves on) and the whole
+document is pushed, so a later push carries the new value rather than the old.
+With no stored profile the phone gets a one-key document with `autoStart` off,
+so re-applying it at boot does not start the stream.
 
 ### Limbs and latency (live)
 
@@ -694,4 +763,21 @@ arms or legs are dropping out. The readouts need the phone streaming
 
 ### Telemetry
 
-The full device namespaced telemetry grid, as it arrives.
+The full device namespaced telemetry grid, as it arrives: fps, points, battery,
+charging (`NO` in amber when unplugged), thermal (amber from serious), low power,
+uptime, stream (`w×h@fps`), planes, net as frames / packets / dropped, gravity,
+extrinsic (mode, pitch and roll), screen (`on` or `BLACKOUT`), source
+(`playback` highlighted), conditioning (the frame flag bits as `edge`, `person`,
+`conf`, `temporal`), footprint in MB, capture age p50 / p95, the age split
+(medians per stage: delivery, prep, hop, main, queue, pack, socket), IMU roll /
+pitch / yaw (`mag` when the yaw is magnetic, `arb` otherwise; a dash after 3 s
+without a report), clock offset / rtt, and phone state. Five cells are the ones
+an operator acts on:
+
+| Cell | What it shows |
+|---|---|
+| **app build** | The app, version, build number and commit this phone runs (`/device/app`), then `· N behind` in amber, or `· current`, against this machine's checkout of that app. Behind means install the current build; see [Installing the app](../ios/install.html). |
+| **capture pressure** | The capture device's own pressure (`AVCaptureDevice` system pressure): `nominal`, `fair`, `serious`, `critical` or `shutdown`, with the factors in brackets (`system`, `power`, `depth module`, `camera`, `battery`). Amber from serious. It can read serious while thermal still says fair, because the LiDAR module heats on its own, and the ladder acts on the worse of the two. |
+| **fps ceiling** | The frame rate the thermal ladder currently allows. Amber when it is below the negotiated stream rate, which means the ladder is shedding load: working as designed, but you should see it. |
+| **link (PoE)** | `Ethernet`, `Wi-Fi`, `Wi-Fi (wired up)` or `none`, with the interface name, then `· escaped to any route (…)` when the chosen link did not route for 5 s and the stream fell back to any route, or `· <mode> pinned` when a link is forced. Amber on an escape, or on a phone sitting on Wi-Fi while its wire is up and preferred. |
+| **moved since lock** | `tilt N°` and `yaw N°` against the pose locked with **Lock pose**, red from 0.5 degrees of tilt; `not locked` before a lock. |

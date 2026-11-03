@@ -79,6 +79,14 @@ Stopping the camera for a replay does **not** clear the auto-resume flag
 should come back streaming, because that flag means "this phone's job is to
 stream", not "this phone is streaming right now".
 
+A replay can also be ended from the console. `/ctl/start` on a replaying phone
+stops the replay and brings the camera back, `/ctl/stop` ends it and leaves the
+camera off, and `/ctl/calibrate 1` ends it on the way into calibration, closing
+any take being recorded as well. None of the three consults the restart toggle
+below: each decides for itself whether the camera comes back. The verbs are on
+[the /ctl page](ctl.html#lifecycle-and-display), with what calibration does on
+the way out under [calibration](ctl.html#calibration).
+
 ---
 
 ## The header
@@ -93,6 +101,18 @@ library, `Choose a take below` once there are takes but none is selected,
 
 When nothing is playing, a panel under the header shows the outcome of the last
 import, armed start or refused action.
+
+The button is disabled while recording; the remote verb is not. `/ctl/rec/play`
+on a recording phone stops the recording first, then starts the replay, so a
+console can move a phone from recording to replay in one command. (The Play action
+in a take's row is disabled while recording for the same reason as the button.)
+
+While the line reads `ARMED · Ns` there is no cancel control on this page.
+Tapping the round button again does not cancel the countdown: it arms again,
+which cancels the running countdown and starts a fresh one from the pre-roll.
+An armed play is cancelled with `/ctl/rec/cancel`, or from
+[the RECORD page](record.html#the-record-button-and-the-status-line), whose
+record button cancels any armed start during its countdown.
 
 ---
 
@@ -112,6 +132,10 @@ Under them, the same wire line the other pages show, ending in the device id
 the replay is being sent as. A replay depends on the network exactly as much as
 a live stream does. A green socket is still not a reachable receiver.
 
+That line reads the live destination, `stage.tcpHost` and `stage.udpPort`, even
+while the playback network override is on. The replay's own destination is the
+**Replay goes to** row in PLAYBACK NETWORK.
+
 `DROP` is the streamer's own abandonment counter, not the player's. A replay
 shares the live latest-wins mailbox, so a slow link drops replayed frames
 exactly as it drops captured ones, and this figure rising means the socket
@@ -123,20 +147,40 @@ cannot keep up with the speed you have asked for.
 
 This section appears once a take is selected.
 
+Every control in it has a remote form: `rec/play`, `rec/pause`, `rec/stopplay`,
+`rec/playat`, `rec/step`, `rec/seek` and `rec/trim`, with `rec/rename` for the
+library, and every playback setting sent over `/ctl/set` reaches a replay that
+is already running: `stage.rec.netOverride`, `host` and `port` re-point the
+socket, and the rest are applied exactly as the on-screen controls apply them.
+The phone mirrors the position back at 2 Hz on
+`/device/rec/play` as index, total, seconds, duration, loops, paused, in and
+out. The verbs are on [the /ctl page](ctl.html#playback) and the telemetry
+under [recording and playback](ctl.html#recording-and-playback).
+
 ### Transport row
 
 Four buttons: step back one frame, play or pause or resume, step forward one
 frame, stop. The step and stop buttons only act on a running replay.
 
+Stepping pauses the replay. The player moves to the neighbouring frame, sends
+it once and sends nothing more, so the last frame on the wire is the one you
+stepped to until you resume or step again. Pause stops the schedule without
+moving; resume continues from the frame it stopped on.
+
 ### Scrub bar
 
 A frame-accurate slider, with the frame number, the elapsed and total times,
-and, after the first loop, the loop count. Releasing the slider seeks.
+and, after the first loop, the loop count. Releasing the slider seeks. While
+the replay is running, the schedule simply continues from the new frame. While
+it is paused, the player sends that one frame, so the receiver shows what you
+scrubbed to rather than the frame it was holding.
 
 ### Speed
 
 Four preset buttons (0.25×, 0.5×, 1×, 2×) and a slider from 0.05× to 4×. The
-recorded intervals are scaled by this figure.
+recorded intervals are scaled by this figure. A speed set remotely, through
+`/ctl/set stage.rec.speed` or the optional speed argument of `/ctl/rec/play`,
+is clamped to the same 0.05 to 4.
 
 A take recorded at 28 fps replays at 28 fps, and a dropout stays a dropout. A
 replay that silently regularised the stream would hide exactly the faults it
@@ -152,7 +196,9 @@ phones' takes after the fact; the player does not schedule from it.
 
 ### Loop
 
-On by default, with an optional gap of up to 5000 ms between loops.
+On by default, with an optional gap of up to 5000 ms between loops. That is
+the stepper's ceiling; `/ctl/set stage.rec.loopGapMs` accepts 0 to 10000 ms
+(see [the settings reference](settings.html#playback)).
 
 ### Pose sent with the take
 
@@ -185,7 +231,11 @@ A collapsed group.
   take-aged stream.
 - **Trim.** Three buttons: *Set in here*, *Set out here*, *Clear*. "Here" is
   the frame now playing. The same code runs for the buttons and for the remote
-  verb, so they cannot disagree about what "here" means.
+  verb, so they cannot disagree about what "here" means. Tapping a different
+  take clears the trim to the whole take, and so does the end of a recording,
+  which selects the new take. Starting a different take by name from the
+  console does not: the in and out points carry over, clamped to the new
+  take's length.
 - **Pre-roll.** A countdown of up to 30 seconds before the replay starts. This
   is the same setting the RECORD page uses.
 - **Restart live capture when playback stops.** Off by default.
@@ -211,6 +261,14 @@ on.
 | Host | Only shown when the override is on. Blank leaves the whole live destination in use, port included |
 | Port | Only shown when the override is on. Default 9003 |
 | Send as | This phone's device id (0), or a stand-in id from 1 to 9 |
+
+Flipping **Send replays somewhere else** re-points a running replay at once. A
+Host or Port you type does not: it takes effect when you tap **Apply**, the
+button beside the port field, which also dismisses the keyboard. Both routes
+run the same code, which does nothing unless a replay is running, and a replay
+that starts later reads the override as it connects. The **Replay goes to** row
+follows what you type; the socket follows Apply. A blank host means the
+override is not in effect, whatever the toggle says.
 
 **Send as** stamps a different device id into every replayed packet, so one
 phone can stand in for another on a receiver's roster. The point stream, the
@@ -322,3 +380,10 @@ Nothing else changes. Same destination port, same packet layout, same
 fragmentation, same latest-wins. The telemetry namespace, the stream
 description, the plane mask and the grid size all describe the replay rather
 than the camera that is switched off.
+
+That includes the hello's stream facts. When a replay starts, the phone takes
+`w` and `h` from the take's own header, and `planes` becomes the take's planes
+ANDed with the plane filter above. So a take recorded at a different grid from
+the one this phone is configured to capture announces the take's grid for as
+long as it plays, and a console that inspects stream facts sees the take, not
+the camera. The camera's grid returns with the next live frame.

@@ -68,6 +68,8 @@ physical.
 | Installing the app | Needs an Apple Account signed in and internet. Neither exists on a rig LAN. |
 | Local Network permission | A one-time prompt on first launch. If it is declined, no data leaves the phone; the console shows it offline and nothing there explains why. |
 | Device id and host address | Set once per phone. Two phones sharing an id overwrite each other's frames. |
+| Camera permission | A second prompt, and it comes on the first START, not on launch: the capture session starts straight into the camera. Declined, the phone still answers the console and streams no frames, and the console's Autofix ends by telling you to look at the phone's screen for a camera or permission error. |
+| Build age | A test build stops working 90 days after it was uploaded. A phone prepared weeks early can carry a build that dies before the show. |
 
 ## Before the phone leaves
 
@@ -79,17 +81,37 @@ waiting for the update.
 1. Update iOS to at least iOS 26, which the build requires, on Wi-Fi at home
    or in the office. Confirm it finished and the phone has rebooted.
 2. Sign in to the Apple Account that was invited to the test build.
-3. Install the app from the invitation.
+3. Install the app from the invitation. For the October A/B that is two
+   invitations and two apps, **TDStage** (red icon) and **TDStage AR** (cyan
+   icon), side by side on the same phone; they share no settings and no
+   takes, so do the first launch and its prompts in each. See
+   [two phones, two apps](../ios/install.html#two-phones-two-apps).
 4. **Open the app once while still on internet.** This is the step people
    skip. First launch is when iOS asks for Local Network access.
 5. Allow Local Network access when prompted. Without it the phone looks
    healthy, streams nothing, and gives no clue why.
+   The camera has its own prompt, and it does not come on launch: the
+   capture session starts straight into the camera, so iOS asks on the first
+   START. Press START once at base and allow it. Do that after the device id
+   in the next section is set, because a fresh install refuses START until
+   then. Both prompts are listed under
+   [permissions](../ios/install.html#permissions).
 6. Turn off automatic app updates, so a build does not change under you
    between a rehearsal and a show.
 
+Check the build's age against the show dates. A TestFlight build stops working
+90 days after it was uploaded, so a phone prepared early can carry a build that
+expires before the show. The console's Rig health warns from 75 days and raises
+an error from 85, counted from the archive date each phone reports
+([Rig health](../console/ui.html#rig-health-hands-fan-out-cable)); the
+re-upload cadence is on the
+[install page](../ios/install.html#test-builds-expire-and-that-is-the-plan).
+
 ### 2. Identity and destination
 
-1. Set the **device id**. Every phone on a rig needs a different one.
+1. Set the **device id**. Every phone on a rig needs a different one, from
+   1 to 9: the phone's stepper and the console's Device ID row both stop
+   there.
 2. Set the **host address** to the machine that will receive the stream.
 
 **The device id is not optional.** A phone whose id was never set
@@ -97,9 +119,29 @@ deliberately refuses to start, with `START refused: Device ID N was never set
 on this phone`. A fresh install will not stream at all until someone confirms
 the id, on the phone or from the console. Do it before the phone ships.
 
+The guard trips only while the id is still the fresh-install 1 and nobody has
+confirmed it. A phone already moved to 2 to 9 was plainly set by someone and is
+never refused, even after an update. Calibration and take playback do not
+stream the camera and are not blocked; hellos and telemetry keep flowing, so
+the console can see the phone and set its id. The banner and its confirm button
+are under [the device id](../ios/install.html#the-device-id).
+
+From the console, the Device ID row sends the id as a one-key profile document,
+folded into the phone's stored profile when the console holds one, so a later
+profile push carries the new id rather than the old; see
+[phone settings](../console/ui.html#phone-settings).
+
 The host address can also be set from the console once a phone is on the
 network, but setting it early means a phone that joins the rig is already
 correct rather than needing attention.
+
+A phone on a USB cable to a Mac cannot work out the Mac's cable address by
+itself. It learns it from the source address of a `/ctl` packet that arrives
+over the cable, and nowhere else, so press **Send telemetry here** in the
+console, or push a profile, while the cable is in; until then the Live page's
+Link diagnostics warn that the Mac's cable address is unknown. Why the phone
+cannot discover it is on the
+[install page](../ios/install.html#the-destination-address).
 
 If two phones do end up sharing an id, the receiver now names it rather than
 letting the frames quietly overwrite each other. The console's Rig health
@@ -115,7 +157,7 @@ address and by the name and model each phone sends in its hello.
 
 | Setting | Set to | What happens otherwise |
 |---|---|---|
-| Auto-Lock | Never | Belt and braces. The app holds the screen awake while it is in front, so this is not what interrupts capture. It matters if the app is ever backgrounded or drops to the home screen: an unlocked phone is still reachable, a locked one needs a person. |
+| Auto-Lock | Never | Belt and braces. Builds from 2026-10-27 hold the screen awake whenever the app is in front, streaming or stopped, so this is not what interrupts capture. Builds before that released the screen on stop, so a phone put in Standby auto-locked and went deaf to the console; on one of those this setting is the only thing keeping it reachable. It also matters if the app is ever backgrounded or drops to the home screen: an unlocked phone is still reachable, a locked one needs a person. |
 | Passcode | Off | A locked phone cannot be recovered without someone walking to the stand. |
 | Automatic updates | Off | iOS or the app changes between rehearsal and show. |
 | Do Not Disturb | On | Notifications draw over the capture view. |
@@ -160,3 +202,12 @@ With the phone on the same network as the console:
 If the phone stays offline in the console while the app is open and the phone
 is on the network, check the Local Network permission before you check the
 network.
+
+If every phone loses its health at once, grey or green with blank battery,
+thermal and stream numbers, while the clouds are fine, it is not permission.
+Telemetry defaults to port 9000, which TouchDesigner binds and relays to the
+console, so with the tox not running, its console link off, or the console not
+yet found, no health arrives even while the phones stream perfectly. Press
+**Send telemetry here** in the console: health then arrives directly and no
+longer depends on TouchDesigner. The causes and the check are on the
+[troubleshooting page](../console/troubleshooting.html#phone-shows-offline-or-shows-no-health-but-is-streaming-fine).

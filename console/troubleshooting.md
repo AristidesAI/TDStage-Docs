@@ -415,10 +415,11 @@ takes, and some seconds or minutes later it is back to the old value.
    label in the top bar: `armed` means it is acting. **Fix**: disarm it, or
    re store the profile so it holds the value you want.
 
-2. **The console's stored profile is stale.** Device id and UDP port are sent as
-   one key profile documents, not bare `/ctl/set` messages. A stored console
-   profile still holds the old value until you re store it, so the next profile
-   push puts the old one back. **Confirm** with the profile line in the device
+2. **The console's stored profile is stale.** A stored profile holds whatever
+   it held when it was stored. Device id and UDP port are folded into it when
+   you change them from the console, but a profile key changed with a plain
+   `/ctl/set` is not, so the next profile push puts the stored value back.
+   **Confirm** with the profile line in the device
    page's Recovery panel, which reads `STALE` when the console holds a newer
    revision than the phone is running. **Fix**: **Store + push profile**.
 

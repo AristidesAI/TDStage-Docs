@@ -81,6 +81,14 @@ change:
 The refusal also goes out as telemetry, so a console operator who pressed Start
 sees the reason rather than silence.
 
+Only an explicit push counts for the third of those. A profile document that
+names `stage.deviceId` is someone choosing the id, which is what the console's
+Device ID row sends, even to the same number. The boot re-apply of the cached
+profile, and the re-apply during a full self-heal, do not go through that path
+and never set the flag, because the cached profile snapshots the registered
+default too and would otherwise confirm an id nobody chose. A phone whose cache
+carries the untouched id 1 therefore still shows the banner after a relaunch.
+
 #### Why this is a refusal and not a warning
 
 The device id is in the 20-byte packet header of every datagram, and a receiver
@@ -124,6 +132,22 @@ with no receiver in existence, because there is no handshake to fail. It proves
 a local socket was created. Only the console or TouchDesigner can confirm
 frames are being received.
 
+THERMAL is not only a readout. OK, WARM, HOT and CRIT are iOS's nominal, fair,
+serious and critical thermal states, and the thermal ladder acts on them while
+`stage.thermalLadder` is on (the default). The rungs are worked out from the
+lower of the rate chosen on the RECORD page and the rate the LiDAR is actually
+pinned to, and never lift it. WARM costs nothing. At HOT the capture rate is
+capped at `stage.thermalSeriousFPS`, 30 by default. At CRIT it is capped at
+half the lower rate the rungs are worked out from, with a floor of 10, and in
+any case no higher than the HOT rung.
+The cap sits on top of the chosen rate without overwriting it, and the phone
+returns to that rate by itself once it has held a cooler state for 45 seconds;
+every return to the rung in force restarts the clock. `stage.thermalColourAt`
+can shed the colour plane
+before the rate has to: 1 drops `rgb` from WARM, 2 from HOT, and the default 0
+never does. Shed colour comes back with the same hold, and stopping the stream
+clears it. The keys are on the [settings page](settings.html).
+
 Under the stats row, one line describes the stream itself:
 
 ```
@@ -145,7 +169,9 @@ means the socket is the bottleneck rather than the camera.
 
 The same mailbox carries replayed frames, which is why a replay inherits
 latest-wins, the frame-id counter and every error path without a second send
-path that could drift from this one.
+path that could drift from this one. The recorder's tap sits on that same
+drain, but it fires only for an assembled live frame. A replayed frame passes
+it untouched, so a take cannot record itself; see [the RECORD page](record.html).
 
 {: .note }
 **POINTS is only a count.** The phone never puts xyz on the wire. It sends the
@@ -179,6 +205,11 @@ raise it as **Transport errors**:
 
 An error count of zero is still not proof of delivery. A receiver that is
 listening but wedged, or a switch that is dropping, answers nothing at all.
+
+For the first row the fix text names the ports to check: TouchDesigner holds
+9003, and the console falls back to 9013 whenever TD is running, so a phone
+meant for the console alone while TD is up belongs on 9013. The
+[ports reference](../reference/ports.html) has the full map.
 
 ---
 
@@ -285,6 +316,16 @@ missing. The same choice arrives from the console as
 `/ctl/set stage.link <auto|ethernet|cable|wifi>`, which pins the link and
 leaves the destination unchanged.
 
+Neither the Link choice nor the three remembered hosts travel in a profile.
+`stage.link`, `stage.hostEthernet`, `stage.hostCable` and `stage.hostWifi` are
+left out of the profile schema on purpose, for the reason `stage.tcpHost` is:
+the link is the operator's choice, set on this page or by an explicit
+`/ctl/set`, and a cached profile re-applied at boot or during a self-heal must
+never walk a phone back onto another link. A pushed profile that carries
+`stage.link` has the key dropped, so an operator who wants a push to move the
+link has to send `/ctl/set stage.link` as well. The
+[settings page](settings.html) has the profile rule.
+
 The phone cannot work out the computer's cable address by itself. Both ends of
 a USB-C link pick a random `169.254.x` address, and iOS blocks the broadcast
 that would discover the other end. The phone learns the address from the source
@@ -311,6 +352,14 @@ to a computer is link-local at both ends and is wired, so judging by address
 would get the cable case wrong. (Ethernet in the picker does read the address,
 to choose the adapter on the destination's subnet.) The only arbiter of whether
 a pinned link routes is whether the connection comes up.
+
+That rule has a cost under Auto. A USB cable to a computer counts as a wired
+link exactly as a PoE adapter does, so a phone that is streaming to a Wi-Fi
+address with Prefer Ethernet on pins the stream to the cable the moment one is
+plugged in. The cable cannot reach the Wi-Fi address, so the phone sends no
+frames for five seconds, then escapes with the note described below. Plugging
+a cable into a phone that is on Wi-Fi mid-show costs that grace. Switch Link to
+Wi-Fi first, or turn Prefer Ethernet off, if the cable is only there to charge.
 
 #### The five-second grace, and why it exists
 
@@ -343,8 +392,12 @@ happened by the time anyone looks. The LIVE page reads **Wi-Fi (Ethernet
 waiting)** in amber during those five seconds, then **Wi-Fi** with the note
 `any route (wired adapter not routing)` after it, still in amber; telemetry
 reports `link = "wifi"` with `wiredUp = 1` and `preferWired = 1`, and carries
-the same note as the seventh argument of `/device/link`. Those three together
-are the signature: the phone asked
+the same note as the seventh argument of `/device/link`. The message's fourth,
+fifth and sixth arguments are `cableAttached`, the link choice (`stage.link`:
+`auto`, `ethernet`, `cable` or `wifi`) and the interface the stream left on
+(`en3`; empty until connected), so the console can tell a cable from an
+adapter and show which link was asked for; see [telemetry](ctl.html). Those
+three together are the signature: the phone asked
 for the wire, the wire's link is up, and the stream is not on it, so what is
 missing is routing rather than a cable. Do not read it as a failed cable, and
 do not go hunting for an unplugged adapter. (`link = "wifi"` with
@@ -376,6 +429,10 @@ pinned mode. The authority is `TDStage/Net/WiredLink.swift`.
 
 The destination port for the depth stream. Default 9003.
 
+While the field has focus a **Done** button appears beside it. Done, or return
+on the keypad, pushes the new port into the live streamer, the same commit the
+host field's Done performs.
+
 ### Device ID
 
 A stepper, 1 to 9. The id is stamped into every packet and into the telemetry
@@ -396,6 +453,11 @@ Three controls on one row.
   otherwise green when the socket is up and red when it is not. Triple-tap
   anywhere to wake the screen.
   **Wake Screen** restores the previous brightness.
+  The dark state is remembered under `stage.blackout`, so a phone that
+  auto-resumes (`stage.showActive` set) goes dark again if it was dark when the
+  app died, while one opened by hand comes up lit; the console's side and which
+  builds carry it are under
+  [a phone's app crashes](../operations/failure.html#a-phones-app-crashes-or-is-killed).
 - **Calibrate** swaps the rear LiDAR from the capture path to ARKit marker
   tracking. The two cannot share the sensor, so this is a hard swap: the point
   stream stops. Pressing **Stop Calibrate** stores the solved pose and resumes
@@ -407,7 +469,8 @@ Three controls on one row.
   seen. When a stored calibration exists, the line reads
   `Stage extrinsic locked`.
 - `ctl :9010` is the port the phone listens on for remote commands. It is not
-  editable here.
+  editable here. If iOS's Local Network prompt was declined, nothing reaches
+  this port however healthy the phone looks; see the diagnostics below.
 
 Marker calibration works end to end in the code and has unit tests. It has not
 been confirmed on a phone against a printed marker (**built, not verified**).
@@ -450,10 +513,20 @@ The findings the app can raise:
 | Last command from a.b.c.d | ok | This is how the phone learned where the console is |
 
 {: .note }
-**The port 9000 warning matters.** TouchDesigner binds 9000. With the hub
-running, a console listening elsewhere never sees a telemetry packet and shows
-the phone offline while it streams perfectly. The console has a button that
-moves the phone to the console's own listen port.
+**The port 9000 warning matters.** TouchDesigner binds 9000 and relays what
+arrives there to the console, so with the hub running the console normally has
+the phone's health. Without the relay (the tox not running, its console link
+off, or the console not yet found) a console listening elsewhere sees no
+telemetry and shows the phone offline, or without health, while it streams
+perfectly. The console has a button that moves the phone to the console's own
+listen port, after which health no longer depends on TouchDesigner.
+
+**No commands received yet** also carries the one fault no diagnostic here can
+see. If iOS asked for Local Network permission on first launch and it was
+declined, no packet reaches the app: the control port is listening, the
+counters rise, and nothing arrives. The fix text names the setting, Settings,
+TDStage, Local Network. The [install page](install.html) explains why the
+phone's own screen looks healthy while it happens.
 
 A cable address is not stable. The far end re-assigns its `169.254.x` address
 whenever the link is re-established, so a remembered cable address goes out of

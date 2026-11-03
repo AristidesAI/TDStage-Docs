@@ -186,7 +186,7 @@ The first four apply live, with no capture restart.
 | `stage.mountedge` | `0` | `set` number (0 to 2), profile | Declared sky side: 0 automatic, 1 left edge up, 2 right edge up. Consulted only when gravity is degenerate, which happens when the camera stares straight down or up. Also rides the hello and the telemetry |
 | `stage.showActive` | `false` | no | Auto-resume streaming on launch. START sets it, STOP clears it. A profile's own `autoStart` field is what a console pushes instead |
 | `stage.thermalLadder` | `true` | `set` number, profile | Let the frame-rate ceiling drop when the phone is hot. Off holds the configured rate |
-| `stage.thermalSeriousFPS` | `25` | `set` number (5 to 60) | The ladder's `serious` rung, in absolute fps |
+| `stage.thermalSeriousFPS` | `30` | `set` number (5 to 60) | The ladder's `serious` rung, in absolute fps |
 
 The ladder only ever lowers the rate, on top of the operator's choice, without
 overwriting it. The phone returns to the chosen rate by itself once it has

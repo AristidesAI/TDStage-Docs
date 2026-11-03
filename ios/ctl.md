@@ -307,7 +307,7 @@ The thermal ladder acts on the worse of `pressure` and `thermal`.
 | `/tdlidar/<id>/device/net` | `framesSent` `packetsSent` `framesAbandoned` |
 | `/tdlidar/<id>/device/captureage` | `p50` `p95` in ms. The capture-to-**socket** age of the last 64 live frames: the phone's own photon-to-wire latency |
 | `/tdlidar/<id>/device/agesplit` | Seven medians in ms, in order: capture delivery, depth and colour prep, hop to the main thread, main-thread work, send queue, pack, socket. Where that age goes, so a warning can name the slowest stage |
-| `/tdlidar/<id>/device/link` | `"wired"|"wifi"|"none"` `wiredUp` `preferWired` `cableAttached`. A phone on a cabled rig reading `wifi` has a link problem. Read the second argument before concluding which: see below |
+| `/tdlidar/<id>/device/link` | `"wired"|"wifi"|"none"` `wiredUp` `preferWired` `cableAttached` `mode` `iface` `note`. Mode is the operator's link choice (`stage.link`), iface the interface the stream left on (`en3`; empty until connected), note the escape note or empty. A phone on a cabled rig reading `wifi` has a link problem. Read the second argument before concluding which: see below |
 | `/tdlidar/<id>/device/source` | `"live"` or `"playback"`. The only thing on the wire that distinguishes a replay from a live phone |
 | `/tdlidar/<id>/device/tcp` | **Always 0.** There is no TCP link. The address is kept so that consoles which parse it keep working |
 

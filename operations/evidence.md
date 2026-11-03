@@ -76,6 +76,15 @@ That writes `Notes/Requirements-Conformance.md` with the date on it. As of
 2026-10-27 it read 14 PASS, 4 BUILT, 0 FAIL, 7 NEEDS-RIG. Re-run it before
 quoting any of those, because they move.
 
+The script exits 1 when any row is FAIL and 0 otherwise, which is what lets it
+run as the `requirements conformance` step of the Windows console workflow
+(`.github/workflows/windows-console.yml`). The counts also depend on the
+machine it ran on. ST-07 runs `doctor.py` and reads PASS only on Windows,
+because CUDA, the 4090 and the show PC's firewall are checked on the machine
+itself; a clean run anywhere else reads BUILT. So the counts above are a Mac's
+counts, and a 0-FAIL run on the show machine moves that one row from BUILT to
+PASS. Say which machine produced the four numbers.
+
 ## Labelling a number
 
 Every figure needs to carry where it came from, because the same quantity has
@@ -112,13 +121,36 @@ The last two are the interesting ones, and they are the ones a client will
 ask about. Both are structural, waiting on phones rather than on testing time.
 Say that rather than implying the test is pending.
 
+The conformance table's evidence column says what each rig-dependent row is
+waiting on, so the next measurements are not a matter of opinion. F1-14, the
+client's density and latency figures, closes when `Tools/f1_probe.py` runs
+with three phones (runbook step 6, #29). ST-05, the phone count that is set
+once the first three phones' synchronisation is measured, closes on the
+three-phone clock measurement (runbook step 2/2a, #24); the tools pass their
+self-tests, with `imu_sync.py` at 0.1 ms, which proves the tools and not the
+phones. The heat run (#31) is carried in the meeting brief of 2026-10-27
+rather than in the table: it has to be repeated on the fixed build, because
+the 25-minute run found the bug that halved the frame rate, and it closes when
+one setting holds at least 25 frames a second.
+
 ## Producing tracking evidence
 
 You can record the tracking output and score it, which turns an impression
 into a number.
 
 1. Record the tracking output from the console while the thing you want to
-   demonstrate happens.
+   demonstrate happens. The control is **Record /track** in the Live view's
+   Client output panel, described in
+   [the console walkthrough](../console/guide.html#sending-the-tracking-output).
+   It calls `POST /api/track/record` with `{"on": true}` to start and
+   `{"on": false}` to stop, and the API answers 503 `emitter not ready` until
+   the /track emitter exists. The file is `logs/track-<stamp>.jsonl` in a
+   `logs/` directory beside the console's `config.json` (`WebConsole/logs/`
+   unless the console was started with `--config`; git ignores it). The
+   recorder drains the emitter's 60 s trace into it every 2 s;
+   the button reads `Recording · <rows>` while it writes, and the console log
+   says where the file went when it starts and how many frames it holds when
+   it stops.
 2. Score the recording:
 
 ```
@@ -135,7 +167,10 @@ and position error against marks. Useful options:
 | `--marks marks.json` | Score position against known marks. |
 | `--on NAME=a-b` | Declare that someone stood on mark NAME during those seconds; position error is scored there. |
 | `--truth-sim RUN.LOG` | Score against a simulation's own truth, including crossings. |
+| `--people N` | With `--truth-sim`, how many walkers the truth is built for. Without it the scorer takes the count from the sim log's scenario line, and it says so when the two disagree. |
+| `--radius M` | With `--truth-sim`, how close a track must be to a walker, in metres, to be assigned to it. |
 | `--json` | Machine-readable output. |
+| `--selftest` | Checks the scorer against a built-in synthetic trace with known answers, then against truth built from the walker sim. No trace file needed. |
 
 `--gap` sets how soon after a lost identity a new one is paired with it and
 counted as one identity loss; a new identity arriving later is a fresh arrival
@@ -145,6 +180,17 @@ The table lists the options that matter; the full set is longer, and the
 defaults are the tool's to change. Run `python3 Tools/track_score.py --help`
 for the current list rather than trusting this page for a default, and quote
 the value you ran with when you report a score.
+
+Since 2026-10-27 every recorded row also carries what the tracker was given
+that frame: its clock (`tn`) and the detections (`dets`, rejects included with
+their reason). `Tools/track_replay.py logs/track-x.jsonl -o /tmp/replayed.jsonl`
+feeds the `ok` detections back through a fresh tracker with the same clock;
+`--module` swaps in a candidate `track_emit.py`, and `--check` replays with the
+shipped module and reports how many rows differ from what was emitted live
+(0 means the replay is faithful). The output is the input with `tracks`
+replaced, so `track_score.py` reads it as it reads a live recording, and a
+tracker change is judged in seconds against the same inputs, with the same
+scorer on both sides, instead of a new simulation run.
 
 ### The distinction that matters in the room
 
@@ -158,7 +204,7 @@ Say which one you are showing.
 | Check | What it proves |
 |---|---|
 | `python3 TD/newtox/wire_fixture_test.py` | Two frames a real iPhone put on the wire still parse through TD's receiver, byte for byte. Catches a phone-side packer change that compiles, which the simulator's own bytes cannot. |
-| `python3 WebConsole/doctor.py` | The machine's setup. A USB-only warning means the phone is tethered rather than on the show network, which is fine on a desk and wrong at a venue. |
+| `python3 WebConsole/doctor.py` | The machine's setup. A USB-only warning means the phone is tethered rather than on the show network, which is fine on a desk and wrong at a venue. Its port checks bind each port without `SO_REUSEADDR`, a true test, so a port the running console or TouchDesigner already holds reads WARN, naming the holder when it can, never FAIL; the exit code is 1 only on a FAIL. `--wait 0` skips the telemetry wait; of the four ports it tests, `--listen` moves the telemetry port and `--http` the web port; the flags and what each check covers are on [running the console](../console/running.html). |
 | `python3 TD/newtox/tox_drift.py` | The saved TouchDesigner project against the repository, so the code in the project is the code in version control. |
 
 ## Running a session, and the pack that comes out of it
@@ -183,11 +229,38 @@ calls the specialised tools where a step needs one. You can list its steps,
 narrow a run to a few of them, or resume an interrupted session into the same
 file.
 
+It saves after every step, so a crash or Ctrl-C loses nothing:
+`Notes/Session-<date>.json` holds everything machine-readable and
+`Notes/Session-<date>.md` is the summary to paste into issues and the email
+(`--out` moves both). The default, `--plan runbook`, is the three-phone
+session; `--plan sydney` is the scored stage test (#27) and writes
+`Notes/Stage-Test-<date>` instead. It refuses to start when the console does
+not answer.
+
+Rehearse it with no phones before the phone day: a scratch console under the
+sandbox that denies the show ports, three sims, and `TDSTAGE_CONSOLE` pointing
+the script and the tools it runs at that console (`f1_probe` still reads
+:9001):
+
+```
+python3 WebConsole/server.py --http 9480 --listen 9490 --tdp4-port 9493 \
+    --sim-port 9494 --f1-port 0 --config /tmp/x/config.json   # {"td": {"enabled": false}}
+python3 TD/newtox/tdp4_sim.py 127.0.0.1 9493 900 --devices 3 --first-id 1 --grid 320x240
+curl -X POST -d '{"push":true}' localhost:9480/api/td            # check the seed poses
+yes '' | TDSTAGE_CONSOLE=http://127.0.0.1:9480 python3 Tools/phone_session.py --out /tmp/x/s
+```
+
 `Tools/evidence_pack.py` then turns that file (a `--plan sydney` session, the
 scored stage test) into the pack, with the build facts read off disk rather
 than remembered: which commits, which project version. The venue is a flag
-(`--venue`); the limits section starts from the tool's standard list, and
-anything this session failed to cover is yours to add.
+(`--venue`); `--out` names the file, which is otherwise
+`Notes/Evidence-Pack-<date>.md`. The limits section starts from the tool's
+standard list, and anything this session failed to cover is yours to add.
+Section 5, the takes, states that every phone recorded every scenario
+(`.tdp4rec` plus `.imu`), leaves the Dropbox link for you to attach, and tells
+the reader to replay the takes into TouchDesigner with
+`TD/newtox/take_play.py` and convert them with `TD/newtox/take_to_mcap.py`,
+both on [the TD testing page](../td/testing.html).
 
 | Tool | The measurement it is for |
 |---|---|
