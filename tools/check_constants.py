@@ -106,6 +106,8 @@ CHECKS = [
      "WebConsole/server.py", "--f1-hz"),
     ("reference/field.md", r"listens on TCP port (\d+) \(`--f1-port`\)",
      "WebConsole/server.py", "--f1-port"),
+    ("console/ui.md", r"A disagreement over (\d+) cm names the phone",
+     "WebConsole/calib_check.py", "WARN_M_CM"),
 ]
 
 
