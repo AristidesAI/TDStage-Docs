@@ -1,0 +1,4 @@
+// Theme variables, read by just-the-docs before its own defaults.
+// Wider content column (theme default 50rem): diagrams scale with it, and
+// the wide LR flowcharts were rendering at 700px with 10px labels.
+$content-width: 64rem;
