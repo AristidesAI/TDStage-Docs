@@ -251,6 +251,16 @@ G = Trim . Reg . Floor . Level . E
 The CPU path applies the same terms in the same order, in `merged_callbacks`
 and `level_ops` rather than in a matrix row.
 
+{: .note }
+**The CPU path's `id` channel is wrong where two people touch**
+([#51](https://github.com/AristidesAI/TDStage/issues/51)). Its fusion
+averages the track ids of the points that land in one 2.5 cm voxel and rounds,
+so a voxel shared by tracks 1 and 3 is labelled 2, a person who does not exist.
+The show path is the GPU merge, which carries no ids, and the tracking output
+comes from the console, so this bites only on the CPU fallback and on any
+content keyed to TouchDesigner's own id channel. Do not key content on it
+until the fix (take the heaviest id per voxel, not the mean) is in.
+
 `Posesource` decides where `Reg` comes from: the console roster, or the Align
 page knobs. The registration yaw is not the same number as the roster's plan
 heading, so a figure typed in by hand from a plan will be ninety degrees out.

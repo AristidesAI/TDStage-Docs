@@ -38,6 +38,19 @@ the Live view without them.
 
 1. **Get the repo.** `git clone`, or download the ZIP and unzip. Keep
    `TD\newtox` beside `WebConsole`.
+
+   {: .warning }
+   **The repo ships a `config.json` that belongs to another machine**
+   ([#46](https://github.com/AristidesAI/TDStage/issues/46)). It is the
+   development Mac's live file: its roster with typed phone addresses on a home
+   LAN, its markers, its registration and its output targets. A typed address
+   wins over the one a phone reports from, so on a fresh install the console
+   warns after ten seconds ("roster host is not where this phone reports
+   from") and start, standby, blackout and calibrate never reach those phones
+   until you clear their host fields on the Dashboard. Do that before anything
+   else. And once the show machine has its own roster, never `git pull` on top
+   of it: copy `config.json` aside, update, copy it back. The console accepts
+   any well-formed file, so an overwrite is silent.
 2. **Install Python 3.12 x64** from python.org with "Add to PATH" ticked, or
    `winget install -e --id Python.Python.3.12`.
 3. **Run `WebConsole\windows\install.bat`.** It creates `WebConsole\.venv`,
@@ -396,7 +409,7 @@ is no TCP transport for depth anywhere in this system.
 
 | Path | What |
 |---|---|
-| `WebConsole/config.json` | Roster, poses, marker plan, person figures, listen port, TD link, client output targets, recovery policy, every setting |
+| `WebConsole/config.json` | Roster, poses, marker plan, person figures, listen port, TD link, client output targets, recovery policy, every setting. **Tracked in git**, so a fresh clone carries the development Mac's copy and an update can overwrite the show's ([#46](https://github.com/AristidesAI/TDStage/issues/46)) |
 | `WebConsole/backups/config-*.json` | Rotating copies, at most one a minute, newest 50 kept. The console loads the newest usable one if `config.json` is unusable |
 | `WebConsole/profiles/phone-<id>.json` | Each phone's last known good profile, with a revision number |
 | `WebConsole/logs/console.log` | Rotating, 5 files of 5 MB |

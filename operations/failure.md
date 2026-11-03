@@ -126,7 +126,15 @@ outage entirely.
 
 Automatic: the phone resumes streaming when the app relaunches. If the show
 was started with **Start show**, the console's auto-recover then sends start to
-a phone that is back online but idle. It does so only once the phone has
+a phone that is back online but idle.
+
+{: .warning }
+**It comes back with its screen lit** ([#49](https://github.com/AristidesAI/TDStage/issues/49)).
+Blackout lives only in the app's memory, so a phone that crashed, rebooted or
+was relaunched by the watchdog rejoins the cloud at full brightness, and the
+console's auto-recover sends it start and nothing else. Nothing darkens it and
+nothing warns. After any relaunch during a show, press **Blackout all** again,
+or the audience sees the phone before you do. It does so only once the phone has
 stayed back for twelve seconds without dropping again, and
 at most once every thirty seconds per phone. A phone that flaps restarts that
 twelve second clock each time, so the console waits for a phone that is back

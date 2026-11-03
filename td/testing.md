@@ -281,6 +281,18 @@ wire format, the shaders or the receiver.
 | `python3 Tools/fuse_weight_ab.py` | Weighted fusion against plain fusion on an exact synthetic surface. This is the measurement behind the show path keeping a plain mean: weighted came out a few tenths of a millimetre better at the median and slightly worse at the 90th percentile. |
 | `python3 TD/pipeline_test.py` | The older point-based isolation pipeline, offline. |
 
+{: .note }
+**What none of these check** ([#50](https://github.com/AristidesAI/TDStage/issues/50)):
+the phone's own fragmenter against this receiver. The bench packs and
+fragments in Python, and the wire fixture of two real iPhone frames holds the
+assembled frame, captured before fragmentation, which the test re-splits with
+the receiver's own packet header. So the 20-byte packet header the phone
+writes (packet index, packet count, payload length, flags) has no
+cross-language check, and a regression in the Swift fragmenter would pass
+every self-test and show up on a rig as frames dropped for missing packets.
+Low risk while real phones stream into this receiver daily; a captured
+datagram fixture would close it.
+
 `hlib.py` and `hlib_grid.py` are pure numpy and OpenCV, with no TouchDesigner
 imports, which is why the same files run inside the tox and in these offline
 tests. Never add a TouchDesigner import to either.
