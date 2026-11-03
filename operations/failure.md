@@ -471,8 +471,11 @@ still an open decision.
 
 **A rebooted phone needs a person.** Nothing can open an app on a locked
 phone, so a phone that reboots stays dark until somebody walks to the stand.
-The self-relaunch path in the app depends on supervised single-app mode, which
-is undecided ([#16](https://github.com/AristidesAI/TDStage/issues/16)).
+The app does have a self-relaunch path, and it depends on the phone being
+locked into supervised single-app mode — which has not been decided, and
+**which no issue currently tracks**. The distribution question it used to sit
+beside has been settled and closed; this half went with it by accident rather
+than by decision.
 
 **Nothing stops the machine sleeping.** There is no wake lock in the system,
 and a sleep mid-show costs every performer id. It is prevented by setting the
@@ -485,14 +488,23 @@ and now comes back sending, so the gap is the restart plus the half minute the
 tracker needs to re-learn its background — not, as it was until 2026-10-27, for
 as long as it takes somebody to notice.
 
+## Not a gap, but a date
+
 **App distribution is a recurring deadline, by choice.** Test builds expire 90
 days after upload, and the decision of 2026-10-30 is to stay on TestFlight and
-re-upload about every 80 days to April 2027 ([#16](https://github.com/AristidesAI/TDStage/issues/16)) rather than move to
-the App Store or Business Manager. Ten days of margin, roughly five more
-uploads, and a date that has to be kept: an expired build does not degrade, it
-refuses to launch, on every phone at once. Separately,
-[#21](https://github.com/AristidesAI/TDStage/issues/21) covers the source
-escrow the agreement asks for.
+re-upload about every 80 days to April 2027 ([#16](https://github.com/AristidesAI/TDStage/issues/16), now closed) rather
+than move to the App Store or Business Manager. Ten days of margin, roughly
+five more uploads.
+
+It is not in the list above because it has both a plan and a fallback. It is
+on this page because the failure mode is total: an expired build does not
+degrade or warn at the moment it matters, it refuses to launch, **on every
+phone at once**, since they were all uploaded on the same day. The phones and
+the console do warn in advance, counting from when the build was archived
+rather than uploaded, so that warning is early rather than late.
+
+Separately, [#21](https://github.com/AristidesAI/TDStage/issues/21) covers the
+source escrow the agreement asks for.
 
 ## Routine that prevents most of this
 
