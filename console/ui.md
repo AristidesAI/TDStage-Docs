@@ -108,6 +108,7 @@ Five panels, then the device cards.
 | **Ping all** | `/tdlidar/ctl/ping` to every phone in the roster, enabled or not. The log records each pong; the round trip is in the device page's telemetry (clock offset / rtt). |
 | **Sync markers** | Sends each phone its marker ids and marker size, for every phone that has a known IP. |
 | **Calibrate all** / **Finish all** | Starts and finishes marker calibration on every enabled phone. |
+| **Check calibration** | With exactly one person on stage, asks `/api/rig/calib` whether the phones agree where that person is. A disagreement over 15 cm names the phone and points at the marker size, because a size read off the black square instead of the crop marks shifts a phone's whole cloud along its line to the marker. Tick the spot option and give the taped mark's position to also test correctness, since agreement alone cannot see an error every phone shares. The method and its limits are in [Rig get-in](../operations/get-in.html#the-one-person-test). |
 | **Start all** | `/tdlidar/ctl/start` to every enabled phone, with no stagger and no verification. Use Start show in the top bar for a real start. |
 | **Stop all**, **Blackout all**, **Wake all** | As the top bar buttons. |
 | **Lock all poses** | Locks every enabled phone's current attitude as its mounted pose. From then on "moved since lock" and the movement alarm measure against it. Do this after the get in. |
