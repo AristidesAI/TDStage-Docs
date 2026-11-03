@@ -22,7 +22,7 @@ tree.
 
 ## Which one do I run?
 
-There are five senders and six self-tests, and picking the wrong one wastes an
+There are five senders and seven self-tests, and picking the wrong one wastes an
 afternoon proving something you were not asking about. Start from what you are
 testing, not from what is convenient to launch.
 
@@ -65,7 +65,7 @@ bound.
 
 | Situation | Send to |
 |---|---|
-| The bridge is running | The bridge's `--port`, which the launchers set to 9003 |
+| The bridge is running | The bridge's `--port`, which the launchers set to 9003 (its own default is 9004) |
 | No bridge, TouchDesigner binds the socket | The tox's `Udpport` |
 | Testing the receiver alone with the bench | The bench's `--port` |
 
@@ -87,6 +87,8 @@ python3 TD/newtox/tdp4_sim.py <host> <port> <seconds> [options]
 | `--fps N` | 30 | Frames per second per device |
 | `--planes P` | `depth+conf` | `depth`, `depth+conf` or `depth+conf+rgb` |
 | `--spread-ms N` | 0 | Spread a frame's packets over this long instead of back to back |
+| `--first-id N` | 101 | First device id; a second sender on the same switch takes 201 |
+| `--grid WxH` | `256x192` | Depth grid; the iPhone 17 Pro streams `320x240`, so use that for show-rig load tests |
 
 Positional defaults are `127.0.0.1`, port 9003, 30 seconds.
 
@@ -180,7 +182,8 @@ just before fragmentation, so replaying one hands the bytes back at the same
 point. Same socket, same destination, same fragmentation, same latest-wins
 policy. A replay is indistinguishable from a live phone to the hub.
 
-The only difference is `"source": "playback"` in the TDPH hello.
+The only difference is `"source": "playback"` in the TDPH hello, whose `app`
+field from this tool starts with `take_play`.
 
 ```
 python3 TD/newtox/take_play.py <host> <port> <seconds> <take> [take ...] [options]
@@ -219,8 +222,9 @@ python3 TD/newtox/take_reader.py --info --verify take.tdp4rec
 One take per invocation. `--info` prints the metadata, frame count, codec and
 compression ratio. `--verify` decodes every frame.
 
-Format version 2 needs only the standard library. Version 1 takes used Apple's
-framed LZ4 and need the `lz4` package installed to read.
+The format version 2 codec needs only the standard library; the reader itself
+also imports numpy. Version 1 takes used Apple's framed LZ4 and need the `lz4`
+package installed to read.
 
 ## Takes to a recording viewer: `take_to_mcap.py`
 
@@ -268,8 +272,9 @@ as TouchDesigner on that port.
 
 ## Self-tests
 
-These need no sockets, no GPU and no TouchDesigner. Run them after touching the
-wire format, the shaders or the receiver.
+These need no GPU and no TouchDesigner, and no sockets apart from the bridge
+self-test's own loopback ports. Run them after touching the wire format, the
+shaders or the receiver.
 
 | Command | What it checks |
 |---|---|
@@ -318,7 +323,8 @@ kept for the record. Do not use them to test the hub.
 **Two sims at once with the same device ids.** Both default to 101 upwards, so
 their frame ids collide and the receiver reports thousands of dropped
 incomplete frames that are not real loss. Run sims sequentially, or give one of
-them different ids, and diff the counters per run.
+them different ids (`tdp4_sim.py --first-id 201`; `merge_sim.py` has no such
+flag), and diff the counters per run.
 
 **Testing in learned segmentation mode overwrites learned state.** A learn
 writes into the application support directory. Back that up before running a
@@ -333,13 +339,15 @@ rate, not TouchDesigner's frame rate.
 
 **Gates on `frame % N` do not fire reliably.** Because frames are skipped, a
 modulus gate lands erratically or never once the merge is loaded. Gate on
-`absTime.seconds`. This has caused two separate freezes in the hub's own
-callbacks.
+`absTime.seconds`. This froze four of the hub's own gates (the health line,
+then device auto-registration, the hands poller and autoframe) before they
+were moved to time gates.
 
 ## What the figures so far are worth
 
 Every multi-stream figure measured to date is simulation. There is no
-multi-phone rig measurement yet.
+multi-phone rig measurement of them yet; the rig has run up to three real
+phones live, but none of these figures was measured on them.
 
 Measured, simulation, 2026-10-26, depth and confidence, with the bridge in
 place:

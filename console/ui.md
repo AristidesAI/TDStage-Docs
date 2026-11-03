@@ -51,7 +51,7 @@ Top to bottom:
 |---|---|
 | **Dashboard**, **Stage 3D**, **Live view**, **All phones**, **Markers**, **Log** | Page links. The active one is highlighted. |
 | **Devices** list | One row per phone in the roster, in id order, with its colour dot, name and a short state. **Click** opens the side drawer for that phone. **Double click** opens its full page. |
-| **Device count** footer | The minus button removes the last phone slot from the roster and asks first. Removing a phone also sends `/tdstage/pose/clear` to TouchDesigner. The plus button adds a slot, placed centre stage ready to drag. |
+| **Device count** footer | The minus button removes the last phone slot from the roster and asks first. Removing a phone also sends `/tdstage/pose/clear` to TouchDesigner for a phone whose pose the console had sent. The plus button adds a slot, placed centre stage ready to drag, and held from TouchDesigner until it is placed or poses are pushed. |
 
 Drag the rail's right edge to resize it, between 170 and 420 px. The console
 remembers the width.
@@ -66,7 +66,7 @@ Left to right.
 |---|---|
 | **View title** | The current page's name, or the phone's name on a device page. |
 | **Undo** / **Redo** | One step through the config history: poses, markers, the person figures and the roster. Also Cmd-Z and Shift-Cmd-Z. Control sends are not undoable. The console keeps up to 60 steps. |
-| **Start show** | Starts every enabled phone, staggered 200 ms apart, so N capture sessions do not spike the network together. Six seconds later it checks telemetry, retries the phones that did not come up, and warns if they still have not. It also arms auto recover. |
+| **Start show** | Starts every enabled phone with its screen dark (the display is a big heat source; Wake shows them again), staggered 200 ms apart, so N capture sessions do not spike the network together. Six seconds later it checks telemetry, retries the phones that did not come up, and warns if they still have not. It also arms auto recover. |
 | **Standby** | Stops capture and blacks out the screen on every enabled phone, 150 ms apart. Phones cool down and stay reachable for telemetry and `/ctl` as long as the app stays open. Builds from 2026-10-27 keep the phone from auto locking; on an older build set Settings, Display, Auto-Lock: Never, or a locked phone goes deaf to `/ctl`. Disarms auto recover. Asks first. |
 | **Stop** | Stops streaming on every enabled phone and disarms auto recover. Asks first. |
 | **Blackout** | Screens off on every enabled phone. Capture keeps running. Asks first. |
@@ -105,7 +105,7 @@ Five panels, then the device cards.
 | Control | What it does |
 |---|---|
 | **Telemetry port** | The UDP port the console binds for phone telemetry and TD replies. Changing it rebinds immediately. |
-| **Ping all** | `/tdlidar/ctl/ping` to every phone in the roster, enabled or not. The log records each pong with its round trip. |
+| **Ping all** | `/tdlidar/ctl/ping` to every phone in the roster, enabled or not. The log records each pong; the round trip is in the device page's telemetry (clock offset / rtt). |
 | **Sync markers** | Sends each phone its marker ids and marker size, for every phone that has a known IP. |
 | **Calibrate all** / **Finish all** | Starts and finishes marker calibration on every enabled phone. |
 | **Start all** | `/tdlidar/ctl/start` to every enabled phone, with no stagger and no verification. Use Start show in the top bar for a real start. |
@@ -120,7 +120,7 @@ Writes to every enabled phone at once.
 |---|---|
 | **Colour planes** picker and **Apply** | Sets `stage.udpPlanes` to `depth`, `depth+conf` or `depth+conf+rgb`. Adding rgb roughly doubles each phone's wire cost. |
 | **Colour On** / **Off** | `stage.colorEnabled`. TDStage only; TDStage AR ignores it. The rgb plane is still only sent when the planes include it. |
-| **Raw mode On** / **Off** | `/tdlidar/ctl/rawmode`. On, depth goes straight to the wire and the phone skips its on phone processing toggles. |
+| **Raw mode On** / **Off** | `/tdlidar/ctl/rawmode`. TDStage only; TDStage AR ignores it. On, depth goes straight to the wire and the phone skips its on phone processing toggles. |
 | **FPS** field and **Apply** | `/tdlidar/ctl/fps`. A thermal ceiling on the phone can still cap it lower. |
 
 ### TouchDesigner link
@@ -149,11 +149,18 @@ error), a title, a detail and a `Fix:` line. Rows the server can repair itself
 also carry a button: **Start fan-out**, **Turn hand tracking on**, or
 **Restart**.
 
-It checks, in this order:
+Before the chain itself come the rows about this session: how it booted
+(below), console code changed on disk since it started, a screen lit during an
+armed show, the USB cable address moved, TestFlight builds near their 90 days,
+what the last rig align left unplaced, pairs of phones whose clouds disagree,
+phones that shed colour for heat, a stale phone IP, a frozen background that
+was cleared, and poses held from TouchDesigner for unchecked phones. Then it
+checks, in this order:
 
 1. whether `hand_track` imported;
 2. whether the Apple Vision bridge is present;
-3. whether a YOLO pose model is loaded;
+3. whether a YOLO pose model is loaded, and whether the worker has a Python
+   with ultralytics to run under (said only when it has not);
 4. whether any frames are reaching **the console** (as opposed to TouchDesigner,
    which is fed by a different socket and can look healthy while the console
    sees nothing);
@@ -168,7 +175,7 @@ pill and a button each:
 
 | Service | What it is | What Restart does |
 |---|---|---|
-| Hand pose (Apple Vision) | Finds hands in each phone's camera image | Clears its state |
+| Hand pose (Apple Vision) | Finds hands in each phone's camera image | Clears its cached hands and error count, and switches hand tracking on if it was off |
 | Person observer (Apple Vision) | Person masks and body pose per phone | Drops queued work and cached results, new thread if the old one died |
 | YOLO worker | Multi person masks and pose in its own process | A real process restart |
 | Live-view person mask (Apple Vision) | The mask behind the Live view and the vision and consensus modes | As the observer |
@@ -210,7 +217,7 @@ Runs synthetic TDP4 phones with no hardware. Ids start at 101.
 | **seconds** | 5 to 3600 per run. |
 | **planes** | `depth`, `depth+conf` or `depth+conf+rgb`. rgb is the only way to exercise the camera tiles and the vision observer without hardware. |
 | **loop** | Relaunch when a run ends. |
-| **Start** / **Stop** | Stop kills every simulator process this console started, and adopts any it finds running. |
+| **Start** / **Stop** | Stop kills every simulator process on this machine, whoever started it. While one runs that this console did not start, the status line adopts it and says so. |
 
 The line underneath says what is running and where it is sending. If the
 target is not 9003 it warns that TouchDesigner will not see it.
@@ -220,7 +227,10 @@ target is not 9003 it warns that TouchDesigner will not see it.
 One card per phone, coloured by its roster colour, dimmed when disabled.
 Clicking the card opens the side drawer.
 
-- **Pills**: `OSC` (telemetry arriving), `STREAM`, `CALIB`, `BLACK`.
+- **Pills**: `OSC` (telemetry arriving), `STREAM`, `CALIB`, `BLACK`, and when
+  they apply `POSE HELD` (planned pose not sent to TouchDesigner until someone
+  confirms it) and `AUTO-RECOVER PAUSED` (stopped from the console, so auto
+  recover leaves it stopped until it is started again).
 - **Stats**: battery, charging, thermal, fps, points, capture age in
   milliseconds, and the marker id it can currently see. Capture age shows the
   phone's own capture to wire p50; hovering names the slowest stage and the p95.
@@ -248,13 +258,13 @@ Rotate. The gizmo is forced off while the console is locked.
 
 | Section | Controls |
 |---|---|
-| (top) | **Auto setup coverage** optimises every enabled phone's position and aim and its marker for maximum coverage and multi phone overlap of the quoted volume, in one undo step. **Load plan (6 phones)** and **(3 phones)** set phone poses and marker positions from a measured coverage study held in the system repository, and also set one rig wide marker size from the layout's sheet size. Both ask first, and undo reverts. |
+| (top) | **Auto setup coverage** optimises every enabled phone's position and aim and its marker for maximum coverage and multi phone overlap of the quoted volume, in one undo step. Under **Stroud plan**, four buttons set phone poses and marker positions from a layout held in the system repository: **Front + back · 6** and **Front + back · 3** (the show rig shape) and **Side rows · 6** and **Side rows · 3** (the coverage study's side rows). Each also sets one rig wide marker size from the layout's sheet size. All ask first, and undo reverts. |
 | **TouchDesigner** | The link state line, plus **Ping**, **Retry** and **Push poses**. |
 | **Selected** | The selected phone's or marker's numbers, with **Open** (its device page) and **Ping**. |
 | **Options** | **LiDAR beams**, **Range split at 7 m** (two zones against one uniform zone), **Max-range plane**, **Beyond-range reach (RGB)**, **Marker plan**, **Labels & text**, **Floor grid**, **Person A (scale figure)** with a pose slider, **Person B (occlusion)** with a pose slider. |
-| **Visual tuning** | In-range brightness, Beyond-range brightness, Range-plane opacity, Shadow strength, Label size, and the backdrop: dark, black, white, or a free colour picker. |
+| **Visual tuning** | In-range brightness, Beyond-range brightness, Range-plane opacity, Shadow strength, Label size, Phone size, Sim point size, Marker locator size, Venue opacity, Grid opacity, and the backdrop: dark, black, white, or a free colour picker. |
 | **Venue** and **Coverage study** | One visibility checkbox and one opacity slider per model layer. The `BAND_` layers are the coverage study supplied for the production. |
-| **Per-phone frustums** | **All on**, then one solo button per phone. |
+| **Per-phone frustums** | One checkbox and one brightness slider per phone, then **All on** and a **Solo** button for each of the first four phones. |
 
 The config stores the two person figures and the quoted volume and shares them
 with every browser, so moving them is a config change and is undoable.
@@ -286,20 +296,23 @@ three tones (black low, grey medium, white high). The card's buttons:
 | **Re-anchor** | Takes the current pose as the new anchor (`latency.rgbReanchor`). |
 | **⤢** and **–** | Enlarge or shrink, collapse or expand. |
 
-**The side rail** sections, in order:
+**The side rail** sections, in order (Phone cameras, described below after Hand
+tracking, actually folds between Live phones and People only):
 
 ### Ingest
 
-One chip per source says whether it is running, on which port, and how many
-frames it has taken. `TD holds the port` means the console correctly stood
-aside. Then **Start simulator** with a phone count picker, and a **Colour planes
-(rgb)** switch, which is the only way to exercise the camera tiles and the
-vision observer without hardware.
+One chip, `TDP4 direct`, says whether the console's own listener on the phone
+port is running, on which port, and how many frames it has taken. `TD holds
+the port` means the console correctly stood aside. The console's second
+listener (:9013, the fan-out and simulator port) has no chip. Then **Start
+simulator** with a phone count picker (1 to 8), and a **Colour planes (rgb)**
+switch, which is the only way to exercise the camera tiles and the vision
+observer without hardware.
 
-On the show machine neither socket listener is running (`--tdp4-port 0`) and
-the frames come from the TDP4 bridge's memory mapped file instead.
+On the show machine the phone-port listener is not running (`--tdp4-port 0`)
+and the frames come from the TDP4 bridge's memory mapped file instead.
 `GET /api/live` reports that path under `bridge`, and so does the Rig health
-panel; these chips do not.
+panel; this chip does not.
 
 Two paths can deliver the same frame, so the store deduplicates by device id and
 frame id: a frame already taken from one path is counted under `dup` rather than
@@ -311,11 +324,11 @@ the bridge while diagnosing one of them.
 | Control | What it does |
 |---|---|
 | **Send /track** with host and port | Starts or stops the `/track` OSC stream of performers and hands to the client's bus. Default `127.0.0.1:7000`. Editing host or port while it runs applies immediately. Stopping asks first, because the client loses performer data. |
-| **Record** | Writes every emitted `/track` frame to `logs/track-<stamp>.jsonl` for the evidence pack scorer. |
+| **Record /track** | Writes every emitted `/track` frame to `logs/track-<stamp>.jsonl` for the evidence pack scorer. |
 | **Hands** | Emit `/track/performer/hand` for confident wrists of confirmed, un-clustered performers. |
 | **Flip Z axis** | Negates z and vz on the wire. One click if the depth axis sign turns out reversed against the client's sim. |
 | **conformance** line | Reports whether every emitted bundle satisfies the contract: hands a subset of performers, all values finite, timestamps monotonic. |
-| **Send /track NDI** button with **view** and **colour** pickers | The NDI image of the cloud. View is `front` or `top`. Colour is `rgb`, `device` or `height`. Needs the NDI runtime and `cyndilib`. The status line names the source as published, which can differ from the configured name because NDI renames a duplicate. |
+| **Send NDI cloud** button with **view** and **colour** pickers | The NDI image of the cloud. View is `front` or `top`. Colour is `rgb`, `device` or `height`. Needs the NDI runtime and `cyndilib`. Stopping asks first. The status line names the source as published, which can differ from the configured name because NDI renames a duplicate. |
 
 An F1 line below reports the WebSocket's client count and frame time.
 
@@ -325,25 +338,31 @@ A bar and a text line breaking down the path from capture to emission.
 
 ### Live phones
 
-**Align all to device N** solves every live phone's heading and position
-relative to the lowest numbered live phone, from the clouds, and writes the
-result to the roster so this view and TouchDesigner move together. It needs
-shared walls or set in view. It leaves weak or ambiguous matches alone and logs
-them. **use plan as prior** restricts the search to near each phone's planned
-pose, which you need in rooms dominated by one wall, where an open search is
-ambiguous.
+**Align to #N** solves every live phone's heading and position relative to
+the lowest numbered live phone, from the clouds, and writes the result to the
+roster so this view and TouchDesigner move together. It needs shared walls or
+set in view. It grades every phone: OK and WARN phones are placed, FAIL phones
+keep their pose and say why. **use plan as prior** restricts the search to near
+each phone's planned pose, which you need in rooms dominated by one wall, where
+an open search is ambiguous. The **solver** picker chooses `Clouds` (the
+console's own, about 1 s a pair) or `Open3D` (about 6 s a pair, in its own
+Python; it does not use the plan prior). **Record walk** / **Stop walk** records
+one person walking the stage for about 20 s, and **Solve walk** places the
+phones from that walk against the anchor, which works for phones facing each
+other, or only the phones the last clouds align left where they were. Below,
+one line per pair of phones says how well their placed clouds agree where they
+overlap.
 
-Then one row per live phone with its fps, point count and source, plus per phone
-gizmo target buttons (whole phone, cloud only, frustum only) and a floor solve:
+Then one row per live phone with its fps, point count and source, plus **Move**
+and **Rotate** (the gizmo on the whole phone, cloud and frustum together; on
+release the pose is saved to the roster, applied by the server and sent to
+TouchDesigner), **Reset**, and the pose as numbers: x, y, z, yaw, and the tilt
+correction pitch and roll (plus or minus 30 degrees). The fields are read only
+for a marker calibrated phone. There is no browser only offset any more: the
+view shows exactly what the server places.
 
-- **Select floor** drags a rectangle over points you know are floor and rotates
-  the cloud so that patch lies flat;
-- **Auto** guesses by consensus and cycles candidates on repeat presses within
-  six seconds;
-- **Clear** clears all manual offsets.
-
-A phone not yet in the roster also gets a button to add it at its current
-placement.
+A phone not yet in the roster gets **Place this phone** instead, which adds it
+at its current placement.
 
 ### People only
 
@@ -372,7 +391,8 @@ group, an **Expert settings** switch that reveals the tunables that can wedge a
 show, and **Reset all** at the bottom which asks first.
 
 A ⚠ beside a row means changing it resets the engine (the background relearns
-from scratch) or needs a console restart. A greyed row with a reason is locked,
+from scratch) or makes its worker or sender (the YOLO worker, the NDI sender)
+restart by itself to apply it, a few seconds without that output. A greyed row with a reason is locked,
 and the server refuses to move it. Hovering a label shows its help text and its
 `group.key`. See [Settings reference](settings.html).
 
@@ -394,6 +414,7 @@ and the server refuses to move it. Hovering a label shows its help text and its
 - **IMU heading**: rotate each cloud and frustum by the phone's IMU heading.
   Marker calibrated phones are left alone.
 - **Mirror upstage axis**.
+- **Heading trim**: rotate every cloud by a fixed offset, -180 to 180 degrees.
 
 ### Consensus: why points survive
 
@@ -423,9 +444,10 @@ Two things to know before reading it:
   has to arrive to be coloured. The points-per-phone budget therefore bounds
   the room here, so a stage that looked fine in another mode can come back
   sparse. Raise the budget rather than concluding points are missing.
-- **The colours are weighted by rarity rather than importance.** On a measured room
-  the split was roughly: unseen 47 %, outvoted 31 %, background 16 %, carved
-  4 %, kept 1.4 %. The two bright colours are the two rare ones, so the room
+- **The colours are weighted by rarity rather than importance.** On a simulated
+  room (two simulator phones, about 67k points; not yet measured on real
+  phones) the split was roughly: unseen 47 %, outvoted 31 %, background 16 %,
+  carved 4 %, kept 1.4 %. The two bright colours are the two rare ones, so the room
   reads as texture and the answers stand out of it.
 
 Each point reports the **first** test that removed it, in the order they run,
@@ -446,14 +468,15 @@ puts the rgb plane on the wire.
 
 | Control | What it does |
 |---|---|
-| **Colour ON for all phones** | Sets `stage.udpPlanes = depth+conf+rgb` on every enabled phone. Each phone then costs about 71 Mbit/s instead of 35. |
+| **Colour ON for all phones** | Sets `stage.udpPlanes = depth+conf+rgb` on every phone in the roster, enabled or not. Each phone then costs about 71 Mbit/s instead of 35. |
 | **Send telemetry here** | Points every phone's telemetry at this console. Phones default to port 9000, which TouchDesigner holds, so with TD running the console gets no telemetry at all and every phone reads offline. This is the fix for that. |
-| **MJPEG stream** | One long lived multipart stream per phone instead of a 5 Hz still refresh. Smoother, but it holds a socket per tile. |
+| **MJPEG stream** | One long lived multipart stream for the phone shown in the camera overlay card, instead of a 5 Hz still refresh; the other tiles stop refreshing while it is on, because browsers allow about six sockets per origin and the event stream and cloud poll already hold most of them. |
 
 ### Visual tuning, Venue, Coverage study
 
-The same controls as Stage 3D, so the study geometry can be switched off here
-too.
+Venue opacity, Grid opacity, Floor grid and the backdrop, then the same Venue
+and Coverage study layer controls as Stage 3D, so the study geometry can be
+switched off here too.
 
 ---
 
@@ -487,7 +510,7 @@ marker matches its reference.
 
 | Control | What it does |
 |---|---|
-| **printed size** field, in mm | The printed side of the black and white square, not the paper. Range 50 to 800 mm. An A4 sheet takes up to 195 mm, A3 up to 280 mm. |
+| **printed size** field, in mm | The printed side of the whole marker image, measured between the crop marks, white margin included (the black square is 89 % of it); not the paper. Range 50 to 800 mm. An A4 sheet takes up to 195 mm, A3 up to 280 mm. |
 | **Apply to all phones** | Sets that size on every phone in the roster and sends it, with each phone's marker ids, to every enabled phone, so plan, print and phones agree. |
 | **Export PNGs** | Writes `marker_01.png` upward. |
 | **Print PDF** | The browser print dialogue, one marker per page at the size in the box, plus a placement sheet on the last page. Only the assigned markers if any are assigned, otherwise all of them. It warns if the size will not fit an A3 sheet with its quiet zone. |
@@ -516,7 +539,7 @@ Print at the assigned size on matte stock and keep the white quiet zone.
 ### Placement plan
 
 One row per marker: id, label or stage position, and X, Y, Z in metres. Edits
-save automatically half a second after you stop typing, as one undo step. This
+save automatically half a second after you leave the field, as one undo step. This
 table prints on the last PDF page and is drawn in the 3D view.
 
 ---
@@ -559,13 +582,15 @@ caption that reads `aim phone at marker #N` or `● seeing marker #N`.
 | **Ctl port** | Where `/ctl` is sent. 9010 by default. |
 | **Colour** | The roster colour, used in every view. |
 | **Stage pos (m)** | x, y, z. |
-| **Aim (°)** | yaw, pitch, roll. |
+| **Plan aim (°)** | yaw, pitch, roll. Yaw turns the live phone; pitch and roll only draw the planned frustum. |
+| **Tilt (°)** | pitch, roll: a correction about the camera, plus or minus 30, for a phone whose own levelling is off. Moves the live cloud here and in TouchDesigner. |
 | **FOV (°)** | h and v, used for the frustum and the simulated returns. |
 | **Mount orientation** | Auto, Left up, Right up. Sets `stage.mountedge` remotely and flips the 3D arrow immediately. The phone's IMU report overwrites it when it arrives. |
 
-Pose and FOV feed the 3D plan **and** stream live to TouchDesigner as
-`/tdstage/pose`. With the tox's Pose Source on `auto`, the merge uses this pose
-until a marker calibration wins.
+Position, yaw and tilt place the live phone here **and** stream live to
+TouchDesigner as `/tdstage/pose` and `/tdstage/tilt`; the plan's pitch, roll
+and FOV only draw its frustum. With the tox's Pose Source on `auto`, the merge
+uses this pose until a marker calibration wins.
 
 ### Autofix
 
@@ -600,10 +625,10 @@ byte identical to a live phone on the wire by design. The `live` / `playback`
 badge is the only thing that tells you which you are looking at. Without it you
 can debug a rehearsal against a recording and never know.
 
-Controls: a take name field, **Record**, a take list with **Refresh** and
-**Delete**, transport buttons, frame stepping, in and out trim points, rename,
-cancel an armed record or play, and an arm delay for recording on every enabled
-phone at once.
+Controls: a take name field, **Record**, a take list with **Refresh takes** and
+**Delete take** (asks first), transport buttons, frame stepping, in and out trim
+points, rename, cancel an armed record or play, and an arm delay for recording
+or replaying on every phone in the roster at once.
 
 ### Recovery / failsafe
 
@@ -624,7 +649,7 @@ phone is running.
 
 ### Phone settings
 
-Seven folding groups, all written to the phone. Phone settings are **write only
+Eight folding groups, all written to the phone. Phone settings are **write only
 on the wire**: phones do not echo their whole config back. So each row shows
 what the phone reports in its `/device/settings` telemetry (`phone:`) and, where
 it exists, what is on the wire right now (`live:`). A phone on an older build
@@ -644,10 +669,10 @@ will often predate the change by a fraction of a second.
 
 | Group | Covers |
 |---|---|
-| **Transport & network** | Transport readout, Device ID, TD host (`stage.tcpHost`, which is a legacy key name for the destination IP, not a transport), Link (cable or Wi-Fi host), UDP port, Prefer Ethernet, Colour planes, OSC host |
+| **Transport & network** | Transport readout, Device ID, TD host (`stage.tcpHost`, which is a legacy key name for the destination IP, not a transport), Destination preset (Use Ethernet host, Use cable host, Use Wi-Fi host: the addresses the phone learned on each link, set together with the link), Link (auto, ethernet, cable, wifi), UDP port, Prefer Ethernet, Colour planes, OSC host |
 | **Capture** | Target FPS, Depth grid, Colour capture, Confidence gate, Apple depth filter (must stay off for the show) |
 | **Processing** | RAW streamer mode, Lens rectification, QR marker detect, Skeleton detect, Stabilization, Thermal ladder |
-| **ARKit depth conditioning** | Capture path, Applied last frame (read back from the frame flags, which is proof the conditioning is on the wire rather than merely requested), Edge cull, Max slope, Edge band, Threshold floor, Test diagonals, Temporal median, Motion threshold, Motion flip guard, Motion hold, Flip limit, Minimum confidence, Apple smoothed depth, Range near, Range far |
+| **ARKit depth conditioning** | Capture path, Applied last frame (read back from the frame flags, which is proof the conditioning is on the wire rather than merely requested), Edge cull, Max slope, Edge band, Threshold floor, Test diagonals, Keep high confidence, Temporal median, Motion threshold, Motion flip guard, Motion hold, Flip limit, Minimum confidence, Apple smoothed depth, Range near, Range far |
 | **Person isolation (ARKit)** | Stream performers only, Grow matte one cell, Invert, Vision matte quality |
 | **Playback settings** | Loop, Loop gap, Speed, Pose sent, Planes on the wire, Rewrite timestamps, Resume live after play, Playback net override, Playback host, Playback port, Play as device id |
 | **Recording settings** | Auto-name, Name prefix, Notes, Compress, Frame divisor, Pre-roll, Max minutes, Min free GB, Auto-stop GB, Keep last, Record IMU |
@@ -660,8 +685,8 @@ or the next profile push puts the old one back.
 
 ### Limbs and latency (live)
 
-Four live readouts, polled every second: limbs kept, body kept, bleed, and
-capture to console p50 and p95. Limbs is the share of the person mask's thin
+Four live readouts, polled every second: limbs kept, body kept, flying pixels
+(bleed), and capture to console p50 and p95. Limbs is the share of the person mask's thin
 parts (arms and legs) that kept depth on that frame. Below 60 per cent means
 arms or legs are dropping out. The readouts need the phone streaming
 `depth+conf+rgb` with someone in view.

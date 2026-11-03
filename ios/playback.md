@@ -131,7 +131,7 @@ frame, stop. The step and stop buttons only act on a running replay.
 ### Scrub bar
 
 A frame-accurate slider, with the frame number, the elapsed and total times,
-and the loop count. Releasing the slider seeks.
+and, after the first loop, the loop count. Releasing the slider seeks.
 
 ### Speed
 
@@ -144,8 +144,8 @@ exists to reproduce: a take is the only way to put a known-bad stream back in
 front of a receiver and watch what it does with it.
 
 Each interval is the difference between two consecutive records' recorded
-capture timestamps, floored at 1 ms and capped at 5 s, so one bad timestamp
-cannot park a replay forever. Those timestamps are on the recording phone's own
+capture timestamps, scaled by the speed and then floored at 1 ms and capped at
+5 s, so one bad timestamp cannot park a replay forever. Those timestamps are on the recording phone's own
 uptime clock, which is why the player only ever uses them as intervals. Each
 record also carries a unix wall-clock stamp, written for aligning several
 phones' takes after the fact; the player does not schedule from it.
@@ -190,8 +190,9 @@ A collapsed group.
   is the same setting the RECORD page uses.
 - **Restart live capture when playback stops.** Off by default.
 
-Every control in this section applies to a running replay on its next frame.
-Nothing restarts.
+The timestamp and trim controls, like the speed, loop, pose and plane controls
+above them, apply to a running replay on its next frame. Nothing restarts.
+Pre-roll applies to the next start, and the restart toggle to the next stop.
 
 ---
 
@@ -207,9 +208,9 @@ on.
 |---|---|
 | Replay goes to | The destination in use. Green when it matches the live stream, orange when overridden |
 | Send replays somewhere else | Off by default. Turns the override on |
-| Host | Only shown when the override is on. Blank follows the live host |
+| Host | Only shown when the override is on. Blank leaves the whole live destination in use, port included |
 | Port | Only shown when the override is on. Default 9003 |
-| Send as | This phone's device id, or another id from 0 to 9 |
+| Send as | This phone's device id (0), or a stand-in id from 1 to 9 |
 
 **Send as** stamps a different device id into every replayed packet, so one
 phone can stand in for another on a receiver's roster. The point stream, the

@@ -36,14 +36,14 @@ flowchart LR
   CPU --> SW
   SW --> POP
   CPU -- "null_merged" --> CH
-  CPU -. "per-point colours<br/>CPU path only" .-> RGB
+  CPU -. "depth-only phone:<br/>shaded from depth (GPU path)<br/>or per-point colours (CPU path)" .-> RGB
   POP --> PRE
   CONS --> HAN
   HAN --> PRE
 ```
 
-Read the dependencies, not the layout. `out_pop` is the only output that works
-on both merge paths. `out_merged` depends on the CPU path. `out_hands` depends
+Read the dependencies, not the layout. `out_pop` is the only cloud output that
+works on both merge paths. `out_merged` depends on the CPU path. `out_hands` depends
 on the console being up. `out_preview` depends on everything and is for a
 person to look at.
 
@@ -85,8 +85,8 @@ Read these three attributes and ignore everything else:
 | Attribute | Type | Meaning |
 |---|---|---|
 | `P` | position | The point, in stage metres |
-| `Color` | colour | The phone's own colour, or the device tint when `Colormode` is `tint` |
-| `DeviceId` | custom float | Which phone the point came from |
+| `Color` | colour | The phone's own colour, a height ramp for a phone that streams depth only, or the device tint when `Colormode` is `tint` |
+| `DeviceId` | custom float | Which phone the point came from. On the CPU path with `Segmode` `geometric` or `learned` it is the person track id from the clustering instead, because `chopto_pop` reads the `id` channel below |
 
 Both chains carry all three, under the same names, so content written against
 them works on either path.
@@ -124,7 +124,7 @@ sample per point, seven channels:
 |---|---|
 | `tx`, `ty`, `tz` | Position in stage metres |
 | `r`, `g`, `b` | Colour |
-| `id` | Device id |
+| `id` | Device id when `Segmode` is `off`; the person track id from the CPU clustering when `Segmode` is `geometric` or `learned` |
 
 **This CHOP is empty while `Mergegpu` is on.** The GPU merge path owns the
 cloud, the CPU merge stands down, and the Script CHOP emits a single empty
@@ -143,8 +143,9 @@ that works on both paths.
 Eight Script TOPs, `rgb_1` through `rgb_8`, each showing one phone's own camera
 image. It is the camera image as the phone sees it, with no reprojection, so
 there are no holes and no resampling artefacts. When a phone streams depth
-only, the slot is drawn from the same per-point colours the merge uses, so the
-slot stays live rather than going black.
+only, the slot is shaded from depth on the GPU path (near is bright) and drawn
+from the same per-point colours the merge uses on the CPU path, so the slot
+stays live rather than going black.
 
 `rgb_switch` chooses what `out_rgb` carries, from `Rgbselect`:
 
@@ -169,7 +170,9 @@ components through `cam1`:
 | `geo_hands` | Hand markers, when `Handsshow3d` is on |
 
 This is an operator view, not a show output. It exists so a person can see
-whether the rig is working. `Autoframe` keeps the camera on the cloud.
+whether the rig is working. `Autoframe`, on by default, keeps the camera on the
+cloud; the saved working copy ships with it off so an operator can fly the
+camera.
 
 Do not send `out_preview` to a projector and call it the show. Build content
 from `out_pop`.
@@ -186,7 +189,7 @@ channels:
 | `x`, `y`, `z` | Position in stage metres |
 | `u`, `v` | Pixel the hand was detected at, in that device's grid |
 | `conf` | Detection confidence |
-| `side` | Which hand |
+| `side` | Which hand: -1 left, 1 right, 0 unknown |
 | `active` | 1 for a real hand |
 
 With no hands detected, the CHOP carries one sample with `active` = 0, so
@@ -195,8 +198,8 @@ Gate on `active`.
 
 Detection itself runs in the web console. The hub polls the console over HTTP
 at `Handsurl` and turns each hit back into the stage point the merge already
-produced. If the console is not running, this output is empty and the cloud is
-unaffected.
+produced. If the console is not running, this output carries only the `active` = 0
+sample and the cloud is unaffected.
 
 ## Taking the cloud into other TouchDesigner work
 
@@ -225,7 +228,8 @@ The hub has no NDI operator. Nothing in the tox emits NDI today.
 
 The web console, not TouchDesigner, produces the NDI feed. It renders the live
 merged, colourised cloud to a virtual-camera view, front or top, and broadcasts
-it as a named source at 960 by 540, 30 frames per second. Any NDI receiver,
+it as a named source at 960 by 540, 30 frames per second by default (the
+console's `output.ndi*` settings). Any NDI receiver,
 including TouchDesigner's own NDI In TOP, sees it. It is a rendered visual
 feed.
 

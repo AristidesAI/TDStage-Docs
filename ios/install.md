@@ -44,10 +44,10 @@ Do both at base.
 {: .warning }
 **Check which app and which build a phone actually has before you trust
 anything on these pages.** The two apps are at different places. The ARKit
-app's invitation now serves **1.1 (3)**, uploaded 2026-10-27. This app,
-TDStage, has not been uploaded since **1.0 (1)** and has never carried a
-build 3, so any note or invitation that mentions "1.0 (3)" is describing the
-ARKit app's export, not this one.
+app's invitation now serves **1.1 (4)**, uploaded on the evening of 2026-11-03
+(its 1.1 (3) went up 2026-10-27). This app, TDStage, has not been uploaded
+since **1.0 (1)** and has never carried a build 3, so any note or invitation
+that mentions "1.0 (3)" is describing the ARKit app's export, not this one.
 <br><br>
 A phone running TDStage 1.0 (1) predates a number of later changes, among them
 the thermal ladder taking effect, so it is months behind the source these pages
@@ -72,9 +72,10 @@ Eighty rather than ninety is the whole point of the decision. It leaves ten
 days of margin, so a build that fails review, an expired certificate or a week
 when nobody is free does not land on a show date.
 
-That commits somebody to roughly five more uploads before April 2027, each one
-a bump, an archive, an upload and the testers accepting it. It is nobody's
-favourite afternoon, and it is cheaper than the alternatives: the App Store
+That commits somebody to at least two more uploads to carry the apps through
+the April 2027 premiere (an 80-day cadence from the 2026-11-03 upload lands
+them in late January and mid April), each one a bump, an archive, an upload
+and the testers accepting it. It is nobody's favourite afternoon, and it is cheaper than the alternatives: the App Store
 means review of an app that is not for the public, and Business Manager means
 an organisation and its paperwork.
 
@@ -84,10 +85,13 @@ not degrade: the app refuses to launch, on every phone at once, because they
 were all uploaded the same day. Treat the re-upload date as a production
 deadline.
 
-The phones warn as the date approaches, and the console's Rig health carries
-the same warning, so the rig tells you before the calendar does. That warning
-counts from when the build was **archived**, not uploaded, so it fires early by
-however long a build waited before upload. That is pessimistic on purpose.
+The phones do not warn themselves: each reports its build's archive date and
+age on `/device/built`, and the console's Rig health does the warning, at 75
+days, escalating to an error at 85, so the rig tells you before the calendar
+does. That warning counts from when the build was **archived**, not uploaded,
+so it fires early by however long a build waited before upload. That is
+pessimistic on purpose. A build made without the script's stamp (an Xcode
+Archive) reports no date and never warns.
 
 ### Doing the re-upload
 
@@ -108,9 +112,11 @@ Each run stamps the build with its archive date, which is what the phones then
 report.
 
 {: .note }
-Two signed builds are waiting to go as of 2026-11-03: **TDStage 1.0 (2)** and
-**TDStage AR 1.1 (4)**, both stamped that date. Their ninety days do not start
-until somebody uploads them, so the clock on this cycle has not begun.
+Two signed builds were exported on 2026-11-03, both stamped that date:
+**TDStage AR 1.1 (4)** was uploaded that evening, so it stops launching on
+2027-02-01 and Rig health starts warning on 2027-01-17. **TDStage 1.0 (2)** is
+exported and signed but not uploaded; its ninety days do not start until
+somebody uploads it.
 
 ---
 
@@ -178,10 +184,11 @@ on 9003, telemetry on 9000, control on 9010.
 There is nothing to connect. The phone starts sending when you press START.
 
 A phone can learn the address of a console on a USB cable, but it cannot work
-it out alone: both ends of a cable pick a random link-local address, and iOS
-blocks the discovery broadcast. The phone reads the address off the first
-command packet it receives, so the console has to send to the phone once before
-the LIVE page's **Cable** button becomes usable.
+it out alone: both ends of a cable pick a random link-local address, and a
+discovery broadcast needs an entitlement the app does not have. The phone reads
+the address off the first command packet it receives, so the console has to
+send to the phone once (its **Send telemetry here** button) before the
+**Cable** option in the LIVE page's Link picker points anywhere.
 
 ---
 
@@ -241,8 +248,9 @@ confirm that frames are arriving.
 ## Two phones, two apps
 
 There is a second app, built on ARKit, used to A/B the capture path. The two
-install side by side and share nothing: not settings, not takes, not a device
-roster entry.
+install side by side and share nothing on the phone: not settings, not takes.
+The console's roster is keyed by device id, so whichever app streams with a
+given id fills that row.
 
 Run only one of them at a time on a given phone. Both want the same rear LiDAR
 and the same ports.

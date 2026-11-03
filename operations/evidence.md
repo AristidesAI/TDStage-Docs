@@ -66,9 +66,11 @@ The table is generated. Do not edit it by hand:
 python3 Tools/requirements_check.py --write
 ```
 
-**Do not run it on a machine with a live console.** One of its rows runs the
-environment doctor, so on a show machine it inspects a rig that is in use.
-Generate the table on a development machine instead.
+**Run it with the console's environment.** One of its rows runs the
+environment doctor, which is read-only and reports ports a running console
+owns as warnings, so a live console is no obstacle. The row fails without the
+YOLO interpreter, so on the Mac run it as
+`(. Tools/show_mac.local; export TDSTAGE_YOLO_PYTHON; python3 Tools/requirements_check.py --write)`.
 
 That writes `Notes/Requirements-Conformance.md` with the date on it. As of
 2026-10-27 it read 14 PASS, 4 BUILT, 0 FAIL, 7 NEEDS-RIG. Re-run it before
@@ -86,22 +88,23 @@ very different values depending on how it was produced.
 | Built, not verified | It runs. No rig evidence. |
 | Not yet verified | Needs hardware we have not had. |
 
-Real-phone evidence today is **one phone**. Every multi-phone figure is
+Real-phone evidence today is **two phones** in one room (phones 1 and 2,
+measured together since 2026-10-28). Every figure at more than two phones is
 simulation. Simulated phones do not get hot, do
 not drop frames on a congested switch, and do not occlude each other the way
 bodies do.
 
-### What one phone cannot evidence
+### What two phones in one room cannot evidence
 
 Being specific about this is more useful than a general disclaimer, because
 it tells you which questions a demonstration can and cannot answer.
 
-| Question | Can one phone answer it? |
+| Question | Can two phones in a room answer it? |
 |---|---|
 | Does the wire format parse correctly? | Yes. A format is a format. |
 | Does a phone sustain capture while charging? | Yes, for that phone, that cable, that power. |
 | Does the rig hold its frame rate at eight streams? | **No.** Simulation says yes. Simulation does not share a switch or a thermal envelope. |
-| Does a phone throttle under stage lighting over two hours? | **No.** This has not been run. |
+| Does a phone throttle under stage lighting over two hours? | **No.** Two heat runs so far, neither two hours under stage light: 25 minutes on phone 2 while charging (2026-10-26: thermal serious throughout, and it found a frame-rate bug since fixed), and about 1.5 hours on two phones (2026-10-28, TDStage AR, plugged in, a furnished room, ambient not measured: serious at 7 to 9 minutes, never critical, phone 1 held 30 fps for 31 minutes). |
 | Does coverage survive a performer walking the playing area? | **No.** This needs the angles, and angles need phones. |
 | Does the system separate performers who cluster? | **No.** Separation is a multi-view property. One view has nothing to fuse. |
 
@@ -130,12 +133,13 @@ and position error against marks. Useful options:
 | `--n N` | Time until N tracks are present. |
 | `--window a-b` | Count identity losses only in that span of seconds. |
 | `--marks marks.json` | Score position against known marks. |
-| `--on NAME=a-b` | Assert someone was on mark NAME during those seconds. |
+| `--on NAME=a-b` | Declare that someone stood on mark NAME during those seconds; position error is scored there. |
 | `--truth-sim RUN.LOG` | Score against a simulation's own truth, including crossings. |
 | `--json` | Machine-readable output. |
 
-`--gap` sets how soon a new identity after a lost one counts as the same
-person reappearing rather than as a fresh loss.
+`--gap` sets how soon after a lost identity a new one is paired with it and
+counted as one identity loss; a new identity arriving later is a fresh arrival
+and counts as nothing.
 
 The table lists the options that matter; the full set is longer, and the
 defaults are the tool's to change. Run `python3 Tools/track_score.py --help`
@@ -153,7 +157,7 @@ Say which one you are showing.
 
 | Check | What it proves |
 |---|---|
-| `python3 TD/newtox/wire_fixture_test.py` | The wire format still parses byte for byte. Catches a protocol change that compiles. |
+| `python3 TD/newtox/wire_fixture_test.py` | Two frames a real iPhone put on the wire still parse through TD's receiver, byte for byte. Catches a phone-side packer change that compiles, which the simulator's own bytes cannot. |
 | `python3 WebConsole/doctor.py` | The machine's setup. A USB-only warning means the phone is tethered rather than on the show network, which is fine on a desk and wrong at a venue. |
 | `python3 TD/newtox/tox_drift.py` | The saved TouchDesigner project against the repository, so the code in the project is the code in version control. |
 
@@ -179,10 +183,11 @@ calls the specialised tools where a step needs one. You can list its steps,
 narrow a run to a few of them, or resume an interrupted session into the same
 file.
 
-`Tools/evidence_pack.py` then turns that file into the pack, with the build
-facts read off disk rather than remembered: which commits, which project
-version. A person still has to supply the judgement: the venue, and the
-limitations.
+`Tools/evidence_pack.py` then turns that file (a `--plan sydney` session, the
+scored stage test) into the pack, with the build facts read off disk rather
+than remembered: which commits, which project version. The venue is a flag
+(`--venue`); the limits section starts from the tool's standard list, and
+anything this session failed to cover is yours to add.
 
 | Tool | The measurement it is for |
 |---|---|
@@ -191,16 +196,17 @@ limitations.
 | `f1_probe.py` | Density and latency of the field stream, decoded with the client's own decoder so the numbers are what they would see |
 | `range_walk.py` | How far from a phone a body is still usable, by walking away from it |
 | `rig_coverage.py` | How many phones see each part of the stage, on a grid |
-| `heat_test.py` | One change at a time against a hot phone, restoring the state afterwards |
+| `heat_test.py` | One change at a time against a hot phone, restoring the screen, streaming state and planes it found afterwards (capture path and edge cull go back to the app defaults) |
 | `imu_sync.py`, `limb_test.py`, `hand_truth_score.py` | Clock alignment, limb fidelity, hand accuracy |
 | `track_score.py` | A recorded tracking output, scored |
 
 The pack's sections are what the agreement asks for: what was tested and on
 what, a table per scenario, the limits stated plainly, and the recordings.
 
-**The limits section is the one that builds trust.** A pack with no limitations
-reads as a pack nobody looked at hard, and the tools cannot write it for you.
-They know what was measured, not what the measurement failed to cover.
+**The limits section is the one that builds trust.** A pack with only the
+standard limits reads as a pack nobody looked at hard. The tool writes those
+five (contact, long contact, frontal occlusion, range, light); it knows what
+was measured, not what this measurement failed to cover.
 
 ## What never to claim
 

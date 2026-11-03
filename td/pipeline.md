@@ -90,14 +90,14 @@ references to arrays the receiver and `level_ops` already own, not copies.
 
 On the GPU merge path the per-frame CPU unprojection is **skipped**. The GLSL
 chain unprojects every cell itself, so computing the same points on the CPU
-first is pure waste. Measured, simulation: 0.9 to 1.7 ms per phone frame,
+first is pure waste. Measured, simulation, 2026-10-25: 0.9 to 1.7 ms per phone frame,
 which is 25 to 40 per cent of the main thread at eight streams. The frame is
 stored with a lazy marker instead, and the few readers that need CPU points
 call `ensure(did)` to compute them on demand: the auto-frame camera, the floor
 pulse (which asks for every device at once), hand detection on any lazy phone
 where a hand was found, and the CPU merge, which asks for every device on each
-merge. A level solve in progress forces the full path, because it needs every
-frame.
+merge. A level solve or a background learn in progress forces the full path,
+because each needs every frame.
 
 The RGB views are **not** among them. A view of a phone with no colour plane
 draws as a depth shade rather than by unprojecting points for it, which is why
@@ -160,7 +160,7 @@ path consumes the same grid as an R8 texture.
 | Atlas build | `gpu_atlas_d`, `gpu_atlas_rgb`, `gpu_bg` (Script TOPs) | Packs every live phone's depth grid into one RGBA32F texture, its colour into an RGBA8 texture, and the learned background into an R8 texture | `Stalesecs`, `registration`, `Flooroffset`, level state |
 | Temporal | `gpu_temporal` (GLSL TOP, fed back on itself) | Averages a depth cell over up to sixteen frames while it holds still, three-frame hold, resets on movement | `Gputemporal`, `Gputempsigma` |
 | Unproject | `gpu_gl` running `gpu_unproject.glsl` | One thread per atlas texel: ray times depth, pose matrix, Brown radial term, crop box, learned-background drop | `Cropminx/z`, `Cropmaxx/z`, `Floorcut`, `Geoceiling`, `Colormode`, `Segmode` |
-| Hysteresis | `gpu_hyst` | A cell must hold points for several consecutive merges before it appears, and inherits the streak from any of its 27 neighbours. The hold scales with the cook rate, so it is six cooks at 60 Hz rather than a fixed three. **Runs only when `Gpuhyst` is on AND `Segmode` is `learned`**, so on a project shipped as `geometric` it is a pass-through | `Gpuhyst`, `Segmode`, `Fusevox` |
+| Hysteresis | `gpu_hyst` | A cell must hold points for several consecutive merges before it appears, and inherits the streak from any of its 27 neighbours. The streak scales with the timeline rate, so it is six cooks at 60 Hz rather than a fixed three (and the hold after a cell empties is 24 rather than 12). **Runs only when `Gpuhyst` is on AND `Segmode` is `learned`**, so on a project shipped as `geometric` it is a pass-through | `Gpuhyst`, `Segmode`, `Fusevox` |
 | Cleanup | `gpu_clean` | Density and cluster cleanup on a spatial hash grid | `Gpuclean`, `Densitymin`, `Minclusterpts` |
 | Fusion | `gpu_fuse` | Collapses overlapping views into one point per voxel | `Gpufuse`, `Fusevox`, `Gpufusemin`, `Gpusmooth` |
 | Delete | `gpu_del` (Delete POP) | Removes every point the shaders rejected | - |
@@ -182,7 +182,7 @@ point in the floor band just under `Floorcut`**. The shader stashes the band
 rather than discarding it so that `gpu_clean` can rescue feet, which would
 otherwise be cut off the bottom of every performer.
 
-Three cook decisions in `gpu_exec` each fix a measured problem:
+Three cook decisions, two in `gpu_exec` and one in the atlas builder, each fix a measured problem:
 
 - The atlases are force-cooked at frame start. A Script TOP has no cook
   dependency on the Python state it reads, so without this the GLSL chain
@@ -247,6 +247,9 @@ G = Trim . Reg . Floor . Level . E
 | `Floor` | `Flooroffset` | Whole rig |
 | `Reg` | `registration`: yaw about Y, then translate | **Per device** |
 | `Trim` | The Level page `Trim` knobs | Whole cloud |
+
+When the console has sent a pitch and roll tilt for a device, that tilt is
+applied per device between `Floor` and `Reg`, about the camera.
 
 The CPU path applies the same terms in the same order, in `merged_callbacks`
 and `level_ops` rather than in a matrix row.
@@ -337,18 +340,21 @@ reason is arithmetic rather than taste.
 The xyz coordinates are a deterministic function of `depth x ray(u, v)`, and
 the ray comes from the intrinsics, which the receiver already has. Sending
 points means paying for information the receiver can regenerate for free on
-the GPU. At eight streams:
+the GPU. At eight streams of the 320 by 240 grid an iPhone 17 Pro sends:
 
 | On the wire | Bandwidth at 30 fps, eight streams | Share of gigabit |
 |---|---|---|
-| Depth only, half-float | about 189 Mbit/s | 20 per cent |
-| Depth and confidence (the show default) | about 283 Mbit/s | 30 per cent |
-| Depth, confidence and colour | about 566 Mbit/s | 60 per cent |
-| xyz points on device | about 1.4 Gbit/s | does not fit |
+| Depth only, half-float | about 295 Mbit/s | 31 per cent |
+| Depth and confidence (the show default) | about 442 Mbit/s | 47 per cent |
+| Depth, confidence and colour | about 885 Mbit/s | 94 per cent |
+| xyz points on device | about 2.2 Gbit/s | does not fit |
 
-Those figures are arithmetic from the frame size, not measurements. xyz on
-device is 7.5 times depth-only and does not fit on the link at all, so the
-conclusion is not a close call.
+Those figures are payload arithmetic from the frame size, not measurements;
+framing adds about six per cent, and the share is against the roughly 940
+Mbit/s a gigabit link carries. xyz on device is 7.5 times depth-only and does
+not fit on the link at all, so the conclusion is not a close call. The
+[system-wide page](../reference/design.html) gives the same table at both
+grids and on both bases.
 
 The grid is also planar, not interleaved, so that each plane can be omitted
 independently and so that a depth plane uploads straight into a GPU texture
@@ -394,8 +400,9 @@ A learned background is a large numpy array. Component storage is saved into
 the tox, so putting it there would bloat a binary file that is already
 versioned by hand, and would carry a venue's floor into every snapshot.
 
-So it lives on disk as a compressed numpy checkpoint (the floor and level
-state beside it is saved uncompressed), reloaded lazily when the
+So it lives on disk as a compressed numpy checkpoint, with the learned floor
+map inside it (the level and lens-unwarp state beside it is saved
+uncompressed), reloaded lazily when the
 module recompiles. See [Maintenance](maintenance.html#where-learned-state-lives)
 for the paths and the consequences, of which the important one is that a fresh
 show machine starts with no learned state at all.

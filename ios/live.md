@@ -18,7 +18,10 @@ reads `Wi-Fi (cable idle)` in amber with the Cable button greyed out, even
 though **Prefer Ethernet** (3) is on. The amber line (4) and the diagnostics
 (5) say why: a cable is plugged in and the phone has never been told the Mac's
 address on it. Neither fault stops the stream, but each costs latency or health
-reporting.
+reporting. The screenshot predates the Link picker that replaced the Cable and
+Wi-Fi buttons on 2026-10-27. The diagnostics read the same, but under Auto a
+cabled phone now reads `Wi-Fi (Ethernet waiting)`, because the cable counts as
+a wired link.
 
 The numbers sit on the screenshot itself, so the pairing survives printing,
 pasting into a call sheet, or reading on a phone where the caption has wrapped
@@ -27,8 +30,8 @@ somewhere else.
 The app has three pages. A glass pill at the bottom of the screen switches
 between LIVE, RECORD and PLAYBACK. The pill carries a coloured dot: red while a
 take is recording, green while a take is replaying, orange while a start is
-armed. Nothing else on the pill changes, so the three shapes stay in the same
-places in the dark.
+armed. The glow behind the glass follows the same state. Nothing else on the
+pill changes, so the three shapes stay in the same places in the dark.
 
 Everything on this page is UDP. There is no TCP mode and no TCP fallback.
 
@@ -109,10 +112,10 @@ four, because the whole snapshot comes back as a single struct.
 
 | Stat | Reads | Notes |
 |---|---|---|
-| FPS | Measured delivery rate | Blank when nothing is streaming. During a replay it is the replay's rate |
+| FPS | Measured delivery rate | A dash when nothing is streaming. During a replay it is the replay's rate |
 | POINTS | Valid depth cells in the last frame sent, in thousands | Counted by the packer. Not the grid size |
 | UDP | OFF, CONNECTING or LIVE | Local socket state only. See the caveat below |
-| MARKER | Last marker id seen, or blank | Green while a marker is in view |
+| MARKER | Id of the marker in view, or a dash | Green while a marker is in view |
 | THERMAL | OK, WARM, HOT or CRIT | The device thermal state |
 
 {: .warning }
@@ -228,29 +231,32 @@ buttons.
 ### Link
 
 A read-only label saying which interface the depth stream is using, followed by
-two buttons.
+the **Link** picker (Auto, Ethernet, Cable, Wi-Fi) and, under Auto only, the
+Prefer Ethernet toggle.
 
 The label is the end of a decision that starts when the streamer opens its
-socket. Two independent facts decide it: which interface the connection left
-on, and whether the destination is a cable address.
+socket. Three facts decide it: which interface the connection left on, whether
+the destination is a cable address, and whether the stream has escaped a
+pinned link (the label then ends with the streamer's note).
 
 ```mermaid
 flowchart TD
-  A["Streamer opens a UDP connection"] --> B{"Prefer Ethernet on<br/>and a wired link up?"}
+  A["Streamer opens a UDP connection"] --> B{"Does the Link choice pin anything?<br/>Auto: Prefer Ethernet on and a wired link up<br/>Ethernet or Cable: an interface fits<br/>Wi-Fi: always"}
   B -- no --> W["No interface requirement<br/>cellular always prohibited"]
-  B -- yes --> R["Require wired Ethernet"]
+  B -- yes --> R["Require that link"]
   R --> C{"Reached ready<br/>within 5 s?"}
-  C -- yes --> S["Stream left on wired"]
+  C -- yes --> S["Stream left on the chosen link"]
   C -- no --> F["Rebuild once<br/>without the requirement"]
   F --> W
-  F -. "re-armed on the next<br/>wired path change" .-> R
-  W --> V["Stream left on Wi-Fi"]
-  S --> L{"Destination a<br/>169.254.x address?"}
+  F -. "re-armed on the next link change:<br/>adapter, address, destination or picker" .-> R
+  W --> V["Stream left on whatever routes"]
+  S --> L{"Did it leave on wired?"}
   V --> L
-  L -- yes --> M["USB cable, or<br/>cable missing if no cable is up"]
-  L -- no --> N{"Did it leave on wired?"}
-  N -- yes --> O["Ethernet"]
+  L -- yes --> O["USB cable (enN) or Ethernet (enN)<br/>by the interface's own address"]
+  L -- no --> N{"Destination a<br/>169.254.x address?"}
+  N -- yes --> M["USB cable, or<br/>cable missing if no cable is up"]
   N -- no --> P["Wi-Fi (Ethernet waiting)<br/>Wi-Fi (Ethernet idle)<br/>Wi-Fi (cable idle) or Wi-Fi"]
+  F -. "after the escape the label ends with<br/>any route (... not routing)" .-> P
 ```
 
 The branch that catches people is the five-second one. It is described under
@@ -259,62 +265,86 @@ cabled phone can read Wi-Fi with the cable still in.
 
 | Label | Meaning |
 |---|---|
-| USB cable | The destination is a `169.254.x` address and a cable is attached |
+| USB cable (en3) | The stream left on a wired interface with a link-local address, named. With a dash and `any route (...)` after it, the stream escaped its pinned link and this is where it landed |
+| USB cable | The stream is not on a wired interface, the destination is a `169.254.x` address and a cable is attached |
 | cable missing | The destination is a cable address and no cable is attached. Nothing can leave |
-| Ethernet | The stream left on a wired interface, which is what a PoE rig wants |
-| Wi-Fi (Ethernet waiting) | Wired is up and preferred, but the stream is on Wi-Fi |
-| Wi-Fi (Ethernet idle) | Wired is up but not preferred |
-| Wi-Fi (cable idle) | A cable is attached but the stream is on Wi-Fi |
-| Wi-Fi | Wi-Fi, no wired interface |
+| Ethernet (en3) | The stream left on a wired interface with a routable address, named, which is what a PoE rig wants |
+| Wi-Fi (Ethernet waiting) | Link is Auto, a wired link is up (an adapter or a USB cable) and Prefer Ethernet is on, but the stream is not on it yet: the grace is running |
+| Wi-Fi (Ethernet idle) | Link is Auto, a wired link is up, Prefer Ethernet is off |
+| Wi-Fi (cable idle) | Link is Ethernet or Cable, a cable is attached, and the stream is on Wi-Fi |
+| Wi-Fi | Wi-Fi with no wired interface, or Link set to Wi-Fi |
+| Wi-Fi, a dash, `any route (wired adapter not routing)` | The pinned link did not reach ready within five seconds; the stream escaped to any route. Under Ethernet, Cable or Wi-Fi the note names that mode (`any route (ethernet not routing)`); `any route (no ethernet interface)` or `(no cable interface)` means nothing fitted the choice and nothing was pinned |
 
-**Cable** and **Wi-Fi** switch the destination between the last complete cable
-address and the last complete network address, so an operator does not retype
-an address at a get-in. Each button is disabled when there is nothing to switch
-to.
+**Ethernet**, **Cable** and **Wi-Fi** in the picker pin the depth stream and the
+telemetry to that link and point the destination at the last complete address
+this phone learned on it (`stage.hostEthernet`, `stage.hostCable`,
+`stage.hostWifi`), so an operator does not retype an address at a get-in.
+**Auto** keeps the destination. A segment with no remembered address still pins
+the link when an interface fits it; the caption under the picker says what is
+missing. The same choice arrives from the console as
+`/ctl/set stage.link <auto|ethernet|cable|wifi>`, which pins the link and
+leaves the destination unchanged.
 
 The phone cannot work out the computer's cable address by itself. Both ends of
 a USB-C link pick a random `169.254.x` address, and iOS blocks the broadcast
 that would discover the other end. The phone learns the address from the source
-of the first control packet it receives, which is why the console has to send
-to it once before the Cable button lights up.
+of every control packet it receives, and learns a cable address only while a
+cable is attached, which is why the console has to send to it once before
+Cable has somewhere to point.
 
-A caption under the buttons explains any disabled state.
+A caption under the picker explains why a chosen link cannot work yet: no
+Ethernet adapter with an address, Ethernet up but the show machine's address on
+it unknown, a cable in but the Mac's cable address unknown, or a cable address
+remembered with no cable detected.
 
 ### Prefer Ethernet (PoE / cable)
 
-On by default. While it is on and a wired interface is up, every outgoing UDP
+On by default, and shown only while Link is Auto. While it is on and a wired
+interface is up, every outgoing UDP
 connection is built with `requiredInterfaceType = .wiredEthernet`, so iOS
 cannot route the depth stream over Wi-Fi even though both interfaces sit on the
 same LAN with equally good routes. Cellular is prohibited on every connection,
 wired or not, so show traffic never leaves over a mobile network.
 
-The app does not infer the requirement from the address. A USB cable to a
-computer is link-local at both ends and is wired, so judging by address would
-get the cable case wrong. The only arbiter is whether the connection comes up.
+Under Auto the app does not infer the requirement from the address. A USB cable
+to a computer is link-local at both ends and is wired, so judging by address
+would get the cable case wrong. (Ethernet in the picker does read the address,
+to choose the adapter on the destination's subnet.) The only arbiter of whether
+a pinned link routes is whether the connection comes up.
 
 #### The five-second grace, and why it exists
 
 A requirement that cannot be satisfied does not fail; it waits. An adapter that
 is *up* but routes nowhere (link-local only, the wrong VLAN, a receiver that
 lives on the Wi-Fi subnet) leaves the connection parked in `waiting` for the
-whole session, and the console cannot rescue the phone either, because its
-telemetry leaves under the same requirement. The one command that would fix
-it, `stage.preferWired 0`, cannot reach the phone that needs it.
+whole session, and telemetry built under the same requirement never arrives, so
+the console would not even see the phone that needs `stage.preferWired 0` or
+`stage.link auto`. Telemetry therefore does not wait at all: the OSC client
+rebuilds on any route as soon as its connection reports waiting or loses
+viability. The depth stream gets a grace instead.
 
-So the requirement is provisional. A wired-required connection that has not
-reached ready within five seconds is rebuilt **once** without the requirement
-and goes out over whatever routes. The streamer records that it fell back, in a
-link note reading `wifi (wired adapter not routing)`, and re-arms the
-requirement on the next wired path change: unplug and replug the adapter, or
+So the requirement is provisional. A pinned connection that has not reached
+ready within five seconds is rebuilt **once** without the requirement and goes
+out over whatever routes. The streamer records that it fell back, in a link
+note reading `any route (wired adapter not routing)` under Auto (under
+Ethernet, Cable or Wi-Fi the note names that mode), and re-arms the requirement
+on the next link change: an adapter appearing or going, an address landing or
+changing on one (the interface table is also re-read every ten seconds), a new
+destination, or a new choice in the picker. Unplug and replug the adapter, or
 lose and regain the switch port, and the phone tries the wire again by itself.
+A connection that was ready and then loses its path starts the same grace, so a
+dead link is left after five seconds rather than held for the session.
 
 {: .warning }
 **A cabled phone can be streaming over Wi-Fi with the cable still in.** The
 grace does not wait for the wired link to drop; an adapter that is up but not
 routing is enough, and five seconds is short enough that it will already have
-happened by the time anyone looks. The LIVE page then reads **Wi-Fi (Ethernet
-waiting)** in amber, and telemetry reports `link = "wifi"` with `wiredUp = 1`
-and `preferWired = 1`. Those three together are the signature: the phone asked
+happened by the time anyone looks. The LIVE page reads **Wi-Fi (Ethernet
+waiting)** in amber during those five seconds, then **Wi-Fi** with the note
+`any route (wired adapter not routing)` after it, still in amber; telemetry
+reports `link = "wifi"` with `wiredUp = 1` and `preferWired = 1`, and carries
+the same note as the seventh argument of `/device/link`. Those three together
+are the signature: the phone asked
 for the wire, the wire's link is up, and the stream is not on it, so what is
 missing is routing rather than a cable. Do not read it as a failed cable, and
 do not go hunting for an unplugged adapter. (`link = "wifi"` with
@@ -331,10 +361,16 @@ keep checking which link is carrying the show. The grace is a floor under a
 mistake.
 
 {: .note }
-The source is gaining an explicit Link picker (automatic, Ethernet, cable,
-Wi-Fi) so an operator can pin a named interface rather than relying on the
-preference alone. The five-second grace survives that change. The page above
-describes the current build; the authority is `TDStage/Net/WiredLink.swift`.
+The Link picker (Auto, Ethernet, Cable, Wi-Fi; `stage.link`, default `auto`)
+pins a named interface rather than relying on the preference alone. Ethernet
+pins the adapter's own interface with `requiredInterface`: the wired interface
+on the destination's subnet, else a wired one with a routable address, else a
+link-local one on the destination's subnet; never the USB cable to a Mac while
+an adapter has a routable address. Cable pins the wired interface with a `169.254.x` address.
+Wi-Fi requires the radio. When nothing fits the choice (Ethernet with no
+adapter address, Cable with no cable) nothing is pinned and the stream takes
+any route at once, never the other wire. The five-second grace applies to every
+pinned mode. The authority is `TDStage/Net/WiredLink.swift`.
 
 ### UDP Port
 
@@ -404,7 +440,7 @@ The findings the app can raise:
 | Transport errors (n) | error | The socket reported send errors |
 | Not listening for commands | error | The control listener is down |
 | No USB cable | warn | Wi-Fi only |
-| Cable attached but the Mac's cable address is unknown | warn | A cable is up and the phone has never been told the far address |
+| Cable attached but the Mac's cable address is unknown | warn | A cable is up, the destination is a valid address other than a cable address, and the phone has never been told the far address |
 | Streaming over Wi-Fi with a cable attached | warn | A cable address is known and unused |
 | No commands received yet | warn | Nothing has ever sent to the control port |
 | Telemetry is going to port 9000 | warn | See below |
@@ -434,9 +470,10 @@ Raw Streamer Mode (1) is the master switch. The three rows under it (2) grey
 out when it is on, because they are the stages being skipped. **Apple depth
 filtering** (3) is not greyed out, because it is a capture-format setting
 outside the master switch rather than per-frame work, and changing it restarts
-the session.
-The capture picker (4) and the smoothed-depth A/B (5) also restart the session,
-which is why none of the three belongs in a cue.
+the session, which is why it does not belong in a cue.
+The capture picker (4) and the smoothed-depth A/B (5) belong to TDStage AR,
+whose page this screenshot shows; TDStage has neither. Its CAPTURE section is
+the one Colour toggle described below.
 
 The phone is a pure streamer. This panel lets you switch each optional stage on
 for an A/B measurement; no show needs any of them.

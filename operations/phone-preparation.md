@@ -46,8 +46,10 @@ on the glass.
 
 **Opening the app once, on internet, is the step people skip.** First launch
 is when the operating system asks for Local Network access. Decline it, or
-never trigger it, and the phone looks healthy and sends nothing,
-with nothing in the console to explain why. There is no remote fix.
+never trigger it, and the phone looks healthy on its own screen and sends
+nothing: the console shows it offline and nothing there explains why. The phone
+itself gives a hint, in the Live page's Link diagnostics ("No commands
+received yet"). There is no remote fix.
 
 **Supervision erases the phone**, so it cannot be added at a venue, in a
 hotel, or on the day. If it is wanted it has to be decided before the phones
@@ -64,7 +66,7 @@ physical.
 |---|---|
 | iOS update | Large download, needs internet and time, and reboots the phone. |
 | Installing the app | Needs an Apple Account signed in and internet. Neither exists on a rig LAN. |
-| Local Network permission | A one-time prompt on first launch. If it is declined, no data leaves the phone and nothing in the console explains why. |
+| Local Network permission | A one-time prompt on first launch. If it is declined, no data leaves the phone; the console shows it offline and nothing there explains why. |
 | Device id and host address | Set once per phone. Two phones sharing an id overwrite each other's frames. |
 
 ## Before the phone leaves
@@ -74,8 +76,8 @@ waiting for the update.
 
 ### 1. Software
 
-1. Update iOS to the version the build targets, on Wi-Fi at home or in the
-   office. Confirm it finished and the phone has rebooted.
+1. Update iOS to at least iOS 26, which the build requires, on Wi-Fi at home
+   or in the office. Confirm it finished and the phone has rebooted.
 2. Sign in to the Apple Account that was invited to the test build.
 3. Install the app from the invitation.
 4. **Open the app once while still on internet.** This is the step people
@@ -100,9 +102,10 @@ network, but setting it early means a phone that joins the rig is already
 correct rather than needing attention.
 
 If two phones do end up sharing an id, the receiver now names it rather than
-letting the frames quietly overwrite each other. The console reports two
-senders on one device id, identified by their addresses and by the name and
-model each phone sends.
+letting the frames quietly overwrite each other. The console's Rig health
+reports two senders on one device id once both have been seen for three
+seconds; it names the id, not the phones. The receiver tells them apart by
+address and by the name and model each phone sends in its hello.
 
 > A note on the setting named `stage.tcpHost`. Despite the name it is the
 > destination IP address, not a transport. Everything in this system runs over
@@ -146,12 +149,14 @@ technical one, and it needs making before phones ship.
 
 With the phone on the same network as the console:
 
-1. The phone appears in the console's device list on its own, without anyone
-   typing its address.
+1. The phone goes online in the console's roster under its device id on its
+   own, without anyone typing its address. The roster needs a slot for that
+   id; a new console session seeds ids 1 to 6.
 2. Its battery reads above 80 per cent and shows as charging.
 3. Its thermal state reads nominal.
 4. Starting the stream from the console produces points, and stopping it
    stops them.
 
-If the phone appears but sends nothing, check the Local Network permission
-before you check the network.
+If the phone stays offline in the console while the app is open and the phone
+is on the network, check the Local Network permission before you check the
+network.
