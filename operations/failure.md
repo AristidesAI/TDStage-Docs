@@ -485,11 +485,14 @@ and now comes back sending, so the gap is the restart plus the half minute the
 tracker needs to re-learn its background — not, as it was until 2026-10-27, for
 as long as it takes somebody to notice.
 
-**App distribution past ninety days.** Test builds expire. For a production
-running months ahead that means a re-upload roughly every quarter, or moving
-to a distribution route that does not expire. The decision is outstanding:
-[#16](https://github.com/AristidesAI/TDStage/issues/16) for the expiry itself, [#21](https://github.com/AristidesAI/TDStage/issues/21) for the non-expiring route
-and source escrow the agreement asks for.
+**App distribution is a recurring deadline, by choice.** Test builds expire 90
+days after upload, and the decision of 2026-10-30 is to stay on TestFlight and
+re-upload about every 80 days to April 2027 ([#16](https://github.com/AristidesAI/TDStage/issues/16)) rather than move to
+the App Store or Business Manager. Ten days of margin, roughly five more
+uploads, and a date that has to be kept: an expired build does not degrade, it
+refuses to launch, on every phone at once. Separately,
+[#21](https://github.com/AristidesAI/TDStage/issues/21) covers the source
+escrow the agreement asks for.
 
 ## Routine that prevents most of this
 

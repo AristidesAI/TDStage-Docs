@@ -228,22 +228,23 @@ makes them 313, 469 and 937 Mbit/s against a 1,000 Mbit/s line, which is the
 basis to use for a claim about fitting on a cable.
 
 Either way: eight phones on `depth+conf` is about 47 per cent of a gigabit
-link. **Eight phones on `+conf+rgb` is 94 per cent, which is not a show
-configuration.**
+link, and eight on `+conf+rgb` is 94 per cent of one.
 
-The receiving software is not what stops you — the bridge has been measured to
-114,500 packets per second, and eight colour phones offer 76,300. It is the
-cable: 937 Mbit/s of framed traffic on a 1,000 Mbit/s line, with nothing spare
-for a burst. Colour is for three phones and for measurement until that is
-solved, and the options are open in [#42](https://github.com/AristidesAI/TDStage/issues/42).
+**Which is why the show does not run on a gigabit link.** Since 2026-10-30 it
+is 2.5 gigabit — a switch with a 2.5G uplink and a 2.5G card in the machine —
+and **every phone sends colour** ([#42](https://github.com/AristidesAI/TDStage/issues/42)). The same 937 Mbit/s is 37 per
+cent of that, which is headroom.
+
+The receiving software was never the constraint: the bridge has been measured
+to 114,500 packets per second and eight colour phones offer 76,300.
 
 {: .note }
-**Dropping colour costs more than colour.** The console's person masks and its
-hand tracking both read the colour plane, so a depth-and-confidence rig
-separates performers by geometry alone and publishes no hands. Tracking
-continues either way — the mask stage fails open — but two of the things that
-make it good are gone. That is usually the real argument in this decision, not
-the megabits.
+**Dropping colour costs more than colour**, which is why the decision went the
+way it did. The console's person masks and its hand tracking both read the
+colour plane, so a depth-and-confidence rig separates performers by geometry
+alone and publishes no hands. Tracking continues either way — the mask stage
+fails open — but two of the things that make it good are gone. Set against
+that, a switch and a network card are cheap.
 
 {: .note }
 Figures of 283 and 566 Mbit/s appear in older notes and in the system

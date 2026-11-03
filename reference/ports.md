@@ -59,14 +59,17 @@ older notes. **That was the highest load anyone had tried, not a ceiling**, and
 it is worth knowing the difference, because a number quoted as a limit tends to
 become one in people's planning.
 
-{: .warning }
-The limit is the link. Eight phones with colour is 937 Mbit/s of framed traffic
-on a 1,000 Mbit/s line, which is the binding constraint and leaves nothing for
-a burst. The bridge figures were measured over loopback, which skips a real
-network card's receive path and the switch, so the bridge half is proven and
-the end-to-end path through the PoE switch is not. What to do about the link —
-a phone-side colour rate, colour on a subset of phones, or 2.5 GbE and a second
-card — is open as [#42](https://github.com/AristidesAI/TDStage/issues/42).
+{: .note }
+**The link, not the software, was the limit — so the link changed.** Eight
+phones with colour is 937 Mbit/s of framed traffic, which is 94 per cent of a
+gigabit line and 37 per cent of the 2.5 Gbit/s the show now runs: a switch with
+a 2.5G uplink and a 2.5G card in the show machine, decided 2026-10-30
+([#42](https://github.com/AristidesAI/TDStage/issues/42)). Every phone sends colour.
+
+The bridge figures were measured over loopback, which skips a real network
+card's receive path and the switch, so the software half is proven and the
+end-to-end path through the venue's switch is not. That measurement is still
+open on the same issue.
 
 The retired fan-out relay lost packets above about 30,000 per second, which is
 why it is retired.

@@ -102,7 +102,7 @@ bottom of this page.
 | What is sent | Bytes per cell | Eight phones at 256×192 | **Eight phones at 320×240** | On the wire, framed | Share |
 |---|---:|---:|---:|---:|---:|
 | Coordinates and colour, unprojected on the phone | 15 | 1,416 Mbit/s | **2,212 Mbit/s** | — | 235 per cent. Does not fit. |
-| Depth, confidence and colour as a grid | 6 | 566 Mbit/s | **885 Mbit/s** | **937 Mbit/s** | 94 per cent. Does not leave room. |
+| Depth, confidence and colour as a grid | 6 | 566 Mbit/s | **885 Mbit/s** | **937 Mbit/s** | 94 per cent of a gigabit link, 37 per cent of the 2.5 Gbit/s the show uses |
 | **Depth and confidence as a grid (the show setting)** | 3 | 283 Mbit/s | **442 Mbit/s** | 469 Mbit/s | 47 per cent |
 | Depth alone as a grid | 2 | 189 Mbit/s | **295 Mbit/s** | 313 Mbit/s | 31 per cent |
 
@@ -137,8 +137,31 @@ in older notes was the highest load tested, not a limit.
 
 So the constraint is 937 Mbit/s of framed traffic on a 1,000 Mbit/s line, with
 nothing left for a burst. That is a cabling decision rather than a software
-one, which is why it is open as [#42](https://github.com/AristidesAI/TDStage/issues/42): a phone-side colour rate, colour
-on a subset of phones, or 2.5 GbE and a second card.
+one — and on 2026-10-30 it was taken.
+
+### The decision: a faster link, not less colour
+
+**The show runs 2.5 gigabit** — a switch with a 2.5G uplink and a 2.5G card in
+the show machine — and **every phone sends colour** ([#42](https://github.com/AristidesAI/TDStage/issues/42)).
+
+Eight colour phones on a 2.5 Gbit/s link is 937 of 2,500 Mbit/s: **37 per
+cent**, which is headroom rather than a tightrope. The alternatives all bought
+the same relief by giving something up — colour from most of the rig, colour
+detail, colour frame rate, or days of protocol work — and this one costs a
+switch and a network card.
+
+That is worth stating as a principle, because the same choice will come again:
+**the cheapest thing in this system is usually the hardware.** A protocol
+change costs days of work across the phone, TouchDesigner, the console, the
+simulators, the take format and the spec, and it costs them again every time
+somebody reads the wire. A faster link costs a purchase order.
+
+{: .note }
+Still to be measured: the receive path through a real network card and the
+venue's switch, rather than loopback. The bridge is proven to 114,500 packets a
+second on loopback, and eight colour phones offer about 76,300 — but loopback
+skips the card's own receive path, which is exactly where a real rig would
+struggle. That test is part of [#42](https://github.com/AristidesAI/TDStage/issues/42).
 
 ### What a show without colour gives up
 

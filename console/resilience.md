@@ -716,10 +716,12 @@ restored roster is held until somebody confirms it, exactly as in a seed. What
 reaches TouchDesigner on a link-up is the set of phones whose positions a
 person has actually checked since.
 
-**App distribution expiry is unresolved.** Test distribution builds expire after
-90 days. For an engagement running well beyond that, the route is either a
-re deployment roughly every quarter or a different distribution method, and
-that decision has not been made.
+**App distribution expiry is a standing deadline.** Test builds expire 90 days
+after upload. The decision of 2026-10-30 is to stay on TestFlight and re-upload
+about every 80 days through to April 2027 ([#16](https://github.com/AristidesAI/TDStage/issues/16)), keeping ten days of
+margin. It is not a gap in the sense the others here are — it is a known cost
+with a date attached — but it belongs on this list because the failure mode is
+total: every phone stops launching on the same day.
 
 **`graceSeconds` was dead code until 2026-10-27**, and the shape of the bug is
 worth keeping even though it is fixed ([#40](https://github.com/AristidesAI/TDStage/issues/40)). The value was documented,

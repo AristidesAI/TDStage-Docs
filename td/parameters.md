@@ -21,7 +21,7 @@ it is read, which is often the thing you actually want to know:
 paths side by side, and where each parameter bites.
 
 One caveat on the generated list: `tox_params_live.md` was generated at v63 and
-the working copy has moved on since (v84 at the time of writing). A multi-component parameter is printed there as its X
+the working copy has moved on since (v86 at the time of writing). A multi-component parameter is printed there as its X
 component alone. The operator or shader that **reads** a parameter is the real
 contract, and that is what the tables below were checked against.
 

@@ -61,14 +61,31 @@ was built from. That is the authority, because it comes from the running
 binary. Compare it against the build you believe you are running before you
 report a behaviour, and before you conclude anything from a measurement.
 
-### Test builds expire
+### Test builds expire, and that is the plan
 
-A test build stops working 90 days after it is uploaded. A production running
-for months therefore needs either a re-upload roughly every quarter, or a
-distribution route that does not expire.
+A test build stops working **90 days after it is uploaded**. On 2026-10-30 the
+decision was taken to live with that rather than move to the App Store or
+Apple Business Manager: the apps stay on TestFlight, **re-uploaded about every
+80 days**, through to the premiere in April 2027 ([#16](https://github.com/AristidesAI/TDStage/issues/16)).
 
-That decision is open. Do not plan a long run on the assumption that it is
-settled.
+Eighty rather than ninety is the whole point of the decision. It leaves ten
+days of margin, so a build that fails review, an expired certificate or a week
+when nobody is free does not land on a show date.
+
+**What that commits somebody to.** Roughly five more uploads before April 2027,
+each one a bump, an archive, an upload and the testers accepting it. It is
+nobody's favourite afternoon, and it is cheaper than the alternatives: the App
+Store means review of an app that is not for the public, and Business Manager
+means an organisation and its paperwork.
+
+{: .warning }
+**The expiry is a show-stopper, not an inconvenience.** An expired build does
+not warn and does not degrade: the app refuses to launch, on every phone at
+once, because they were all uploaded the same day. Treat the re-upload date as
+a production deadline and not as maintenance.
+
+The phones warn as the date approaches, and the console's Rig health carries
+the same warning, so the rig tells you before the calendar does.
 
 ---
 
