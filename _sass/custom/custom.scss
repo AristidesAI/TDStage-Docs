@@ -42,3 +42,16 @@ body { background: #ffffff; }
 .side-bar { background: #f7f8fa; }
 code.language-mermaid > svg { padding: 0.5rem 0; }
 .main-content img { border: 1px solid #d9dde3; border-radius: 4px; max-width: 100%; }
+
+// A two-column table whose second cell is a paragraph squeezes the first
+// column to one word per line: the browser's auto layout gives width in
+// proportion to content, and a 600-character fix beside a six-word symptom
+// wins every time. The troubleshooting page is 77 such rows, so the symptom
+// you are scanning for ends up stacked vertically down a thin strip.
+// A fixed share for the first column reads left-to-right again.
+.main-content table th:first-child,
+.main-content table td:first-child { min-width: 11rem; }
+
+// Long shell flags and regex-ish symptoms must not force a horizontal
+// scrollbar on a phone.
+.main-content table td:first-child { overflow-wrap: anywhere; }
