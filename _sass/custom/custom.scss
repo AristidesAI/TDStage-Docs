@@ -34,3 +34,11 @@ pre:has(> code.language-mermaid) {
 // object. The result is `var config = ` followed by nothing, mermaid.initialize
 // receives undefined, and every diagram on the site silently stops rendering.
 // Keep that file to one line of JSON-ish object literal with no comments.
+
+// Light page. The site moved from the dark scheme on 2026-11-03 so diagrams,
+// tables and screenshots read on a white page; mermaid's colours come from
+// _includes/mermaid_config.js (theme "base" with explicit light variables).
+body { background: #ffffff; }
+.side-bar { background: #f7f8fa; }
+code.language-mermaid > svg { padding: 0.5rem 0; }
+.main-content img { border: 1px solid #d9dde3; border-radius: 4px; max-width: 100%; }
