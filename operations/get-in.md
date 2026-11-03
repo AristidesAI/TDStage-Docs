@@ -140,6 +140,10 @@ Each phone goes where the coverage plan puts it. Coverage is the whole reason
 there is more than one phone: a performer hidden from one camera has to be
 visible to another, and that only happens if you planned the angles.
 
+For Stroud the plan is already worked out to the centimetre — every phone's
+position, yaw and pitch, every marker, and the tape procedure that sets them
+out: **[Stroud — the plan](stroud.html)**.
+
 ![Coverage model of the Stroud 8 x 6 m playing area with six phones on 2.25 m stands: floor cells coloured by how many phones see them, phone positions P1 to P6 with their yaw and pitch, markers M1 to M10, the gauze and the rear screen.](../assets/img/stroud-coverage-6-phones.webp)
 
 *Plotted 2026-10-25. The entrance partition and the front of the low stage are marked UNVERIFIED on the plot itself.*
