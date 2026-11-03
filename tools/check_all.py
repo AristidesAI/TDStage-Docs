@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run every check, report once, exit non-zero if any failed.
 
-Five checks and two generators, each with its own command, is five commands
+Six checks and two generators, each with its own command, is six commands
 nobody runs. This is the one to run before pushing, and the one CI runs.
 
 Checks that need the system repository say so and skip when it is absent,
@@ -23,6 +23,7 @@ TOOLS = pathlib.Path(__file__).resolve().parent
 CHECKS = [
     ("check_links.py", False, "every internal link, image and heading anchor resolves"),
     ("check_diagrams.py", False, "no diagram hits a known silent-failure pattern"),
+    ("check_tables.py", False, "every table is fenced by blank lines (kramdown)"),
     ("check_constants.py", True, "numbers in prose match the constants they came from"),
     ("check_contracts.py", True, "the /ctl verb table matches the app"),
     ("check_tox_version.py", True, "the docs are current with the saved project"),

@@ -143,7 +143,12 @@ def render(hints, age) -> str:
     for stage, fix in age.items():
         age_rows.append(f"| `{stage}` | " + " ".join(fix.split()).replace("|", "\\|") + " |")
 
-    return HEADER + "\n".join(rows) + "\n".join(age_rows) + "\n" + FOOTER
+    # The blank line after the last row is load-bearing: kramdown reads a
+    # table as the block up to the next blank line, so a heading touching
+    # the last row makes the whole table a paragraph on the published page
+    # (cmark-gfm renders it anyway, so GitHub's own view hides this).
+    return (HEADER + "\n".join(rows) + "\n"
+            + "\n".join(age_rows) + "\n" + FOOTER)
 
 
 def demo():
@@ -154,6 +159,10 @@ def demo():
     assert "| a / b | do the thing |" in out
     assert "| `hop` | cool it |" in out
     assert "Where capture latency is going" in out
+    # Every table must end on a blank line or kramdown renders it as prose.
+    import check_tables
+    assert check_tables.problems_in(out.split("\n")) == [], \
+        check_tables.problems_in(out.split("\n"))
     print("self-check ok")
 
 

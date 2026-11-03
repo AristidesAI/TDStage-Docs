@@ -98,6 +98,7 @@ here is what an operator sees at the desk.
 | F1 note | Run the F1 bus on a different port from TD's telemetry (9000), or on another machine. |
 | -> 4\d\d | The UI sent a request the server refused; the reply above says why. Reload the page if the UI is out of date. |
 | -> 5\d\d | Server-side exception: the traceback is in logs/console.log. Report it with the request line above. |
+
 ## Where capture latency is going
 
 When the console reports a phone's frames arriving late, it names
