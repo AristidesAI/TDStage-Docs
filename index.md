@@ -15,7 +15,7 @@ manages the devices and carries the tracking outputs to other systems.
 {: .note }
 **This documentation is public; the code is not.** Links on these pages to
 issues, to the board or to the source repository go to a private repository and
-will ask an outside reader to sign in, or show nothing. They are kept because
+will ask an outside reader to sign in, or show nothing. We keep them because
 they are the right pointers for anyone working on the system, and because a
 named issue number is still a usable reference in an email or a call. Nothing
 on these pages depends on being able to open one.
@@ -58,18 +58,18 @@ other's path for point data.** TouchDesigner crashing does not stop the
 tracking output. The console crashing does not touch the point cloud or the
 visuals. Closing the console mid-show is a deliberate, survivable act.
 
-**The health path has two possible destinations, and that is the one thing
-worth remembering.** A phone reports its battery, temperature and frame rate
-to whichever port it has been told to. By default that is port 9000, which
+**The health path has two possible destinations.** A phone reports its
+battery, temperature and frame rate to whichever port it has been told to. By
+default that is port 9000, which
 TouchDesigner owns, and TouchDesigner relays it to the console. The console
 also has a listener of its own, and the console can tell the phones to send
 there instead.
 
-So the consequence is conditional, not a law: **while TouchDesigner is down,
-the console loses health only if the phones are still pointed at 9000.**
+**While TouchDesigner is down, the console loses health only if the phones
+are still pointed at 9000.**
 Points keep arriving the whole time, from the bridge, so the rig reads as
 alive but with no battery, no temperature and no frame rate. The fix is to
-retarget telemetry, not to restart anything. See
+retarget telemetry. Nothing needs a restart. See
 [When something fails](operations/failure.html).
 
 **The control path** is the console telling a phone to start, stop or
@@ -90,7 +90,8 @@ expensive to revisit, is in
 
 ## Where to start
 
-Pick the page by what you are about to do, not by reading in order.
+Pick the page by what you are about to do; the pages do not need to be read
+in order.
 
 | You are about to | Read |
 |---|---|
@@ -120,8 +121,8 @@ someone is deciding what the system can do.
 
 A "built" item is not a working item. Do not quote one as proven.
 
-**The state of the evidence today: real-phone evidence is one phone.** Every
-multi-phone figure on this site is simulation. Simulated phones do not get
+**Today the real-phone evidence is one phone.** Every multi-phone figure on
+this site is simulation. Simulated phones do not get
 hot, do not fight for a switch and do not stand in front of each other.
 [Evidence and claims](operations/evidence.html) explains how to turn a
 demonstration into a figure that survives being questioned.

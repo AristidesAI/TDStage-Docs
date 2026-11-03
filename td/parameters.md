@@ -16,14 +16,15 @@ was never built. Most of what it lists does not exist. Do not treat it as a
 parameter reference.
 
 This page says what each parameter does. It does not say where in the pipeline
-it is read, which is often the thing you actually want to know:
+it is read, which is often what you want to know.
 [How the pipeline is built](pipeline.html) has the stage order, the two merge
 paths side by side, and where each parameter bites.
 
 One caveat on the generated list: `tox_params_live.md` was generated at v63 and
-the working copy has moved on since (v86 at the time of writing). A multi-component parameter is printed there as its X
-component alone. The operator or shader that **reads** a parameter is the real
-contract, and that is what the tables below were checked against.
+the working copy has moved on since (v87 at the time of writing). The list
+prints a multi-component parameter as its X component alone. The operator or
+shader that **reads** a parameter is the real contract, and that is what the
+tables below were checked against.
 
 ## Reading this page
 
@@ -76,16 +77,16 @@ POP `gpu_gl`, are:
 | `uMax.y` | `Geoceiling` |
 | `uMin.w` | A fixed 0.08 m floor band, not a parameter |
 
-So on the GPU path the vertical extent is set on the Level page, not on the
-Point Cloud page. `Cropminy` and `Cropmaxy` are read by the CPU crop.
+So on the GPU path you set the vertical extent on the Level page, not on the
+Point Cloud page. The CPU crop reads `Cropminy` and `Cropmaxy`.
 
 `Cropminy` is not dead on the GPU path, though: `gpu_clean` and `gpu_hyst`
 take the **origin** of their spatial hash grid from
 `Cropminx - 0.5`, `Cropminy - 0.1`, `Cropminz - 0.5`, and the grid's extent in
 X and Z from `Cropmax - Cropmin`. Change `Cropminy` on the GPU path and you
-move the cleanup and hysteresis grid without moving the crop. That is a
-deliberate split, not an oversight: the crop decides what is in the room, and
-the hash grid only has to cover it.
+move the cleanup and hysteresis grid without moving the crop. The split is
+deliberate. The crop decides what is in the room, and the hash grid only has
+to cover it.
 
 ## View
 
@@ -95,8 +96,8 @@ The preview render. None of this touches the output cloud.
 |---|---|---|---|---|---|
 | `Pointsize` | Point Size | Float | 3.0 | Show | Point sprite size in the preview render. Saved working copy: 8. |
 | `Floorviz` | Show Floor Plane | Toggle | False | Get-in | Draws the floor plane in the preview, which is how you see whether the level solve landed. |
-| `Flooroffset` | Floor Offset (m) | Float | 0.0 | Get-in | Subtracted from Y on every landed frame, on **both** merge paths, so it moves the whole cloud vertically. The saved tox shipped **-0.782028 m** until v80, which was not a small correction: it was most of a metre, and it is why #38 exists. It now ships **0**. On the CPU path `udp_pc_exec._land` passes it to `level_ops.unproject_level`; on the GPU path `gpu_atlas_callbacks` bakes it into each phone's pose row. It is applied at landing, before any merging. |
-| `Autofloor` | Set Floor To Origin (auto) | Pulse | - | Get-in | Takes the fifth percentile of Y across live devices and adds it to `Flooroffset`, putting the floor at y = 0. Robust to people standing in frame. It is cumulative, so it refines rather than replaces. |
+| `Flooroffset` | Floor Offset (m) | Float | 0.0 | Get-in | Subtracted from Y on every landed frame, on **both** merge paths, so it moves the whole cloud vertically. The saved tox shipped **-0.782028 m** until v80. That is most of a metre, and it is why #38 exists. It now ships **0**. On the CPU path `udp_pc_exec._land` passes it to `level_ops.unproject_level`; on the GPU path `gpu_atlas_callbacks` bakes it into each phone's pose row. The hub applies it at landing, before any merging. |
+| `Autofloor` | Set Floor To Origin (auto) | Pulse | - | Get-in | Takes the fifth percentile of Y across live devices and adds it to `Flooroffset`, putting the floor at y = 0. People standing in frame do not throw it off. It is cumulative, so it refines rather than replaces. |
 | `Autoframe` | Auto-Frame Preview Cam | Toggle | True | Get-in | Keeps the preview camera framed on the cloud. Saved working copy: off. |
 
 ## Log
@@ -118,9 +119,9 @@ Learned-background segmentation, and the shared cleanup thresholds.
 | `Floormargin` | Floor Margin (m) | Float | 0.03 | Get-in | CPU | Tolerance on the learned floor height map. Saved working copy: 0.033. |
 | `Densitymin` | Min Pts / 10cm Cell | Int | 2 | Get-in | both | A 10 cm cell with fewer points than this is noise. Read by the CPU cleanup and by the GPU cleanup shader. **Was 4 until v84**, where it was measured: against exact limb truth from six simulated phones, 4 kept 0.985 of the limb points the phones delivered and 0.967 of hand points; 2 keeps 0.995 and 0.984. What it was discarding was limb tips clipping the corner of a 10 cm cell. |
 | `Minclusterpts` | Min Person Points | Int | 150 | Get-in | both | A cluster with fewer points than this is not a person. Read by both cleanup paths. |
-| `Autoalign` | Measure Alignment | Pulse | - | Get-in | both | Collects 30 frames, then solves a four-degree-of-freedom alignment per device against a reference, on a worker thread. It only measures. **Worked on the CPU path only until v82**: both collection points sat after the GPU path's early return, so on the show default (`Mergegpu` on) the snapshot never started and the pulse reported nothing, ever. |
+| `Autoalign` | Measure Alignment | Pulse | - | Get-in | both | Collects 30 frames, then solves a four-degree-of-freedom alignment per device against a reference, on a worker thread. It only measures. **Worked on the CPU path only until v82**: both collection points sat after the GPU path's early return, so on the show default (`Mergegpu` on) the snapshot never started and the pulse never reported anything. |
 | `Alignref` | Reference Device | Int | 1 | Get-in | CPU | The device the alignment solve measures the others against. |
-| `Applyalign` | Apply To Registration | Pulse | - | Get-in | both | Writes the measured alignment into the `registration` table, and only for a device the measurement graded OK. Check `align_report` first: since v82 it carries a status (OK / WARN / FAIL), the reason, a fix, the overlap with its target and what it was solved against, beside the residual and inlier count. A correction beyond a refine's reach — more than 10 degrees or half a metre — FAILs rather than being polished into a confident wrong answer, and points at the console's global alignment or the walk calibration instead. |
+| `Applyalign` | Apply To Registration | Pulse | - | Get-in | both | Writes the measured alignment into the `registration` table, and only for a device the measurement graded OK. Check `align_report` first: since v82 it carries a status (OK / WARN / FAIL), the reason, a fix, the overlap with its target and what it was solved against, beside the residual and inlier count. A correction beyond a refine's reach (more than 10 degrees or half a metre) FAILs rather than being polished into a confident wrong answer, and points at the console's global alignment or the walk calibration instead. |
 | `Halign` | Auto-Align (ICP vs static bg) | Toggle | False | - | - | **Inert.** The parameter exists on the page and nothing in the repository reads it. It is also absent from the generated parameter list. Treat it as dead until something claims it. |
 
 ## Level
@@ -146,8 +147,8 @@ Fits the ground plane so the cloud sits level with the floor at y = 0.
 | `Levelmaxtilt` | Level Max Tilt (deg) | Float | 40.0 | Build | Reject a solved plane tilted more than this. Saved working copy: 53.1. |
 | `Levelmaxrms` | Level Max RMS (m) | Float | 0.05 | Build | Reject a solved plane with a worse residual. |
 
-All five of `Levelcell`, `Levelthresh`, `Levelmincells`, `Levelmaxtilt` and
-`Levelmaxrms` are read by the solve. Before 2026-09-04 they did not exist and
+The solve reads all five of `Levelcell`, `Levelthresh`, `Levelmincells`,
+`Levelmaxtilt` and `Levelmaxrms`. Before 2026-09-04 they did not exist and
 the solve used fixed values.
 
 ### Lens unwarp
@@ -174,12 +175,11 @@ Saved working copy: all zero, since v81.
 {: .warning }
 `Trimy` was 0.25 until v81, and it is the second half of the same bench pair as
 `Flooroffset`. On the GPU path it is baked into every pose, so every
-stage-frame stream — the simulators, and any marker-calibrated phone — sat a
+stage-frame stream (the simulators, and any marker-calibrated phone) sat a
 quarter of a metre above the floor. v80 cleared `Flooroffset` and left this
-one, which is the lesson: a bench artefact is rarely a single parameter, and
-clearing the one you noticed is not the same as clearing them all. `Trimreset`
-zeroes the whole group in one pulse, which is the safe thing to do before a
-numbered save.
+one. A bench artefact is rarely a single parameter, and clearing the one you
+noticed does not clear them all. `Trimreset` zeroes the whole group in one
+pulse, which is the safe thing to do before a numbered save.
 
 ### Stage volume and segmentation
 
@@ -194,7 +194,7 @@ numbered save.
 | Parameter | Label | Type | Default | When | Path | What it does |
 |---|---|---|---|---|---|---|
 | `Mergegpu` | GPU Merge Path | Toggle | False | Get-in | - | Builds the cloud on the GPU: the depth grids go up as one texture and a chain of GLSL POPs unprojects, transforms, crops, cleans and fuses every cell each frame. The **CPU merge stands down**; background removal, cleanup and fusion continue as GPU stages. `out_merged` goes empty. Needs the bridge running. Saved working copy: on. |
-| `Fusionmode` | Fusion Mode | Menu `points` / `grid` / `merged` | `points` | Build | CPU | `grid` runs the angle-aware weighted merge on the full grid rather than on decimated points. **CPU path only** — the GPU path the show runs takes a plain mean per voxel, deliberately (see below). |
+| `Fusionmode` | Fusion Mode | Menu `points` / `grid` / `merged` | `points` | Build | CPU | `grid` runs the angle-aware weighted merge on the full grid rather than on decimated points. **CPU path only**. The GPU path the show runs takes a plain mean per voxel, deliberately (see below). |
 | `Mergevoxel` | Merge Voxel (m) | Float | 0.025 | Build | CPU | Voxel size for the grid merge. |
 | `Mergealign` | Pre-align Devices | Toggle | False | Build | CPU | Runs the alignment solve before merging. |
 | `Fuserate` | Fusion Rate (Hz) | Float | 30.0 | Build | CPU | Caps real fusions per second. Below the interval, the last result is re-emitted rather than recomputed. |
@@ -204,8 +204,8 @@ numbered save.
 ### GPU merge path controls
 
 These are read only while `Mergegpu` is on. They are the GPU equivalents of
-the CPU path's stages, not extras: background removal, cleanup and fusion all
-happen on this path, on the GPU. See [How the pipeline is built](pipeline.html)
+the CPU path's stages. Background removal, cleanup and fusion all happen on
+this path, on the GPU. See [How the pipeline is built](pipeline.html)
 for the stage order and for which parameter each shader reads.
 
 | Parameter | Label | Type | Default | When | What it does |
@@ -218,8 +218,8 @@ for the stage order and for which parameter each shader reads.
 | `Gputemporal` | GPU Temporal Depth (still) | Toggle | False | Build | Prototype. Averages each depth cell over up to sixteen frames while it holds still, with a three-frame hold, and resets the moment it moves. Off by default. |
 | `Gputempsigma` | Temporal Noise Scale | Float | 1.0 | Build | Scale on the depth-noise model the temporal filter gates with. Lower is a stricter stillness test: less lag, less averaging. |
 
-Both prototypes are built, not verified on a rig. `Gputemporal` has an offline
-check, `TD/newtox/temporal_test.py`, which scores it against the merge
+Both prototypes are built and neither has been verified on a rig. `Gputemporal`
+has an offline check, `TD/newtox/temporal_test.py`, which scores it against the merge
 simulator.
 
 ## Console
@@ -239,15 +239,15 @@ calibration markers and the client-facing outputs; the hub carries the cloud.
 
 ## RGB
 
-Each phone's own camera image, as a TOP. The camera image is the image: there
-is no reprojection and no holes. When a phone streams depth only, the slot is
-drawn from the same per-point colours the merge uses, so it stays live.
+Each phone's own camera image, as a TOP. The view shows the camera image as
+it is, with no reprojection and no holes. When a phone streams depth only, the
+slot draws from the same per-point colours the merge uses, so it stays live.
 
 | Parameter | Label | Type | Default | When | What it does |
 |---|---|---|---|---|---|
 | `Rgbactive` | RGB Views Active | Toggle | True | Get-in | Enables the views. |
 | `Rgbmap` | Slot Mapping | Menu `auto` / `byid` | `auto` | Get-in | `auto`: slot N is the Nth live device in sorted order, which is what the desk wants. `byid`: slot N is device id N. |
-| `Rgbselect` | Output Select | Menu `grid` / `1` to `8` | `grid` | Show | What `out_rgb` carries: the four by two grid of all eight, or one phone full size. This is a genuine show-time control for looking down a single camera. |
+| `Rgbselect` | Output Select | Menu `grid` / `1` to `8` | `grid` | Show | What `out_rgb` carries: the four by two grid of all eight, or one phone full size. This is a show-time control for looking down a single camera. |
 | `Rgbw` | View Width (px) | Int | 320 | Get-in | Per-slot width. |
 | `Rgbh` | View Height (px) | Int | 240 | Get-in | Per-slot height. |
 
@@ -326,15 +326,15 @@ rather than trusting this table.
 
 `Cropmin` and `Cropmax` together are the live stage box: about six metres
 either side in X and five either side in Z, three metres down and three up.
-The X and Z figures are read directly by the GPU crop; the Y figures are read
-by the CPU crop and by the cleanup grid's origin.
+The GPU crop reads the X and Z figures directly; the CPU crop and the cleanup
+grid's origin read the Y figures.
 
 The `Align` knobs are the pose of whichever device `Regdevice` selects. They
 are all zero as saved, and so is every row of the `registration` table.
 
-That is a recent state, and the reason it changed is worth knowing, because the
-same thing can happen again on any bench. Up to v79 the saved component carried
-a real bench placement:
+That state is recent, and the reason it changed matters because the same thing
+can happen again on any bench. Up to v79 the saved component carried a real
+bench placement:
 
 | id | yaw (deg) | tx | ty | tz |
 |---|---|---|---|---|
@@ -342,11 +342,11 @@ a real bench placement:
 | 2 | 21.0 | 0.3 | -0.09 | -1.9 |
 | 3 | 90.0 | 0.0 | 1.67 | 0.599 |
 
-Those were a desk in a room, not a venue, and they were in the file only
-because the component was last saved while they were set. Worse, `Posesource`
-was saved on `manual`, so the obvious correction, fixing the poses in the
-console, returned early and did nothing at all. A phone would land in the wrong
-place and the one control an operator would reach for was inert.
+Those described a desk in a room rather than a venue, and they were in the
+file only because the component was last saved while they were set. Worse,
+`Posesource` was saved on `manual`, so the obvious correction, fixing the poses
+in the console, returned early and did nothing at all. A phone would land in
+the wrong place and the one control an operator would reach for was inert.
 
 v80 cleared the table, set `Regdevice` back to 1, zeroed the `Align` knobs and
 put `Posesource` back on `console`. **v81 then found two more**: `Trimy` was

@@ -12,8 +12,8 @@ The core console boots on plain Python 3.9 or newer. The Live view, YOLO person
 segmentation and MCAP export need the packages in `WebConsole/requirements.txt`.
 One virtual environment serves both the console and the YOLO worker.
 
-`torch` and `torchvision` are deliberately not in `requirements.txt`. They are
-installed first, from the right index, so that `ultralytics` finds them already
+`torch` and `torchvision` are deliberately not in `requirements.txt`. You install
+them first, from the right index, so that `ultralytics` finds them already
 satisfied instead of pulling a CPU build from PyPI.
 
 On Windows the installer targets Python 3.12, falling back to 3.11. Those are
@@ -62,8 +62,8 @@ the Live view without them.
    `install.bat` again.
 6. **Run `python xplat.py` once**, from `WebConsole` with the virtual
    environment's Python. It is the cross-process self-test for the
-   platform-specific half of the console — the file locking that stops two
-   consoles sharing one configuration, among other things. That code takes a
+   platform-specific half of the console (the file locking that stops two
+   consoles sharing one configuration, among other things). That code takes a
    different path on Windows from the one every development machine exercises,
    so this is the first place it has ever run for real. A failure here is
    worth stopping for.
@@ -109,9 +109,10 @@ there is no relay in the show path any more.
 eight phones with colour are 49,000 at the simulator's grid, about 76,000 at
 the 320×240 a real iPhone 17 Pro sends; the bridge alone took 114,500 per second
 with no loss at twelve colour streams, 55 per cent of one core. The 61,000 in
-older notes was the highest load then tried, not a ceiling. `windows\fanout.bat` and the console's Start fan-out button remain for
-the no bridge CPU path only. The architecture diagram in `CLAUDE.md` still shows
-the relay as the show path and is stale; its port table is correct.
+older notes was the highest load then tried, not a ceiling. `windows\fanout.bat`
+and the console's Start fan-out button remain for the no bridge CPU path only.
+The architecture diagram in `CLAUDE.md` still shows the relay as the show path
+and is stale; its port table is correct.
 
 ### The show machine, console only
 
@@ -181,8 +182,8 @@ listener sets `SO_REUSEADDR`; on Windows it does not, because there
 holds, and silently taking TouchDesigner's telemetry port is worse than
 refusing to start the listener.
 
-**`--tdp4-port 0` on the show machine is not a performance choice, it avoids a
-deadlock.** TouchDesigner must be able to bind 9003 the instant it launches. A
+**`--tdp4-port 0` on the show machine avoids a deadlock; performance has nothing
+to do with it.** TouchDesigner must be able to bind 9003 the instant it launches. A
 console that opportunistically grabs the port while TD is down wedges the pair,
 because the console only yields the port once it learns from TD's status message
 that TD wants it, and TD cannot send that message until it has started. With `0`
@@ -214,7 +215,7 @@ to remember and one firewall rule per direction.
 
 **What counts as a test instance:** one started with `--config`, *or* one on
 any web port other than 9080. Either marks it, and both are things people do
-without thinking about consequences — copying a config to try something, or
+without thinking about consequences: copying a config to try something, or
 running a second console beside the first.
 
 A test instance comes up with the **TouchDesigner link off** and **`/track` and
@@ -224,7 +225,7 @@ NDI off**, whatever its own saved configuration says. Add `--td-link` or
 The reason is a real incident rather than caution: on link-up a console pushes
 its own phone poses into TouchDesigner's registration table, so a scratch
 console started for a measurement moved phones 1 to 6 in the live tox. The same
-argument covers the client bus — a copy of the show's configuration should not
+argument covers the client bus. A copy of the show's configuration should not
 start publishing tracking data over the top of the show.
 
 The port half matters more than it looks. A worktree started the usual way
@@ -240,16 +241,15 @@ cannot switch the show console's link off behind your back.
 
 A second console started on a configuration file that another console already
 holds **exits immediately**, with status 3, naming the file that is taken. The
-lock is the operating system's, on a file beside the configuration, so it is
-released the moment the holder dies — a crash or a watchdog restart frees it
-with nothing to clean up, and the launchers retry every two or three seconds,
-so a restart takes over as soon as the old process is gone.
+lock is the operating system's, on a file beside the configuration, so the
+operating system releases it the moment the holder dies. A crash or a watchdog
+restart frees it with nothing to clean up, and the launchers retry every two or
+three seconds, so a restart takes over as soon as the old process is gone.
 
-This closes the last route by which a second console could rewrite the show's
-roster: not by driving TouchDesigner or the client bus, which the test-instance
-rules already prevent, but simply by saving its own idea of the roster over the
-show's file. Two consoles on one file was never a configuration anyone wanted;
-now it is one that cannot happen.
+The test-instance rules already stop a second console driving TouchDesigner or
+the client bus. The lock closes the one route left for rewriting the show's
+roster: saving its own idea of the roster over the show's file. Two consoles on
+one file was never a configuration anyone wanted, and now it cannot happen.
 
 **The launchers stop rather than retrying.** Double-click the show launcher
 while the show console is already running and you get one line saying it was
@@ -259,7 +259,7 @@ looping. A crash or a watchdog restart is unaffected, because a dead process
 releases the lock and the relaunch takes it.
 
 To run a second console deliberately, give it its own file with `--config`,
-which is what you want anyway — its phone profiles move with it.
+which is what you want anyway, since its phone profiles move with it.
 
 ### What `--config` does to a fresh instance
 
@@ -366,9 +366,9 @@ A Tailscale `100.64/10` address counts as off LAN, because it is a tunnel. Only
 private, loopback and link local addresses count as on LAN.
 
 Everything else in the UI is uncapped remotely: the roster, telemetry, `/ctl`,
-the Log, Stage 3D, Markers and the settings. It is the point cloud, and only the
-point cloud, that is thinned. Judging merge quality or cloud density needs a
-browser on the venue LAN, or a remote desktop session on the show machine.
+the Log, Stage 3D, Markers and the settings. The console thins the point cloud
+and nothing else. Judging merge quality or cloud density needs a browser on the
+venue LAN, or a remote desktop session on the show machine.
 
 Use RDP or another remote desktop over Tailscale for TouchDesigner and for
 running the `.bat` files. Phones stay on the venue LAN. Only the browser crosses
@@ -409,8 +409,8 @@ git bundles, uncommitted work as patches, the console config and its rotating
 backups, the profiles, the tox, TD's learned state, and a manifest with sha256
 sums. Run it before anything you might want to undo.
 
-Treat it as a snapshot, not as a tested restore. **Restoring a configuration is
-not proven.** Two specific gaps:
+Treat it as a snapshot; nobody has tested a restore from it. **Restoring a
+configuration is not proven.** Two specific gaps:
 
 - **The fallback tests shape, not sense.** The console keeps
   `backups/config-*.json`, and when `config.json` is unusable it sets that file
@@ -432,15 +432,15 @@ not proven.** Two specific gaps:
 - The backup path has open review findings, and no restore has been exercised
   end to end.
 
-So: keep the snapshots, and if you ever need one, check the restored roster,
-poses, marker plan and listen port by eye against what you expected before
-trusting them. Do not plan a show around an unattended restore.
+Keep the snapshots, and if you ever need one, check the restored roster, poses,
+marker plan and listen port by eye against what you expected before trusting
+them. Do not plan a show around an unattended restore.
 
 ### Why saves are serialised and fsynced
 
-`config.json` is written whole on every change, into a private temporary file
-that is fsynced before it is renamed over the real one, under one lock. All three
-parts earn their keep. Until 2026-10-27 concurrent POST handlers shared a single
+The console writes `config.json` whole on every change, into a private temporary
+file that it fsyncs before renaming it over the real one, under one lock. All
+three parts earn their keep. Until 2026-10-27 concurrent POST handlers shared a single
 `config.json.tmp`: the second `open()` truncated the first writer's file, the
 rename raised a 500 for whoever pressed the button, and a reader could find
 `config.json` empty or half written. The rename is atomic, so a crash mid save
@@ -463,6 +463,6 @@ clear its error counters and start a fresh thread if the old one died. Reimporti
 a module under a live rig would swap code out from under threads that hold
 references to the old one, which is a different and much worse failure than the
 one being fixed. So the split is: Restart to recover, process restart to deploy.
-For the YOLO backend the distinction is narrower, because its Restart really does
+For the YOLO backend the distinction is narrower, because its Restart does
 restart the separate worker process, but even there the console's own code is
 unchanged.

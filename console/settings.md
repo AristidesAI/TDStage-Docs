@@ -7,7 +7,7 @@ nav_order: 5
 # Settings reference
 
 These are the console's runtime tunables. They live in `WebConsole/settings.py`,
-are persisted in the `settings` section of `config.json`, and are edited from the
+persist in the `settings` section of `config.json`, and you edit them from the
 **Tuning** panel in the Live view's side rail.
 
 They are **not** phone settings. Phone settings are sent over OSC to each phone
@@ -32,27 +32,28 @@ flowchart TD
   M --> PE["Persisted into the settings<br/>section of config.json"]
 ```
 
-Three design choices in that path explain most of the odd cases further down
+Four design choices in that path explain most of the odd cases further down
 this page.
 
 **The values live in `settings.py`; the modules keep their own globals.** A
 module does not look a setting up when it needs it. It receives the whole group
 as a plain dict through `apply_settings(d)` and copies what it owns into its own
 module globals, which its hot loop then reads with no dict lookup and no lock.
-Every one of those globals is a plain scalar written from the HTTP thread and
-read inside exactly one worker loop, which is safe without a lock because a
-CPython global store is atomic, and the loop reads them once at the top of each
-tick so a change lands cleanly on the next one.
+Every one of those globals is a plain scalar, written from the HTTP thread and
+read inside exactly one worker loop. That is safe without a lock because a
+CPython global store is atomic. The loop reads them once at the top of each
+tick, so a change lands cleanly on the next one.
 
 **Several modules can own one group, and a missing module is skipped silently.**
 `output` goes to `track_emit`, `ndi_out` and `rgb_stream`; `vision` goes to
 `vision_seg` and to whichever observers started. Each is handed the whole group
-and ignores the keys it does not own. A module with no `apply_settings` attribute
-is accepted and skipped, and starts working on its own if it later grows one,
-because the attribute is looked up at dispatch time rather than at registration.
-That is what lets the console boot without NDI, or without Vision, and still
-accept their settings. A hook that raises is caught and reported as an error on
-the group: **a broken hook must not take the console down mid show.**
+and ignores the keys it does not own. The dispatcher accepts and skips a module
+with no `apply_settings` attribute. If that module later grows one, it starts
+working on its own, because the dispatcher looks the attribute up at dispatch
+time rather than at registration. That is what lets the console boot without
+NDI, or without Vision, and still accept their settings. The dispatcher catches
+a hook that raises and reports it as an error on the group: **a broken hook must
+not take the console down mid show.**
 
 **Some hooks spell keys in snake_case.** Those schema entries carry `aliases`,
 and the dispatched dict holds the value under both spellings, so either
@@ -100,18 +101,18 @@ The **Live** class says what happens when you change it:
 Keys marked **expert** are hidden until you turn on **Expert settings**. They
 are hidden because they can wedge a show.
 
-One key is **locked**: the server refuses to move it. It is shown greyed with
-the reason rather than hidden, because it records a contract decision.
+One key is **locked**: the server refuses to move it. The panel shows it greyed
+with the reason rather than hiding it, because it records a contract decision.
 
 `GET /api/settings` returns the schema, the current values and the defaults, so
 the panel can never drift from the running server. `POST /api/settings` changes
-them and reports only the keys that actually changed.
+them and reports only the keys that changed.
 
 ### Resetting
 
-Per group, with the **Reset** button on the group's header. All groups, with
-**Reset all**, which asks first because the background relearns and the tracker
-may hand the client new performer ids.
+Reset one group with the **Reset** button on the group's header. Reset every
+group with **Reset all**, which asks first because the background relearns and
+the tracker may hand the client new performer ids.
 
 One key is deliberately exempt: `latency.personMode` survives both kinds of
 reset, because it says what the rig is doing rather than how well. The list is
@@ -119,15 +120,15 @@ reset, because it says what the rig is doing rather than how well. The list is
 
 A small number of defaults have been retuned after measurement. When that
 happens the console moves a saved value **only if it equals the old default**,
-on the grounds that nobody chose it; a value someone set differently is kept.
+on the grounds that nobody chose it, and keeps a value someone set differently.
 The pairs it migrates are listed as `RETUNED` in `WebConsole/settings.py`.
 
 That migration runs **once**, not on every boot. The saved settings block
-carries a `_rev`, and a file already at the current `SETTINGS_REV` is never
-touched. The first version of this had no revision and re-ran at every start,
-which made the old value unsettable: an operator who deliberately chose the
-previous default had it silently moved back on the next restart. A file written
-before revisions existed counts as revision 0 and is migrated once.
+carries a `_rev`, and the console never touches a file already at the current
+`SETTINGS_REV`. The first version of this had no revision and re-ran at every
+start, which made the old value unsettable: an operator who deliberately chose
+the previous default had it silently moved back on the next restart. A file
+written before revisions existed counts as revision 0 and is migrated once.
 
 ## What this page deliberately does not cover
 
@@ -141,7 +142,7 @@ For those, read the live source instead of a page:
 
 - `WebConsole/settings.py`, `SCHEMA["tracking"]`, for the current defaults,
   ranges and help text.
-- `WebConsole/track_emit.py` for what each one actually does.
+- `WebConsole/track_emit.py` for what each one does.
 - `GET /api/settings` on the running console, which is the only truth that
   cannot drift. The Tuning panel is built from it, so the panel's own hover
   text is always current.
@@ -174,7 +175,7 @@ Motion mode shows and what `/track` filters against.
 | `matureFrac` | 0.15 | 0.02 to 0.60 | safe | Background voxels over all voxels above this means mature. **Until mature, all foreground shows and `/track` emits zero performers** |
 | `motionBornS` | 3.0 s | 1 to 10 | safe | A voxel born later than this after engine start counts as "walked in" rather than scenery |
 | `guardMotionFrac` | 0.3 | 0.1 to 0.6 | safe | Fraction of motion born voxels a cluster needs before its footprint is protected. Too low and the from boot scene guards itself and never learns |
-| `freezeBg` | off | | safe | Background learned at calibration, with no absorption on stage. Press "Stage is empty now" on the empty stage; after that a performer holding still never fades into the background. Off means keep learning, which absorbs anything still for about 0.6 times the learn time. **Moving a phone while this is on clears the frozen background and `/track` publishes nobody until somebody presses it again** — with it off, only the moved phone drops out, for about 30 s |
+| `freezeBg` | off | | safe | Background learned at calibration, with no absorption on stage. Press "Stage is empty now" on the empty stage; after that a performer holding still never fades into the background. Off means keep learning, which absorbs anything still for about 0.6 times the learn time. **Moving a phone while this is on clears the frozen background and `/track` publishes nobody until somebody presses it again.** With it off, only the moved phone drops out, for about 30 s |
 | `fringeFrac` | 1.0 x bgThresh | 0.0 to 2.0 | safe | A foreground voxel below this times `bgThresh` that touches background is speckle and is dropped. 0 disables |
 | `stageX` | 9.0 m | 3 to 15 | safe | Engine inclusion box half width |
 | `stageZlo` | -9.0 m | -15 to -3 | safe | Downstage edge of the kept volume |
@@ -241,14 +242,14 @@ look like faults:
 
 What `/track` emits for hands. **These are not the hand detector's settings.**
 The detector is configured by `POST /api/hands` and by the Live view's Hand
-tracking panel, with its own separate keys (`maxHands`, `rateHz`, `depthWin`,
-`smooth`, `minPoints`). This group governs emission only, and it is applied by
+tracking panel, with its own separate keys (`maxHands`, `minConf`, `rateHz`,
+`depthWin`, `smooth`, `minPoints`). This group governs emission only, and it is applied by
 `track_emit.py`.
 
-Three of its keys decide when a hand is first published, how a lost hand is
-closed off, and which emitted performer an observed hand belongs to. Those are
-publication and identity thresholds in code that is mid revision, so they are
-**not documented here**: `birthHits`, `holdS` and `matchM`. Read their current
+Three of its keys, `birthHits`, `holdS` and `matchM`, decide when a hand is
+first published, how a lost hand is closed off, and which emitted performer an
+observed hand belongs to. Those are publication and identity thresholds in code
+that is mid revision, so they are **not documented here**. Read their current
 values from `GET /api/settings` or `SCHEMA["hands"]` in
 `WebConsole/settings.py`.
 
@@ -303,13 +304,12 @@ Rates, polls and freshness windows across the ingest and camera view paths.
 | `snapshotMaxAge` | 2.0 s | 0.5 to 5.0 | safe | A device with no frame for this long vanishes from `/api/cloud`. **The browser view only** |
 | `personMode` | `off` | `off`, `motion`, `vision`, `combined` | safe | Which signal filters the Live view cloud. The motion engine keeps learning in every mode |
 
-{: .warning }
-**Consensus can be chosen but not saved.** The console offers a Consensus
-mode and applies it, but the saved settings cannot hold the value, so it is dropped after every console start AND after any change to a
-latency setting, because the whole group is re-applied on an edit. The console
-restarts itself after a crash, so this can happen without anyone touching
-it. Re-select Consensus after a restart and after touching anything in the
-latency group, until this is fixed.
+{: .note }
+**Consensus used to be lost on every restart and on any edit to the latency
+group**, because the schema had no such option. Fixed on 2026-10-27
+([#37](https://github.com/AristidesAI/TDStage/issues/37)):
+`consensus` is now a valid `personMode` value and persists like any other
+setting. The story is in section 1 below.
 
 ---
 
@@ -317,13 +317,13 @@ latency group, until this is fixed.
 
 ### 1. The person filter used to forget what you picked
 
-Fixed on 2026-10-27 ([#37](https://github.com/AristidesAI/TDStage/issues/37)), and kept here because the failure is a
-good example of how a setting can be half-wired.
+Fixed on 2026-10-27 ([#37](https://github.com/AristidesAI/TDStage/issues/37)),
+and kept here because the failure shows how a setting can be half-wired.
 
 The Live view's People only panel offered **Consensus**, and the ingest module
 accepted it, but the settings schema's options were `off`, `motion`, `vision`
-and `combined` only. So the mode could be selected and applied, and could never
-be **saved**. Pressing the button worked; editing anything else in the same
+and `combined` only. So you could select and apply the mode, and could never
+**save** it. Pressing the button worked; editing anything else in the same
 group, or restarting the console, silently put the rig back on the saved mode.
 It dropped Consensus in the middle of a demo.
 
@@ -331,8 +331,8 @@ Three things were wrong at once, which is why it survived: the enum was missing
 a value the UI offered, the button wrote to a different route than the setting,
 and that route only set the live mode. All three are fixed. `consensus` is now
 a valid option, `POST /api/person` writes `latency.personMode` and persists it
-like any other setting, and ingest re-applies the mode only when it actually
-changes. An unknown mode is refused with a 400 naming the valid ones.
+like any other setting, and ingest re-applies the mode only when it changes.
+The server refuses an unknown mode with a 400 naming the valid ones.
 
 **Reset keeps it.** A reset of the `latency` group, or Reset all, leaves
 `personMode` where you put it and returns everything else in the group to its
@@ -346,9 +346,9 @@ that.
 the `output` group. **Neither key exists in the schema's `output` group**, so
 the hook is never handed them and the panel never shows them.
 
-They are still adjustable, just per request, as query parameters on the image
-routes: `?q=` (10 to 95, default 75) and `?maxAge=` (default 2.0 s). The module
-globals keep their defaults otherwise.
+They are still adjustable per request, as query parameters on the image routes:
+`?q=` (10 to 95, default 75) and `?maxAge=` (default 2.0 s). The module globals
+keep their defaults otherwise.
 
 ### 3. The two "hands" are different things
 
@@ -367,8 +367,10 @@ rings still show.
 In the `settings` section of `WebConsole/config.json`. A config file with no
 `settings` section behaves exactly as the shipped defaults.
 
-If that section is malformed, the console logs `saved settings ignored` (which fires only if the loader itself raises, not on bad content: a non-dict block is skipped and a bad key is rejected per key, both silently), runs on
-defaults, and tells you to fix or delete the block and restart. Settings are not
+If that section is malformed, the console logs `saved settings ignored`, runs on
+defaults, and tells you to fix or delete the block and restart. That log line
+fires only if the loader itself raises, not on bad content: the console skips a
+non-dict block and rejects a bad key per key, both silently. Settings are not
 undoable: the undo stack covers poses, markers, the person figures and the
 roster, not these.
 
@@ -383,11 +385,12 @@ a rig figure.
 The bench numbers behind that, on the same scene at 306,000 points a tick: 29.2
 to 14.6 ms, and 37.7 to 14.4 ms with the background frozen. The live figure
 before the change was worse than the bench, 44.8 ms a tick on a 50 ms period,
-which is one core with no slack left. The optimisation itself replaced
-`searchsorted` joins of each observation against roughly 170,000 sorted state
-rows, which were 40 per cent of a tick, with a dense cell to row table over the
-stage box. Published arrays are bit identical before and after, checked tick by
-tick for 900 ticks.
+which is one core with no slack left.
+
+The optimisation itself replaced `searchsorted` joins, which matched each
+observation against roughly 170,000 sorted state rows and took 40 per cent of a
+tick, with a dense cell to row table over the stage box. Published arrays are
+bit identical before and after, checked tick by tick for 900 ticks.
 
 The engine stayed on the CPU on purpose. A GPU version would mean importing
 torch into the console process, which is exactly what the YOLO worker exists to
@@ -402,8 +405,8 @@ started before this change still reports the old cost until it is restarted.
 That matters when choosing `segTick`, because the engine period is the dominant
 server side latency lever: `/track` does not re-segment, it filters the
 **current** cloud against the foreground set the engine published on its **last**
-tick. A period shorter than the work takes does not make the engine faster, it
-only makes it late every tick.
+tick. A period shorter than the work takes makes the engine late every tick,
+never faster.
 
 {: .warning }
 `segment.py`'s docstring says the engine runs at a fixed cadence of about 10 Hz.

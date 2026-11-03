@@ -7,11 +7,11 @@ nav_order: 6
 # When something fails
 
 For each part of the rig: what takes over by itself, what an operator does,
-and whether it has actually been seen working.
+and whether anyone has seen it working.
 
 The status column is the important one. "Verified" means a test or a run
-showed it. "Not verified" means it is designed and written but has not been
-seen working on hardware. **Gap** means there is no fallback today.
+showed it. "Not verified" means it is designed and written but nobody has
+seen it working on hardware. **Gap** means there is no fallback today.
 
 Most of the "not verified" items are waiting on the same thing: a session with
 real phones on real stands. That session is [#24](https://github.com/AristidesAI/TDStage/issues/24), and it is what will
@@ -22,8 +22,8 @@ Read the gaps first. They are at the bottom of this page.
 
 ## Why the failures are shaped like this
 
-Most of what follows is a consequence of two structural choices, and knowing
-them makes the individual cases predictable rather than a list to memorise.
+Two structural choices explain most of what follows. Once you know them, the
+individual cases are predictable rather than a list to memorise.
 
 **The phones and the receiver share no state.** A phone holds a destination
 address and sends to it. It does not negotiate, does not wait for an
@@ -44,11 +44,11 @@ only process listening on the port the phones send to. The console opens no
 phone-facing socket of its own in the show setup, and while TouchDesigner does
 bind its own socket when the bridge stops, it binds the port the bridge
 publishes on, not the one the phones send to. So nothing reaches either side
-until the bridge is back. The launcher restarts it in two or three seconds,
-and that is the real answer here, because there is no second path.
+until the bridge is back. The launcher restarts it in two or three seconds.
+There is no second path, so that restart is the answer.
 
-The cost of the first choice is that nothing is guaranteed to arrive. That is
-paid for deliberately, and the reasoning is in
+The cost of the first choice is that nothing is guaranteed to arrive. That
+cost is deliberate, and the reasoning is in
 [Why it is built this way](../reference/design.html).
 
 ## Triage: something has stopped, what do I check first
@@ -57,8 +57,7 @@ One question orders everything else. **Are the visuals still running?**
 
 That answer tells you whether TouchDesigner is alive, and because
 TouchDesigner and the console are two independent readers of the same
-received frames, it separates three completely different problems
-immediately.
+received frames, it separates three different problems at once.
 
 ```mermaid
 flowchart TD
@@ -112,13 +111,12 @@ flowchart TD
   Q -- "no" --> H["Health is live.<br/>Go back to the triage tree"]
 ```
 
-**Restarting the console does not fix this**, and that is the mistake worth
-inoculating against, because someone makes it once, under pressure, at the
-worst possible moment. The telemetry is not arriving at the console in the
-first place, so restarting the thing that is not receiving it changes
-nothing. Retarget instead.
+**Restarting the console does not fix this.** Someone makes that mistake once,
+under pressure, at the worst possible moment. The telemetry is not arriving at
+the console in the first place, so restarting the thing that is not receiving
+it changes nothing. Retarget instead.
 
-Retargeting is also the better state to be in generally: once a phone sends
+Retargeting is also the better state in general: once a phone sends
 health to the console's own listener, that health survives a TouchDesigner
 outage entirely.
 
@@ -128,33 +126,33 @@ outage entirely.
 
 Automatic: the phone resumes streaming when the app relaunches. If the show
 was started with **Start show**, the console's auto-recover then sends start to
-a phone that is back online but idle — but only once it has stayed back for
-twelve seconds without dropping again, and at most once every thirty seconds
-per phone. A phone that flaps restarts that twelve second clock each time,
-which is the point: the console waits for a phone that is actually back rather
-than chasing one that is still coming and going.
+a phone that is back online but idle. It does so only once the phone has
+stayed back for twelve seconds without dropping again, and
+at most once every thirty seconds per phone. A phone that flaps restarts that
+twelve second clock each time, so the console waits for a phone that is back
+and staying back instead of chasing one that is still coming and going.
 
 That qualifier matters. Auto-recover is off when the console boots, and
-**Start all does not arm it** — only Start show does, and Standby and Stop
+**Start all does not arm it**. Only Start show arms it, and Standby and Stop
 disarm it again. A rig started with Start all has no safety net, which is a
 reasonable choice and a bad surprise.
 
 Two more things end the watching, both deliberate:
 
-**A phone you stopped stays stopped.** If the console stopped a phone, auto-
-recover leaves it alone until something starts it again — the console, or the
-phone itself. Otherwise stopping one phone to look at it would turn into a
+**A phone you stopped stays stopped.** If the console stopped a phone,
+auto-recover leaves it alone until something starts it again, either the
+console or the phone itself. Otherwise stopping one phone to look at it would turn into a
 fight with the supervisor.
 
-**"The show is running" expires.** The latch is saved, so a watchdog restart
-keeps it, but a console that was down for **more than half an hour** boots with
-auto-recover disarmed and says so. The age comes from a heartbeat file the
-console touches every ten seconds. The reasoning is that a restart seconds
-later is the same show, and a restart the next morning is not — and a
-supervisor that silently starts phones because of yesterday's latch is worse
+**"The show is running" expires.** That state is a latch the console saves, so
+a watchdog restart keeps it, but a console that was down for **more than half
+an hour** boots with auto-recover disarmed and says so. The age comes from a
+heartbeat file the console touches every ten seconds. The reasoning is that a
+restart seconds later is the same show, and a restart the next morning is not.
+A supervisor that silently starts phones because of yesterday's latch is worse
 than one that waits to be asked. Press Start show when the show should run.
 
-Operator: relaunch the app. Nothing else — but that means **reaching the
+Operator: relaunch the app, and nothing else. That still means **reaching the
 phone**, because nothing opens an app on a locked one. See the gap below
 ([#44](https://github.com/AristidesAI/TDStage/issues/44)): everything after the relaunch is automatic, and the relaunch
 itself is a walk to the stand.
@@ -171,8 +169,8 @@ Operator: swap in a spare and set its device id from the console.
 
 {: .warning }
 The id guard is narrower than it sounds. It blocks a **fresh install** that
-still holds the untouched default id. A spare whose id was set at some point —
-in a rehearsal, last week — streams straight away and will collide silently if
+still holds the untouched default id. A spare whose id was set at some point
+(in a rehearsal, last week) streams straight away and will collide silently if
 that id is already on the rig. Two phones on one id black out that id
 completely: the receiver discards both, in TouchDesigner and in the tracking
 output alike. Rig health names the colliding id; the fix is to change it on
@@ -206,16 +204,16 @@ after about forty five seconds of cooling.
 should say**, and the finding is not what anyone expected:
 
 - Both phones reached **serious within seven to nine minutes** of launch and
-  **never left it** — not with the screen blacked out, not on the USB cable,
-  not on the cheaper capture path.
+  **never left it**, whether the screen was blacked out, the phone was on the
+  USB cable or it ran the cheaper capture path.
 - **Neither ever reached critical**, at 25 fps or at 30.
 - Capture pressure stayed "fair", and its one factor was system temperature.
   The camera was never the limit; the whole phone was, and a phone plugged in
   at 100 % is also running a charging circuit.
 
-So **serious is the normal working state of a phone on a stand**, not an
-alarm, and the question is not how to get back to nominal. It is what the
-phone still delivers while it sits there — which was 30 fps, indefinitely.
+So treat **serious as the normal working state of a phone on a stand** and
+not as an alarm. The useful question is what the phone still delivers while it
+sits there, and the answer was 30 fps, indefinitely.
 
 {: .warning }
 Blackout made **no measurable thermal difference** over nineteen minutes at
@@ -224,9 +222,9 @@ keeps the interface idle. But it will not bring a plugged-in phone back, and
 anyone treating it as the cooling fix will be disappointed by the numbers.
 
 Operator: shade it or give it air if you can. The console shows capture
-pressure per device, and the factor tells you *which* part is hot — worth
-reading before intervening, because shading helps a hot camera and does
-nothing for system temperature.
+pressure per device, and the factor tells you *which* part is hot. Read it
+before intervening, because shading helps a hot camera and does nothing for
+system temperature.
 
 Status: **measured on two phones over ninety minutes** ([#31](https://github.com/AristidesAI/TDStage/issues/31)). Not yet
 measured on a full rig, in a venue, or anywhere warm.
@@ -236,22 +234,22 @@ measured on a full rig, in a venue, or anywhere warm.
 Automatic: if the adapter drops, the stream moves immediately to any other
 route that is not cellular, which is Wi-Fi **only if the phone is joined to a
 network that reaches the host**. The five seconds people remember is a
-different case: a link that is pinned to the wire and never becomes ready is
-abandoned after five seconds.
+different case: a link that is pinned to the wire and never becomes ready,
+which the phone abandons after five seconds.
 
 Operator: re-seat the cable.
 
 A direct cable address can also drift on its own, with nothing unplugged. The
-Mac re-picks its link-local address — measured drifting twice in two days on
-this rig — and the phone goes on streaming to the address it learned, which no
+Mac re-picks its link-local address (measured drifting twice in two days on
+this rig) and the phone goes on streaming to the address it learned, which no
 longer exists. Nothing on either end reports an error; the stream simply stops.
 
 **The console watches for this and says so**, naming the old address and the
-new one, with the fix attached: press **Autofix** on that phone, which sends it
-a message over the cable so it learns the new address from where that message
-came from. The re-teaching is one click rather than automatic, which is
-deliberate — reaching for a phone unasked is what the recovery rules exist to
-prevent ([#19](https://github.com/AristidesAI/TDStage/issues/19)).
+new one, with the fix attached. Press **Autofix** on that phone: the console
+sends it a message over the cable, and the phone learns the new address from
+where that message came from. The re-teaching is one click rather than
+automatic, on purpose, because the recovery rules exist to stop the console
+reaching for a phone unasked ([#19](https://github.com/AristidesAI/TDStage/issues/19)).
 
 Status: code review and unit tests. **Not verified on a rig.**
 
@@ -284,7 +282,7 @@ outputs.
 Operator: reopen the project. The console re-seeds the phone positions when
 the link comes back.
 
-One catch worth knowing: by default phone health reaches the console
+One catch: by default phone health reaches the console
 **through** TouchDesigner, on the port TouchDesigner owns. Until it is back,
 the phones look dead even though they are streaming, because the point data
 comes by a different route and never stopped.
@@ -311,7 +309,8 @@ hands, because the fallback hand detector is macOS only.
 Operator: nothing, unless it keeps happening. Rig health shows the worker's
 state and how many times it has restarted, and can restart it by hand.
 
-Status: the respawn has an automated test. It is run by hand at the moment, because the repository's Actions have been refused on billing since
+Status: the respawn has an automated test. The test runs by hand at the
+moment, because the repository's Actions have been refused on billing since
 2026-10-27.
 
 ### The show machine goes to sleep
@@ -336,7 +335,7 @@ Status: **gap.** Nothing in the repository enforces this.
 What happens: nothing visible. The tracking output is plain UDP to a fixed
 address, so a dead host or a closed port produces no error anywhere an
 operator looks. The console keeps reporting that it is sending, and the frame
-count keeps rising, because it is sending — into nothing.
+count keeps rising, because it is sending, into nothing.
 
 Operator: if the console says it is sending and the frames are climbing, the
 console is fine. Look at the receiving machine and the network between. The
@@ -349,14 +348,13 @@ client before the first show, because there is no symptom to go on otherwise.
 ### The network between the phones and the machine drops
 
 Automatic: everything recovers by itself when the link returns. The phones
-never stop streaming — their own link is still up, so nothing on the phone
+never stop streaming. Their own link is still up, so nothing on the phone
 treats this as a failure.
 
 What the client sees is the part to plan for: after about six seconds every
 phone reads offline, and after three seconds without points **every performer
 is released**. When the link returns they come back as **new ids**. A thirty
-second dropout is therefore not a thirty second gap, it is a gap plus a fresh
-cast list.
+second dropout is therefore a gap plus a fresh cast list.
 
 Operator: nothing during. Afterwards, make sure anything downstream that holds
 per-performer state has let go of the old ids.
@@ -390,28 +388,28 @@ parses **and** applies, skipping any that do not and naming each one it
 skipped. The bad file is kept aside with a timestamp, and an error says which
 backup it started from.
 
-That second word matters. A file with the right shape but one unreadable value
-— a position written `1,5` instead of `1.5` — used to skip the backups
-entirely and seed a fresh six-phone session, which was then written over the
-configuration while a good backup sat beside it. Fixed on 2026-10-27.
+The word "applies" matters. A file with the right shape but one unreadable
+value (a position written `1,5` instead of `1.5`) used to skip the backups
+entirely and seed a fresh six-phone session, which the console then wrote over
+the configuration while a good backup sat beside it. Fixed on 2026-10-27.
 
 {: .warning }
 A restore is at best a minute old, because backups are taken at most once a
 minute. Check the calibration after any restore rather than assuming it is
 where you left it.
 
-If it does end up seeding — nothing in the backups could be used — **the seeded
-roster does not push its poses to TouchDesigner by itself**. A seed's six
+If it does end up seeding, because nothing in the backups could be used, **the
+seeded roster does not push its poses to TouchDesigner by itself**. A seed's six
 default positions are not the venue's, and the console pushes poses on every
 TouchDesigner link-up, so a seed used to move the live cloud as a side effect
 of reconnecting. It now holds them, and Rig health says so.
 
-The hold is **per phone**, and the rule is worth knowing exactly, because it
-decides what your next click publishes.
+The hold is **per phone**. Know the rule exactly, because it decides what your
+next click publishes.
 
 | What you do | What it releases |
 |---|---|
-| Save an edit that **moves or turns** one phone — its position, its yaw, or its **tilt** | That phone only. The others stay held |
+| Save an edit that **moves or turns** one phone (its position, its yaw, or its **tilt**) | That phone only. The others stay held |
 | Edit a phone's **plan aim** pitch or roll, or its field of view | Nothing. Those only draw the frustum in the plan; they do not move anything |
 | Click a phone in the stage view without dragging it | Nothing. The value has not changed |
 | **Push poses** | Every phone |
@@ -421,14 +419,13 @@ decides what your next click publishes.
 **There are two pitch-and-roll pairs and they do opposite amounts of work.**
 The *plan aim* is a drawing: it points the frustum in the plan view and changes
 nothing about the cloud. The *tilt* is a real correction, up to 30 degrees,
-applied to that phone's points on every merge path. One is annotation, the
-other is geometry. The console labels the plan aim as drawing-only for exactly
-this reason.
+applied to that phone's points on every merge path. The console labels the
+plan aim as drawing-only for exactly this reason.
 
 Rig health names the phones still held, and the held set is saved with the
 configuration, so a restart does not quietly release them.
 
-The same hold covers three cases, not just a seed: every phone of a seeded
+The same hold covers three cases: every phone of a seeded
 roster, every phone of a roster restored from a backup, and any slot added with
 the **+** button. In each one, nobody has confirmed where that phone actually
 is.
@@ -442,8 +439,8 @@ come back.
 
 ### Two performers are confused for each other
 
-Automatic: the output flags the identity as uncertain while it cannot be
-told apart, so the receiving side can treat it as provisional rather than
+Automatic: the output flags the identity as uncertain while the two cannot
+be told apart, so the receiving side can treat it as provisional rather than
 trusting it.
 
 This is a property of the measurement, not a bug. See
@@ -463,8 +460,9 @@ mean on the wire is being pinned down in [#32](https://github.com/AristidesAI/TD
 
 ## The gaps
 
-These have no fallback today. They are listed plainly because a gap you know
-about can be planned around, and a gap you discover during a show cannot. Each
+These have no fallback today. This page lists them plainly because you can
+plan around a gap you know about, and not around one you discover during a
+show. Each
 links its issue where it has one; the full, current list is the
 [board](https://github.com/users/AristidesAI/projects/1) and the [issues](https://github.com/AristidesAI/TDStage/issues).
 
@@ -474,36 +472,36 @@ still an open decision.
 
 **A phone that crashes or reboots stays down until somebody reaches it.**
 iOS has no supervisor: nothing can open an app on a locked phone. Everything
-downstream recovers the moment the app is running again — the phone re-applies
+downstream recovers the moment the app is running again: the phone re-applies
 its last known good profile and resumes streaming, and the console's
-auto-recover restarts it within about twelve seconds — but getting the app
-running is a person walking to the stand.
+auto-recover restarts it within about twelve seconds. Getting the app running,
+though, is a person walking to the stand.
 
 There are exactly two ways to close that, and the choice is open
 ([#44](https://github.com/AristidesAI/TDStage/issues/44)):
 
 | | What it costs |
 |---|---|
-| **Supervise the phones and lock them into Single App Mode.** The system then relaunches the app after a crash or a reboot | Supervising **wipes each phone**, and the phone is locked to the app — so every app update, roughly every 80 days, means leaving Single App Mode, updating, and re-entering it |
+| **Supervise the phones and lock them into Single App Mode.** The system then relaunches the app after a crash or a reboot | Supervising **wipes each phone**, and the phone is locked to the app, so every app update, roughly every 80 days, means leaving Single App Mode, updating, and re-entering it |
 | **Staff the stands.** Somebody within reach of every phone, relaunch in the show checklist | A person per cluster of stands, for every performance |
 
 {: .warning }
 **Guided Access is the obvious answer and it does not work.** It keeps the app
-in front on an unsupervised phone, which looks like the same thing — but it
+in front on an unsupervised phone, which looks like the same thing, but it
 does not survive a reboot and does not relaunch an app that has crashed, which
 are the two cases this is about. Reaching for it would leave the gap open while
 feeling solved.
 
 **Nothing stops the machine sleeping.** There is no wake lock in the system,
-and a sleep mid-show costs every performer id. It is prevented by setting the
-machine up correctly, which means it is prevented by remembering to.
+and a sleep mid-show costs every performer id. The only prevention is setting
+the machine up correctly, which means the only prevention is remembering to.
 
 **The outputs to other systems stop if the console stops.** TouchDesigner's
 own point cloud keeps running, so the visuals continue, but anything consuming
 the tracking output loses it until the console restarts. It restarts by itself
 and now comes back sending, so the gap is the restart plus the half minute the
-tracker needs to re-learn its background — not, as it was until 2026-10-27, for
-as long as it takes somebody to notice.
+tracker needs to re-learn its background. Until 2026-10-27 it lasted as long as
+it took somebody to notice.
 
 ## Not a gap, but a date
 
@@ -515,7 +513,7 @@ five more uploads.
 
 It is not in the list above because it has both a plan and a fallback. It is
 on this page because the failure mode is total: an expired build does not
-degrade or warn at the moment it matters, it refuses to launch, **on every
+degrade or warn at the moment it matters. It refuses to launch, **on every
 phone at once**, since they were all uploaded on the same day. The phones and
 the console do warn in advance, counting from when the build was archived
 rather than uploaded, so that warning is early rather than late.

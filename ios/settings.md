@@ -9,20 +9,20 @@ nav_order: 5
 Every setting the app holds, with the key it is stored under, its default, what
 it does, and whether a console can set it remotely.
 
-All settings live in iOS UserDefaults under keys beginning `stage.`. Every
-default is registered once at launch, in one place, and every reader goes
+All settings live in iOS UserDefaults under keys beginning `stage.`. The app
+registers every default once at launch, in one place, and every reader goes
 through UserDefaults with no inline fallback.
 
-That is the rule that keeps the three authorities over a setting, the on-screen
-control, `/ctl/set`, and a pushed profile, from disagreeing. An inline
-fallback (`?? 30`) is a second default that only one reader sees: the screen
-shows 30, the registered default says something else, the telemetry reports a
-third thing, and which one you get depends on whether anything has written the
-key yet. A new key that is read without being registered is the defect to look
-for when a fresh install behaves differently from a reset one.
+That rule keeps the three authorities over a setting (the on-screen control,
+`/ctl/set` and a pushed profile) from disagreeing. An inline fallback
+(`?? 30`) is a second default that only one reader sees: the screen shows 30,
+the registered default says something else, the telemetry reports a third
+thing, and which one you get depends on whether anything has written the key
+yet. When a fresh install behaves differently from a reset one, look for a new
+key that is read without being registered.
 
-Each value is also clamped twice on the remote path: once to a billion either
-way after the non-finite check, and again to the key's own range in the same
+The remote path also clamps each value twice: once to a billion either way
+after the non-finite check, and again to the key's own range in the same
 `switch` that writes it. Both would have to be wrong for a value to reach a key
 unbounded.
 
@@ -39,23 +39,24 @@ a phone across a stage.
 | **profile** | Only a whole pushed profile document can change it |
 | **no** | No remote path exists. Either the phone sets it, or a person does on the phone |
 
-Two authorities, deliberately at different trust levels. `/ctl/set` is a narrow,
-numerically clamped, per-key surface. A profile is a whole document applied in
-one go, and it is the only way to re-point a phone's identity or its ports. A
-key the profile schema does not list is dropped, so a profile cannot reach
-anything below that does not say `profile`.
+The two remote authorities sit at different trust levels on purpose.
+`/ctl/set` is a narrow, numerically clamped, per-key surface. A profile is a
+whole document applied in one go, and it is the only way to re-point a phone's
+identity or its ports. The profile schema drops any key it does not list, so a
+profile cannot reach anything below that does not say `profile`.
 
 {: .note }
-Every setting a person can change on the phone's screens is reported back as a
+The phone reports every setting a person can change on its screens back as a
 JSON object on `/tdlidar/<id>/device/settings`, keyed by these same UserDefaults
-keys. It is sent **when it changes**, on the next 0.5 s telemetry tick, and
-**every 2 s regardless** whether it changed or not. The first half means a
-console catches up with an edit within half a second, whether the edit came
-from a thumb on the phone or from its own `/ctl/set`. The second half means a
-console that starts late, or that drops a datagram, still converges rather than
-waiting for the next change. That is how a console shows the phone's real state
-rather than the last value it happened to send. A key absent from that object
-is a control the app does not have, and the console hides that row.
+keys. It sends the object **when a value changes**, on the next 0.5 s telemetry
+tick, and **every 2 s regardless** of whether anything changed. The first half
+means a console catches up with an edit within half a second, whether the edit
+came from a thumb on the phone or from its own `/ctl/set`. The second half
+means a console that starts late, or that drops a datagram, still converges
+rather than waiting for the next change. That is how a console shows the
+phone's real state rather than the last value it happened to send. A key absent
+from that object is a control the app does not have, and the console hides that
+row.
 
 An unknown key sent to `/ctl/set` is ignored. Nothing writes arbitrary
 UserDefaults.
@@ -82,11 +83,11 @@ UserDefaults.
 {: .warning }
 `stage.tcpHost` and `stage.oscHost` are deliberately **not** in the profile
 schema. Which link a phone uses is the operator's choice, and nothing may
-override it. A cached profile is re-applied at boot and on a full self-heal: if
-a host lived in that document, pressing **Cable** and then taking a heal a few
-seconds later would walk the phone back onto Wi-Fi on its own. An explicit
-`/ctl/set stage.tcpHost` still works, because that is a person at a console
-deciding.
+override it. The phone re-applies a cached profile at boot and on a full
+self-heal: if a host lived in that document, pressing **Cable** and then taking
+a heal a few seconds later would walk the phone back onto Wi-Fi on its own. An
+explicit `/ctl/set stage.tcpHost` still works, because that is a person at a
+console deciding.
 
 In practice an operator does not send that by hand. Pressing **Send telemetry
 here** on the console's device row sends the address over the control channel,
@@ -98,31 +99,31 @@ default. They read as empty until the phone learns an address.
 
 ### `stage.preferWired` is a preference with a five-second escape
 
-While this is on and a wired interface is up, each outgoing UDP connection is
-built with `requiredInterfaceType = .wiredEthernet`. Cellular is prohibited on
-every connection regardless.
+While this is on and a wired interface is up, the streamer builds each
+outgoing UDP connection with `requiredInterfaceType = .wiredEthernet`.
+Cellular is prohibited on every connection regardless.
 
-That requirement is **dropped after five seconds if the connection has not come
-up, even while the wired link stays up.** An adapter that is up but routes
-nowhere, link-local only, the wrong VLAN, a receiver on the Wi-Fi subnet,
-otherwise parks the connection in `waiting` for the whole session, and the
-phone cannot be rescued remotely either, because its telemetry leaves under the
-same requirement: `/ctl/set stage.preferWired 0` cannot reach the phone that
-needs it. So the streamer rebuilds the connection once with no requirement,
-notes `wifi (wired adapter not routing)`, and re-arms the requirement on the
-next wired path change.
+The streamer **drops that requirement after five seconds if the connection has
+not come up, even while the wired link stays up.** Without that escape, an
+adapter that is up but routes nowhere (link-local only, the wrong VLAN, a
+receiver on the Wi-Fi subnet) would park the connection in `waiting` for the
+whole session, and nobody could rescue the phone remotely either, because its
+telemetry leaves under the same requirement: `/ctl/set stage.preferWired 0`
+cannot reach the phone that needs it. So the streamer rebuilds the connection
+once with no requirement, notes `wifi (wired adapter not routing)`, and re-arms
+the requirement on the next wired path change.
 
-The key itself is not changed by this. A phone that has fallen back still
+The fallback does not change the key itself. A phone that has fallen back still
 reports `preferWired 1`, and the fallback shows up as `link = "wifi"` with
 `wiredUp = 1` on `/device/link` and as "Wi-Fi (Ethernet waiting)" on the LIVE
 page.
 
 {: .warning }
 **Toggling this key does not re-arm the requirement.** Writing it relinks both
-the depth and the telemetry connections, but the fallback latch is cleared only
-by a wired path change, so a phone that has already fallen back rebuilds
-without the requirement again. Bounce the wired link, or restart the app. There
-is no remote verb that clears the latch on its own.
+the depth and the telemetry connections, but only a wired path change clears
+the fallback latch, so a phone that has already fallen back rebuilds without
+the requirement again. Bounce the wired link, or restart the app. No remote
+verb clears the latch on its own.
 
 Full description, including what to check when it happens:
 [Prefer Ethernet](live.html#prefer-ethernet-poe--cable).
@@ -147,15 +148,15 @@ escape survives that change. The authority is `TDStage/Net/WiredLink.swift`.
 {: .warning }
 `stage.depthgrid` is inert on the show path. The format selector accepts the
 target and deliberately ignores it, so setting this value changes nothing about
-the grid that is captured or sent. It is still stored, reported and carried in
-a profile. A change is refused while a take is recording, because a take is one
-file with one geometry in its header.
+the grid that is captured or sent. The phone still stores it, reports it and
+carries it in a profile. The app refuses a change while a take is recording,
+because a take is one file with one geometry in its header.
 
 So its default of `256x192` is **not** what the phone sends, and reading it as
 a statement about the wire is the mistake this key invites. The phone takes the
 smallest float depth format its camera offers, which is **320×240 on an iPhone
 17 Pro**. To know what a phone is really sending, read the grid on the LIVE
-page's stream line, or the frame header — not this key. Bandwidth and disk
+page's stream line or the frame header rather than this key. Bandwidth and disk
 figures that assume 256×192 understate a real phone by about half again:
 [Wire and disk cost](record.html#disk-cost).
 
@@ -163,8 +164,8 @@ figures that assume 256×192 understate a real phone by about half again:
 
 ## Processing
 
-The phone is a pure streamer. These exist so each optional stage can be
-switched on for a measurement.
+The phone is a pure streamer. These keys exist so you can switch each optional
+stage on for a measurement.
 
 | Key | Default | Remote | What it does |
 |---|---|---|---|
@@ -174,7 +175,7 @@ switched on for a measurement.
 | `stage.skeleton` | `false` | `set` number, verb `skeleton`, profile | On-phone person and pose detection. Its results have no wire, so this is a cost measurement only |
 | `stage.flipZ` | `true` | `set` number, profile | Negates Z for the receiver's convention. **Read only by the on-phone pose engine**, which has no wire, so it has no effect on what is streamed |
 
-All of the first four apply live, with no capture restart.
+The first four apply live, with no capture restart.
 
 ---
 
@@ -196,9 +197,9 @@ system's own pressure.
 
 ## Recovery
 
-No remote path exists for any of these. They are not in the `/ctl/set`
-whitelist and they are not in the profile schema, so today they can only be
-changed by editing the app's stored defaults, which no screen does
+No remote path exists for any of these. They are in neither the `/ctl/set`
+whitelist nor the profile schema, so today the only way to change one is to
+edit the app's stored defaults, and no screen does that
 (**not yet verified** in operation).
 
 | Key | Default | What it does |
@@ -284,8 +285,8 @@ a restart.
 
 **Non-finite numbers are dropped.** A NaN or an infinity is a legal value in an
 OSC float, and used to crash the phone on the integer conversions behind these
-keys. One stray console value, one dead phone. Non-finite values are now
-dropped, and the rest are bounded before any key sees them.
+keys, so one stray console value meant one dead phone. The remote surface now
+drops non-finite values and bounds the rest before any key sees them.
 
 **A missing argument on a processing toggle means off, never on.** A stray
 pulse from a mistyped control must not switch depth rectification or on-device

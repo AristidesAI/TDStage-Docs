@@ -52,21 +52,21 @@ person to look at.
 Every point is in stage coordinates: metres, Y up, origin at the centre of the
 stage floor.
 
-**The hub does not only union.** A phone's extrinsic is gravity-levelled but
-origin-centred: the phone knows which way is up and nothing about where it
-stands, so without help three phones pile up on top of each other at the
-origin. The hub applies a **per-device registration** of yaw, tx, ty and tz on
-both merge paths, from the console roster when `Posesource` is `console` or
-from the Align page knobs otherwise, and then the stage level solve and the
-manual trim.
+**The hub does more than union the phones' clouds.** A phone's extrinsic (the
+pose it sends with every frame) is gravity-levelled but origin-centred: the
+phone knows which way is up and nothing about where it stands, so without help
+three phones pile up on top of each other at the origin. The hub applies a
+**per-device registration** of yaw, tx, ty and tz on both merge paths, from the
+console roster when `Posesource` is `console` or from the Align page knobs
+otherwise, and then the stage level solve and the manual trim.
 
 The full transform, per phone, is `Trim . Reg . Floor . Level . E`.
 [How the pipeline is built](pipeline.html#where-the-per-device-registration-is-applied)
 has the terms and where each one is applied.
 
-That means a point you read from `out_pop` is already in the space your content
-works in. No further transform is needed or wanted. The alignment happens in
-the hub precisely so that nothing downstream has to repeat it.
+So a point you read from `out_pop` is already in the space your content works
+in. Do not transform it again. The hub does the alignment once so that nothing
+downstream has to repeat it.
 
 ## `out_pop`: the merged point cloud
 
@@ -127,8 +127,8 @@ sample per point, seven channels:
 | `id` | Device id |
 
 **This CHOP is empty while `Mergegpu` is on.** The GPU merge path owns the
-cloud, the CPU merge stands down entirely, and the Script CHOP emits a single
-empty sample. The saved working copy ships with `Mergegpu` on, so a reader
+cloud, the CPU merge stands down, and the Script CHOP emits a single empty
+sample. The saved working copy ships with `Mergegpu` on, so a reader
 wired to `out_merged` gets nothing by default.
 
 The one exception is while a background learn is running: the CPU path comes
@@ -141,10 +141,10 @@ that works on both paths.
 ## `out_rgb`: the phones' camera images
 
 Eight Script TOPs, `rgb_1` through `rgb_8`, each showing one phone's own camera
-image. The image is the camera image: there is no reprojection, so there are no
-holes and no resampling artefacts. When a phone streams depth only, the slot is
-drawn from the same per-point colours the merge uses, so the slot stays live
-rather than going black.
+image. It is the camera image as the phone sees it, with no reprojection, so
+there are no holes and no resampling artefacts. When a phone streams depth
+only, the slot is drawn from the same per-point colours the merge uses, so the
+slot stays live rather than going black.
 
 `rgb_switch` chooses what `out_rgb` carries, from `Rgbselect`:
 
@@ -154,8 +154,8 @@ rather than going black.
 Slot size is `Rgbw` by `Rgbh`, 320 by 240 by default. `Rgbmap` decides whether
 slot N means the Nth live phone or device id N.
 
-This is the output to look down when you are aiming a phone or checking what
-one camera actually sees.
+This is the output to look at when you are aiming a phone or checking what one
+camera sees.
 
 ## `out_preview`: the rendered view
 
@@ -214,8 +214,8 @@ Rules that hold on the hot path, and that your own work should keep:
 
 - Do not write to tables per frame. The ingest, merge, cleanup and fusion path
   never does. Use storage dictionaries.
-- Do not add a receive thread of your own inside TouchDesigner. That is exactly
-  the problem the bridge exists to solve.
+- Do not add a receive thread of your own inside TouchDesigner. The bridge
+  exists to solve that problem.
 - Keep learned state out of component storage. See
   [Maintenance](maintenance.html) for where it lives.
 
@@ -223,31 +223,32 @@ Rules that hold on the hot path, and that your own work should keep:
 
 The hub has no NDI operator. Nothing in the tox emits NDI today.
 
-The NDI feed is produced by the web console, not by TouchDesigner. It renders
-the live merged, colourised cloud to a virtual-camera view, front or top, and
-broadcasts it as a named source at 960 by 540, 30 frames per second. Any NDI
-receiver, including TouchDesigner's own NDI In TOP, sees it. It is a rendered
-visual feed, and it is honest about that.
+The web console, not TouchDesigner, produces the NDI feed. It renders the live
+merged, colourised cloud to a virtual-camera view, front or top, and broadcasts
+it as a named source at 960 by 540, 30 frames per second. Any NDI receiver,
+including TouchDesigner's own NDI In TOP, sees it. It is a rendered visual
+feed.
 
 **Bulk depth never rides NDI.** NDI compresses through a lossy DCT video codec.
 Packing depth into pixels and sending it through NDI quantises the exact values
 the whole system exists to measure, smears them at edges, costs more bandwidth
 than sending depth as half-floats, and adds encode and decode latency. NDI
-earns its place carrying finished visuals. It does not carry measurements.
+carries finished visuals, never measurements.
 
 **Bulk depth never rides OSC either.** OSC has no fragmentation layer, so a
 depth grid does not fit in a message and there is no defined way to split one.
 OSC in this system carries telemetry and control: small, infrequent, named
 values.
 
-Depth rides TDP4 over UDP, which was built for it. That is not a preference; it
-is the only one of the three that preserves the values.
+Depth rides TDP4 over UDP, which was built for it and is the only one of the
+three that preserves the values.
 
 ## Where the client-facing outputs live
 
-For completeness, because an older diagram puts them here: the tracking output
-to other systems, the websocket field data and the NDI feed are all produced by
-the web console, not by the tox. The hub's job is the cloud and the visuals.
+An older diagram puts them in the tox, so for the record: the web console
+produces the tracking output to other systems, the websocket field data and the
+NDI feed. The tox produces none of them. The hub's job is the cloud and the
+visuals.
 
 Closing the console mid-show has no effect on the hub's cloud. It stops those
 outputs.

@@ -9,8 +9,8 @@ has_children: true
 Getting a rig up, running a show, and what to do when something stops. These
 pages assume no knowledge of the code.
 
-They are procedure. If you want to know *why* the system is shaped the way
-it is, or you are connecting another system to its output, that is
+These pages are procedure. If you want to know *why* the system is shaped
+the way it is, or you are connecting another system to its output, go to
 [Reference](../reference/). Nobody at a get-in should have to read a wire
 format to finish a get-in.
 
@@ -41,7 +41,7 @@ flowchart TD
 Both are answered in advance or not at all.
 
 **Addressing.** If the rig has no router, nothing gets an address and every
-phone needs a static one. Discovered on the day, that is an hour.
+phone needs a static one. Discover that on the day and it costs an hour.
 [Rig get-in](get-in.html) has the decision tree.
 
 **Phone preparation.** Several steps need internet and a hand on the phone,

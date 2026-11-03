@@ -24,7 +24,6 @@ The numbers are drawn on the screenshot rather than listed beside it, so the
 pairing survives being printed, pasted into a call sheet, or read on a phone
 where the caption has wrapped somewhere else.
 
-
 ## What a take is
 
 A take is the wire itself.
@@ -49,10 +48,11 @@ flowchart TD
 
 The tap is a closure the streamer holds under the same lock the send queue
 reads it with, so arming a recording mid-stream is not a race between the
-interface and the packer. It is handed the finished byte array, a Swift array,
-so the hand-off is a copy-on-write reference rather than a memcpy of the 148 to
-295 kB the frame occupies, and it returns to the send queue immediately. Replayed
-frames are deliberately not tapped: a take cannot record itself.
+interface and the packer. The streamer hands it the finished byte array, a
+Swift array, so the hand-off is a copy-on-write reference rather than a memcpy
+of the 148 to 295 kB the frame occupies, and control returns to the send queue
+immediately. Replayed frames are deliberately not tapped: a take cannot record
+itself.
 
 That has three consequences, and they are the reason the recorder was built
 this way:
@@ -63,7 +63,7 @@ this way:
    one that captured the datagrams and reassembled them. Both add a second
    implementation of a layout that already has four artifacts to keep bit-exact
    (the phone's packer, the TouchDesigner receiver, the simulator and the
-   bench), and both would drift silently: a recorder that writes a format no
+   bench). Both would also drift silently. A recorder that writes a format no
    longer on the wire produces files that look fine and replay wrong. Tapping
    the assembled buffer removes the possibility rather than testing for it.
 2. A replay is indistinguishable from a live phone to every receiver. Same
@@ -126,7 +126,7 @@ Five figures, refreshed twice a second.
 | FPS | Measured delivery rate |
 | FREE | Free space in GB. Red below the floor |
 
-Under them, a wire line, because a take only exists if the wire does. The tap
+Under them is a wire line, because a take only exists if the wire does. The tap
 sits on the send queue, so a link that is not sending is a recording that is
 not being written.
 
@@ -143,10 +143,10 @@ as. The three pages read the same counters.
 ### Dropped frames
 
 The live stream matters more than the recording. If the writer falls behind,
-because of a NAND stall, thermal throttling, or a phone that is also pushing
-several megabytes a second, frames are dropped and counted rather than queued
-without bound. A recorder that backs up into the show is worse than a recorder
-with a hole in it.
+because of a NAND (flash storage) stall, thermal throttling, or a phone that is
+also pushing several megabytes a second, the writer drops and counts frames
+rather than queuing them without bound. A recorder that backs up into the show
+is worse than a recorder with a hole in it.
 
 The mechanism is a bound rather than a timeout. The writer allows at most eight
 frames in flight on its own utility queue; a ninth arriving before one of them
@@ -230,8 +230,8 @@ basis to use for a claim about fitting on a cable.
 Either way: eight phones on `depth+conf` is about 47 per cent of a gigabit
 link, and eight on `+conf+rgb` is 94 per cent of one.
 
-**Which is why the show does not run on a gigabit link.** Since 2026-10-30 it
-is 2.5 gigabit — a switch with a 2.5G uplink and a 2.5G card in the machine —
+**That is why the show does not run on a gigabit link.** Since 2026-10-30 it
+is 2.5 gigabit (a switch with a 2.5G uplink and a 2.5G card in the machine),
 and **every phone sends colour** ([#42](https://github.com/AristidesAI/TDStage/issues/42)). The same 937 Mbit/s is 37 per
 cent of that, which is headroom.
 
@@ -242,8 +242,8 @@ to 114,500 packets per second and eight colour phones offer 76,300.
 **Dropping colour costs more than colour**, which is why the decision went the
 way it did. The console's person masks and its hand tracking both read the
 colour plane, so a depth-and-confidence rig separates performers by geometry
-alone and publishes no hands. Tracking continues either way — the mask stage
-fails open — but two of the things that make it good are gone. Set against
+alone and publishes no hands. Tracking continues either way, because the mask
+stage fails open, but two of the things that make it good are gone. Set against
 that, a switch and a network card are cheap.
 
 {: .note }
@@ -263,7 +263,7 @@ thermal lever.
 
 What you get instead is the smallest float depth format the camera offers,
 which is **320×240 on an iPhone 17 Pro**. It is not 256×192 by rule, and a
-mixed rig of models can send more than one grid — every frame carries its own
+mixed rig of models can send more than one grid. Every frame carries its own
 dimensions, so nothing downstream minds.
 
 ### Capture rate
@@ -306,12 +306,12 @@ clash gets a `-2`, `-3` suffix rather than overwriting.
 
 ### Compression
 
-Each frame is compressed on its own. Two lossless steps: the f16 depth plane is
-split into all its high bytes followed by all its low bytes, and an RGB plane
-into separate R, G and B planes; then the result is deflated. A smooth depth
-field has near-constant high bytes, and only the low byte carries the sensor
-noise, so the compressor sees long runs where before it saw an alternating
-pattern.
+The writer compresses each frame on its own, in two lossless steps. First it
+splits the f16 depth plane into all its high bytes followed by all its low
+bytes, and an RGB plane into separate R, G and B planes. Then it deflates the
+result. A smooth depth field has near-constant high bytes, and only the low byte
+carries the sensor noise, so the compressor sees long runs where before it saw
+an alternating pattern.
 
 Because every frame stands alone, seeking, looping and crash recovery stay
 cheap. There is no keyframe, no backward reference and no decoder state, so
@@ -319,12 +319,12 @@ jumping to frame 9000 costs one record's decode and a crash costs the last
 record rather than the file.
 
 That independence was measured against the obvious alternatives rather than
-assumed (**measured, simulation**): LZFSE came within one per cent of deflate
+assumed (**measured, simulation**). LZFSE came within one per cent of deflate
 and is Apple-only, which would have made the file unreadable on the
-TouchDesigner side; LZMA gained a further 30 per cent at 15 to 35 ms a frame,
-which drops frames at 30 fps; a temporal XOR against the previous frame bought
-nothing at all over the per-frame shuffle, so per-record independence is free;
-and spatial deltas made things worse, because differencing noise adds entropy.
+TouchDesigner side. LZMA gained a further 30 per cent at 15 to 35 ms a frame,
+which drops frames at 30 fps. A temporal XOR against the previous frame bought
+nothing at all over the per-frame shuffle, so per-record independence is free.
+Spatial deltas made things worse, because differencing noise adds entropy.
 The deflate stream is a raw one, so the Mac-side reader decompresses it with
 `zlib.decompress(data, -15)` and no Apple code.
 
@@ -380,7 +380,6 @@ mid-session loses the take it is writing, so these are set once and left alone.
 
 The prefix (1) is worth one look before a session rather than after it: the
 line under it shows the exact filename the next take will get.
-
 
 | Control | Default | Range |
 |---|---|---|
@@ -460,8 +459,8 @@ Either:
 - **Open it.** Tap a `.tdp4rec` in Files, Mail or AirDrop and choose this app.
 - **Import.** PLAYBACK page, **Import**, then pick one or more files.
 
-Both routes land in the same code. It validates the file before copying it,
-refuses junk, short-circuits a file that is already in the Takes folder, and
+Both routes land in the same import code. It validates the file before copying
+it, refuses junk, short-circuits a file that is already in the Takes folder, and
 rebuilds the sidecar from the file itself. The copy and the index walk run off
 the main thread, because a take can be gigabytes.
 

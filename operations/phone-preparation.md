@@ -9,15 +9,15 @@ nav_order: 3
 Everything on this page has to happen **before a phone reaches the venue**,
 on a normal internet connection, with a person holding the phone.
 
-The reason is blunt: a show rig has no internet and often no spare hands. A
+A show rig has no internet and often no spare hands. A
 phone that needs an App Store sign-in, a software update or a permission tap
 at a get-in is a phone that is not in the show. Several of the steps below
 cannot be done remotely at all.
 
 ## The split that is the whole point of this page
 
-Some of this can only be done where there is internet and a person holding
-the phone. The rest can be done at a venue, from the console, with the phone
+You can only do some of this where there is internet and a person holding
+the phone. The rest you can do at a venue, from the console, with the phone
 on a stand three metres up. Knowing which is which is the difference between
 a get-in and a crisis.
 
@@ -40,15 +40,13 @@ flowchart TD
   OFF --> VEN
 ```
 
-The left-hand box is not a preference, it is a hard boundary. A rig LAN has
+The left-hand box is a hard boundary. A rig LAN has
 no internet and no app store sign-in, and a permission prompt needs a finger
 on the glass.
 
-Two of those are worth singling out.
-
 **Opening the app once, on internet, is the step people skip.** First launch
 is when the operating system asks for Local Network access. Decline it, or
-never trigger it, and the phone looks completely healthy and sends nothing,
+never trigger it, and the phone looks healthy and sends nothing,
 with nothing in the console to explain why. There is no remote fix.
 
 **Supervision erases the phone**, so it cannot be added at a venue, in a
@@ -102,13 +100,13 @@ network, but setting it early means a phone that joins the rig is already
 correct rather than needing attention.
 
 If two phones do end up sharing an id, the receiver now names it rather than
-letting the frames quietly overwrite each other: the console reports two
+letting the frames quietly overwrite each other. The console reports two
 senders on one device id, identified by their addresses and by the name and
 model each phone sends.
 
 > A note on the setting named `stage.tcpHost`. Despite the name it is the
 > destination IP address, not a transport. Everything in this system runs over
-> UDP. The name is a leftover and is being carried for compatibility.
+> UDP. The name is a leftover, kept for compatibility.
 
 ### 3. Phone settings that break a show if missed
 
@@ -123,7 +121,7 @@ model each phone sends.
 ### 4. Power
 
 A show phone runs on mains, not battery. Confirm the phone charges from the
-power you will actually use at the venue, and that it keeps charging while
+power you will use at the venue, and that it keeps charging while
 streaming. Streaming and charging at once is where a marginal cable or a
 dead hub port shows up.
 
@@ -138,8 +136,8 @@ a phone, but **it cannot reboot a phone back into the app**. Without
 supervision, any phone that restarts is out of the show until someone
 physically reaches it, which during a performance may be never.
 
-Supervision has to be applied before the phones go out, because it erases the
-device. It is not something that can be added at a venue.
+Supervision erases the device, so it has to happen before the phones go out.
+No one can add it at a venue.
 
 **Status: decision outstanding.** This is a logistics decision, not a
 technical one, and it needs making before phones ship.
@@ -155,5 +153,5 @@ With the phone on the same network as the console:
 4. Starting the stream from the console produces points, and stopping it
    stops them.
 
-If the phone appears but sends nothing, the Local Network permission is the
-first thing to check, not the network.
+If the phone appears but sends nothing, check the Local Network permission
+before you check the network.

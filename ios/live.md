@@ -12,18 +12,17 @@ it is sending it, and what is wrong with the link.
 
 ![The LIVE page: stream stats, network and link diagnostics](../assets/screens/live-network.webp)
 
-The phone above is a useful example rather than a healthy one. It is streaming,
-the UDP pill (1) reads LIVE, and the thermal state is fine. But **Link** (2)
+The phone above is streaming with two faults, which makes it a useful example.
+The UDP pill (1) reads LIVE and the thermal state is fine. But **Link** (2)
 reads `Wi-Fi (cable idle)` in amber with the Cable button greyed out, even
 though **Prefer Ethernet** (3) is on. The amber line (4) and the diagnostics
 (5) say why: a cable is plugged in and the phone has never been told the Mac's
-address on it. Two problems to fix, neither of which stops the stream, and both
-of which cost latency or health reporting.
+address on it. Neither fault stops the stream, but each costs latency or health
+reporting.
 
-The numbers are drawn on the screenshot rather than listed beside it, so the
-pairing survives being printed, pasted into a call sheet, or read on a phone
-where the caption has wrapped somewhere else.
-
+The numbers sit on the screenshot itself, so the pairing survives printing,
+pasting into a call sheet, or reading on a phone where the caption has wrapped
+somewhere else.
 
 The app has three pages. A glass pill at the bottom of the screen switches
 between LIVE, RECORD and PLAYBACK. The pill carries a coloured dot: red while a
@@ -82,32 +81,31 @@ sees the reason rather than silence.
 #### Why this is a refusal and not a warning
 
 The device id is in the 20-byte packet header of every datagram, and a receiver
-reassembles fragments per `(deviceId, frameId)`. Two phones sharing an id do
-not produce two streams that a receiver can tell apart and discard one of. They
-produce one stream whose packets interleave, so frames are assembled from two
-phones' halves: the symptom is a cloud that delivers almost nothing, or
-delivers geometry that cannot exist. It is the one misconfiguration on the
-phone that looks like a hardware fault, and it costs a get-in slot to find.
+reassembles fragments per `(deviceId, frameId)`. Two phones sharing an id
+produce one stream whose packets interleave, so the receiver assembles frames
+from two phones' halves. It cannot tell the two apart and discard one. The
+symptom is a cloud that delivers almost nothing, or delivers geometry that
+cannot exist. It is the one misconfiguration on the phone that looks like a
+hardware fault, and it costs a get-in slot to find.
 
-The flag is separate from the number precisely so that "phone 1" is reachable.
-The guard is not "the id must not be 1", it is "a person must have chosen",
-which is why pressing the banner's own button clears it without changing
-anything.
+The flag is separate from the number so that "phone 1" stays reachable. An id
+of 1 is allowed; the guard only checks that a person has chosen it, which is
+why pressing the banner's own button clears it without changing anything.
 
 ---
 
 ## The stats row
 
-Five figures across the top, refreshed twice a second. They are health, not
-signal: the app deliberately does not update them per frame.
+Five figures across the top, refreshed twice a second. They report health, and
+the app does not update them per frame.
 
-That is a correctness rule rather than a taste. The counters live under a lock
-in the streamer and are mirrored into observable state on a 2 Hz tick, never on
-the frame path. `pkt` changes thirty-odd times a second; publishing it from the
-frame path would invalidate the view on every frame and put SwiftUI layout
-behind the capture callback. The frame path's only jobs are to pack and to
-hand off. Reading them is also one lock acquisition rather than four, because
-the whole snapshot comes back as a single struct.
+The 2 Hz rate protects the frame path. The counters live under a lock in the
+streamer, and a 2 Hz tick mirrors them into observable state; the frame path
+never touches the view. `pkt` changes thirty-odd times a second, so publishing
+it from the frame path would invalidate the view on every frame and put SwiftUI
+layout behind the capture callback. The frame path's only jobs are to pack and
+to hand off. Reading the counters is also one lock acquisition rather than
+four, because the whole snapshot comes back as a single struct.
 
 | Stat | Reads | Notes |
 |---|---|---|
@@ -130,26 +128,26 @@ TDP4/UDP → 192.168.1.10:9003 · 320×240 · 41203 frm · 128744 pkt · 0 drop
 ```
 
 The grid size appears once the first captured frame has revealed it. Nothing in
-the app hardcodes it: the dimensions are read off the pixel buffer the capture
-format actually delivers, which is why this line is blank until the first
+the app hardcodes it. The app reads the dimensions off the pixel buffer the
+capture format delivers, which is why this line is blank until the first
 frame.
 
 `drop` counts frames the phone abandoned because a newer frame arrived while
-the older one was still on the socket. Latest wins, by design, and it is one
-slot rather than a queue: the capture callback deposits into a single mailbox,
-the send queue drains it, and a deposit onto an occupied slot overwrites it and
-increments this counter. On a link that cannot keep up, the phone sends fewer,
-newer frames instead of a growing backlog of stale ones. A rising `drop` with a
-healthy FPS means the socket is the bottleneck, not the camera.
+the older one was still on the socket. Latest wins, by design. The mailbox
+holds one frame: the capture callback deposits into it, the send queue drains
+it, and a deposit onto an occupied slot overwrites it and increments this
+counter. On a link that cannot keep up, the phone sends fewer, newer frames
+instead of a growing backlog of stale ones. A rising `drop` with a healthy FPS
+means the socket is the bottleneck rather than the camera.
 
 The same mailbox carries replayed frames, which is why a replay inherits
 latest-wins, the frame-id counter and every error path without a second send
 path that could drift from this one.
 
 {: .note }
-**POINTS is a count, not a payload.** The phone never puts xyz on the wire. It
-sends the organised depth grid, and the receiver regenerates points on the GPU
-from `depth x ray(u, v)` using the intrinsics in each frame's own header.
+**POINTS is only a count.** The phone never puts xyz on the wire. It sends the
+organised depth grid, and the receiver regenerates points on the GPU from
+`depth x ray(u, v)` using the intrinsics in each frame's own header.
 Unprojecting on the phone would cost about 7.5 times the bandwidth, 1.4 Gbit/s
 across eight phones, to send a receiver data it already has. The count is free
 because the packer decides each cell's validity as it writes it, so no extra
@@ -159,14 +157,14 @@ If the app has an error to report, it appears in red at the bottom of this card.
 
 ### How a dead receiver does show up
 
-There is one place where the phone can learn it is shouting into nothing, and
-the app now reads it. When a connected UDP socket sends to a port with no
-listener, the far host answers with an ICMP port-unreachable, and that arrives
-as an error on the **send completion** of a datagram, nowhere else. Every send
-completion's error used to be discarded by name, which is exactly how a phone
-sits behind a green pill while not one datagram is being delivered. The last
-error is kept and translated into something an operator can act on, and the
-diagnostics below raise it as **Transport errors**:
+The phone has one way to learn it is shouting into nothing, and the app now
+reads it. When a connected UDP socket sends to a port with no listener, the far
+host answers with an ICMP port-unreachable. That answer arrives as an error on
+the **send completion** of a datagram, nowhere else. The app used to discard
+every send completion's error by name, which is how a phone sits behind a green
+pill while not one datagram is delivered. The app now keeps the last error and
+translates it into something an operator can act on, and the diagnostics below
+raise it as **Transport errors**:
 
 | What the socket reported | What the app says |
 |---|---|
@@ -210,16 +208,15 @@ The destination IP address for the depth stream, the telemetry and the control
 replies. Type four numbers separated by dots.
 
 {: .note }
-**Use the numeric address.** The app's own diagnostic text says names are not
-resolved here, and the code is more permissive than that: both the depth
-connection and the telemetry client hand this string to `NWEndpoint.Host`,
-which accepts a hostname, and the streamer carries an error branch for a failed
-lookup. What a non-numeric host actually costs is the rest of the panel. The
+**Use the numeric address.** A hostname may connect, but the rest of the panel
+stops working with one. The app's own diagnostic text says names are not
+resolved here; the code is more permissive. Both the depth connection and the
+telemetry client hand this string to `NWEndpoint.Host`, which accepts a
+hostname, and the streamer carries an error branch for a failed lookup. The
 field only files a **complete dotted quad** into the Cable and Wi-Fi memories,
-so a name is never remembered for those buttons, and the diagnostics raise
+so it never remembers a name for those buttons, and the diagnostics raise
 "Destination is not a valid address" against it. Where the comment and the code
-disagree, the code wins: a name may resolve, but nothing else on this page will
-work properly with one.
+disagree, the code wins.
 
 While the field has focus the button beside it reads **Done**. Otherwise it
 reads **Connect**. Either one pushes the edited address into the live streamer.
@@ -230,12 +227,12 @@ buttons.
 
 ### Link
 
-A read-only label saying which interface the depth stream is actually using,
-followed by two buttons.
+A read-only label saying which interface the depth stream is using, followed by
+two buttons.
 
 The label is the end of a decision that starts when the streamer opens its
-socket. Two independent facts decide it: which interface the connection
-actually left on, and whether the destination is a cable address.
+socket. Two independent facts decide it: which interface the connection left
+on, and whether the destination is a cable address.
 
 ```mermaid
 flowchart TD
@@ -281,8 +278,7 @@ that would discover the other end. The phone learns the address from the source
 of the first control packet it receives, which is why the console has to send
 to it once before the Cable button lights up.
 
-A caption under the buttons explains any disabled state, rather than leaving a
-dead button with no reason.
+A caption under the buttons explains any disabled state.
 
 ### Prefer Ethernet (PoE / cable)
 
@@ -292,17 +288,17 @@ cannot route the depth stream over Wi-Fi even though both interfaces sit on the
 same LAN with equally good routes. Cellular is prohibited on every connection,
 wired or not, so show traffic never leaves over a mobile network.
 
-The requirement is deliberately not inferred from the address. A USB cable to a
+The app does not infer the requirement from the address. A USB cable to a
 computer is link-local at both ends and is wired, so judging by address would
 get the cable case wrong. The only arbiter is whether the connection comes up.
 
 #### The five-second grace, and why it exists
 
-A requirement that cannot be satisfied does not fail. It waits. An adapter that
+A requirement that cannot be satisfied does not fail; it waits. An adapter that
 is *up* but routes nowhere (link-local only, the wrong VLAN, a receiver that
 lives on the Wi-Fi subnet) leaves the connection parked in `waiting` for the
-whole session, and the phone cannot be rescued from the console either, because
-its telemetry leaves under the same requirement. The one command that would fix
+whole session, and the console cannot rescue the phone either, because its
+telemetry leaves under the same requirement. The one command that would fix
 it, `stage.preferWired 0`, cannot reach the phone that needs it.
 
 So the requirement is provisional. A wired-required connection that has not
@@ -325,21 +321,20 @@ do not go hunting for an unplugged adapter. (`link = "wifi"` with
 `wiredUp = 1` and `preferWired = 0` is a different thing entirely: nobody
 asked for the wire.)
 
-What to do about it is a routing question, not a phone question: check which
-subnet the adapter got an address on, and whether the receiver is reachable on
-it. The phone will take the wire the moment the link bounces.
+Fix it on the network: check which subnet the adapter got an address on, and
+whether the receiver is reachable on it. The phone will take the wire the
+moment the link bounces.
 
 Wi-Fi costs roughly 8 ms and adds jitter against roughly 0.55 ms on a cable
-(**measured, real phone (one phone)**). Leave this on for a cabled rig. The
-grace is a floor under a mistake, not a reason to stop caring which link is
-carrying the show.
+(**measured, real phone (one phone)**). Leave this on for a cabled rig, and
+keep checking which link is carrying the show. The grace is a floor under a
+mistake.
 
 {: .note }
-Link selection is being revised in the source to add an explicit Link picker
-(automatic, Ethernet, cable, Wi-Fi) so an operator can pin a named interface
-rather than relying on the preference alone. The five-second grace survives
-that change. The page above describes the current build; the authority is
-`TDStage/Net/WiredLink.swift`.
+The source is gaining an explicit Link picker (automatic, Ethernet, cable,
+Wi-Fi) so an operator can pin a named interface rather than relying on the
+preference alone. The five-second grace survives that change. The page above
+describes the current build; the authority is `TDStage/Net/WiredLink.swift`.
 
 ### UDP Port
 
@@ -358,8 +353,8 @@ Changing it re-points the stream, the hello and the telemetry together.
 Three controls on one row.
 
 - **Blackout Screen** sets the screen brightness to zero and hides the status
-  bar. The page itself is not drawn at all while blacked out, so it stops
-  consuming power on a screen nobody can see. A tiny dot in the top right
+  bar. The app stops drawing the page while blacked out, so it stops spending
+  power on a screen nobody can see. A tiny dot in the top right
   corner stays lit, and the recorder's colour wins over the socket's: red while
   recording, green while replaying, orange while a start is armed, and
   otherwise green when the socket is up and red when it is not. Triple-tap
@@ -392,10 +387,10 @@ the pose as given either way.
 
 ## Link diagnostics
 
-Every problem with the link, worst first, each with the evidence and a concrete
-next action. Problems are always visible. The healthy checks are hidden behind
-the **All** button, because a screen of green ticks is how a real fault gets
-missed. The header says `all clear` or `N to fix`.
+Every problem with the link, worst first, each with its evidence and a next
+action. Problems are always visible. The healthy checks sit behind the **All**
+button, because a screen of green ticks is how a real fault gets missed. The
+header says `all clear` or `N to fix`.
 
 The findings the app can raise:
 
@@ -435,25 +430,26 @@ one.
 
 ![PROCESSING and CAPTURE PATH: Raw Streamer Mode, the three skipped stages, and the ARKit / AVFoundation picker](../assets/screens/live-processing.webp)
 
-Raw Streamer Mode (1) is the master switch, and the three rows under it (2)
-grey out when it is on because they are the things being skipped. **Apple depth
-filtering** (3) is not greyed out, because it is not per-frame work: it is a
-capture-format setting, outside the master switch, and changing it restarts the
-session. So do the capture picker (4) and the smoothed-depth A/B (5), which is
-why none of the three belongs in a cue.
+Raw Streamer Mode (1) is the master switch. The three rows under it (2) grey
+out when it is on, because they are the stages being skipped. **Apple depth
+filtering** (3) is not greyed out, because it is a capture-format setting
+outside the master switch rather than per-frame work, and changing it restarts
+the session.
+The capture picker (4) and the smoothed-depth A/B (5) also restart the session,
+which is why none of the three belongs in a cue.
 
-The phone is a pure streamer. This panel exists so each optional stage can be
-switched on for an A/B measurement, not because a show needs any of them.
+The phone is a pure streamer. This panel lets you switch each optional stage on
+for an A/B measurement; no show needs any of them.
 
 **Raw Streamer Mode (master)** is on by default. While it is on, the frame path
 is acquire depth, pack, send, and the three toggles below it are skipped
-whatever they say. They are greyed out to make that visible rather than
-silently ignored. The caption under the switch says which state you are in.
+whatever they say. They grey out so you can see that. The caption under the
+switch says which state you are in.
 
-It is one boolean read on the frame path, in two places: once in the capture
-renderer, before lens rectification, and once in the controller, before the
-marker and pose detectors. That is why it can be switched mid-stream with no
-restart, and why its cost when on is nil rather than small.
+The switch is one boolean read on the frame path, in two places: once in the
+capture renderer, before lens rectification, and once in the controller, before
+the marker and pose detectors. That is why you can flip it mid-stream with no
+restart, and why its cost when on is nil.
 
 ```mermaid
 flowchart TD
@@ -470,13 +466,13 @@ flowchart TD
   L --> M["Fragment into 1452-byte payloads,<br/>one batch onto the socket"]
 ```
 
-Three things sit outside the master switch and run either way. Apple depth
-filtering, because it is a capture format rather than a stage. The choice of
-extrinsic, because every frame must carry a pose. And the colour render, which
-is gated on its own question: it happens when the RGB plane is genuinely on the
-wire, or, with raw mode off, when the marker detector or the pose detector
-needs an image. Raw mode therefore also removes the colour render on a
-depth-only rig, which is the single largest saving in the panel.
+Three things sit outside the master switch and run either way: Apple depth
+filtering, because it is a capture format rather than a stage; the choice of
+extrinsic, because every frame must carry a pose; and the colour render, which
+has its own gate. The colour render happens when the RGB plane is on the wire,
+or, with raw mode off, when the marker detector or the pose detector needs an
+image. Raw mode therefore also removes the colour render on a depth-only rig,
+which is the single largest saving in the panel.
 
 | Toggle | Default | What it does |
 |---|---|---|
@@ -521,5 +517,5 @@ receiver takes whichever it was sent. On this app the confidence plane is
 writes 2 where the depth cell is finite and positive, and 0 where it is not.
 It therefore carries nothing the depth plane does not already carry as NaN. The
 ARKit sibling supplies a real per-cell confidence, and the same plane then
-means what its name says. Worth knowing before costing `depth+conf` at 1.5x
+means what its name says. Know that before costing `depth+conf` at 1.5x
 `depth` on this app.

@@ -11,8 +11,10 @@ in on the same socket, in the same wire format, with the same fragmentation, so
 the hub cannot tell the difference. Recorded takes do the same thing with real
 sensor data.
 
-Every command below was checked against the script's own argument parsing on
-2026-10-27. The self-tests in this page were run and passed on that date.
+![What a synthetic phone sends as its colour plane, at 256 x 192: human_sim4's walkers before (top) and after (bottom) the 2026-10-27 sim_people rendering.](../assets/img/merge-sim-people.webp)
+
+Every command below matches the script's own argument parsing as of
+2026-10-27, and the self-tests on this page passed on that date.
 
 Run them from the repository root. The scripts add their own directory to the
 import path, so `python3 TD/newtox/<script>.py` works from anywhere in the
@@ -105,9 +107,9 @@ not measured.
 Its scene is built in camera space: a background plane about four metres out,
 plus animated ellipsoid performers two and a half to three and a half metres in
 front of whichever camera is rendering. The extrinsic is applied downstream, so
-every device sees a different private world. Measured, simulation: stage-space
-performer centroids for three devices of a six-device ring came out metres
-apart, as several disjoint clouds arranged in a ring.
+every device sees a different private world. Measured in simulation, the
+stage-space performer centroids for three devices of a six-device ring came out
+metres apart, as several disjoint clouds arranged in a ring.
 
 That is correct for what the sim is for: exercising the wire, the reassembler
 and the ingest at load. It cannot test merging, because the devices have never
@@ -147,8 +149,8 @@ python3 TD/newtox/merge_sim.py 127.0.0.1 9003 120 --devices 6 --frames 1 --scena
 
 ## Scoring the merge: `td_merge_score.py`
 
-Scores the cloud TouchDesigner actually produced against the simulator's exact
-truth. Three steps.
+Scores the cloud TouchDesigner produced against the simulator's exact truth.
+Three steps.
 
 1. Stream a static world in, as above.
 2. In TouchDesigner, dump the output POP once per variant you want to compare:
@@ -222,7 +224,7 @@ framed LZ4 and need the `lz4` package installed to read.
 
 ## Takes to a recording viewer: `take_to_mcap.py`
 
-Converts takes to MCAP so they can be inspected in a robotics log viewer as
+Converts takes to MCAP so you can inspect them in a robotics log viewer as
 ROS 2 image, camera info, transform and point cloud messages.
 
 ```
@@ -242,8 +244,8 @@ Needs `pip install mcap mcap-ros2-support`.
 
 ## The receive-side bench: `tdp4_bench.py`
 
-Receives TDP4 outside TouchDesigner and reports what the transport is really
-doing. It imports `tdp4_receiver` as the single parsing truth and drives it the
+Receives TDP4 outside TouchDesigner and reports what the transport is doing.
+It imports `tdp4_receiver` as the single parsing truth and drives it the
 way the hub does, so its numbers are the hub's numbers minus TouchDesigner.
 
 ```
@@ -261,8 +263,8 @@ python3 TD/newtox/tdp4_bench.py --port 9003 --seconds 15
 python3 TD/newtox/tdp4_sim.py 127.0.0.1 9003 15 --devices 7
 ```
 
-Note the bench binds the port, so it cannot run at the same time as the bridge
-or as TouchDesigner on that port.
+The bench binds the port, so it cannot run at the same time as the bridge or
+as TouchDesigner on that port.
 
 ## Self-tests
 
@@ -275,8 +277,8 @@ wire format, the shaders or the receiver.
 | `python3 TD/newtox/tdp4_bridge.py --selftest` | The bridge round trip: packets, through the bridge's own loop, into the memory-mapped file, out through the reader. Includes a torn write, a slot eviction at seventeen devices, a bad payload, a layout mismatch, and the `--shm-port` republish. Passed 2026-10-27. |
 | `python3 TD/newtox/glsl_parity_test.py` | Shader constants and the pose-row layout against their numpy references. A shader edited without its reference fails here instead of on the rig. Passed 2026-10-27. |
 | `python3 TD/newtox/temporal_test.py` | The static-surface temporal depth filter against the merge simulator: on a still scene the depth error must fall at least 2.5 times; on moving performers the body error must stay within one millimetre of raw. |
-| `python3 TD/newtox/pipeline_test_grid.py` | The organized-grid pipeline offline: wire round trip, isolation purity, angle-aware fusion collapsing a two-phone overlap, and the weighted-fuse mechanism — all of which is the CPU path. |
-| `python3 Tools/fuse_weight_ab.py` | Weighted against plain fusion on an exact synthetic surface. The measurement behind the show path keeping a plain mean: a few tenths of a millimetre better at the median, slightly worse at the 90th percentile. |
+| `python3 TD/newtox/pipeline_test_grid.py` | The organized-grid pipeline offline: wire round trip, isolation purity, angle-aware fusion collapsing a two-phone overlap, and the weighted-fuse mechanism. All of this is the CPU path. |
+| `python3 Tools/fuse_weight_ab.py` | Weighted fusion against plain fusion on an exact synthetic surface. This is the measurement behind the show path keeping a plain mean: weighted came out a few tenths of a millimetre better at the median and slightly worse at the 90th percentile. |
 | `python3 TD/pipeline_test.py` | The older point-based isolation pipeline, offline. |
 
 `hlib.py` and `hlib_grid.py` are pure numpy and OpenCV, with no TouchDesigner
@@ -332,7 +334,7 @@ place:
 
 | Figure | Value |
 |---|---|
-| GPU merge path, TouchDesigner frame rate | 60 real frames per second at 8, 12 and 16 streams, geometric or learned. **Development Mac, person model idle, no content rendering** — headroom, not a show figure |
+| GPU merge path, TouchDesigner frame rate | 60 real frames per second at 8, 12 and 16 streams, geometric or learned. **Development Mac, person model idle, no content rendering**, so this is headroom rather than a show figure |
 | CPU merge path at 8 streams, learned | 55 to 59 TouchDesigner frames per second, merge worker saturated at 27.7 merges per second, 38 ms each |
 | Transport | 0 incomplete frames up to 16 streams, 573 Mbit/s |
 | Bridge to TouchDesigner latency | p50 9.5 ms, p95 15.3 ms |

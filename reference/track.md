@@ -79,7 +79,7 @@ described further down.
 | 6-8 | `f f f` | vx, vy, vz | Velocity in metres per second. |
 | 9 | `f` | confidence | 0 to 1. |
 
-Hands can be turned off, in which case these messages simply do not appear.
+Hands can be turned off, in which case these messages do not appear.
 Absence of hands is not an error and a receiver should not wait for them.
 
 ## The coordinate frame
@@ -92,10 +92,9 @@ is what you get when somebody is on a rostrum, on a step or lifted. So a
 performer standing centre stage reads `(0, 0, 0)`, and a `y` of 0.4 means their
 feet are 0.4 m up, not that they are 0.4 m tall.
 
-That surprises people, so it is worth saying what it is for: the useful thing
-downstream is almost always where a body meets the floor, and a position that
-sits at a varying point up the body moves whenever they crouch. This one does
-not.
+That surprises people. The useful thing downstream is almost always where a
+body meets the floor, and a position that sits at a varying point up the body
+moves whenever they crouch. This one does not.
 
 One switch can change what you receive: an operator setting that negates `z`
 and `vz` on the wire. It exists because the sign of the depth axis is the one
@@ -110,8 +109,8 @@ The default is 30 Hz, settable from 1 to 60. The emitter runs on its own clock
 and **re-sends the current state when no new point cloud has arrived**, so the
 rate you receive is steady even when the phones stutter.
 
-That has a consequence worth stating plainly: **a frame is not evidence that
-anything was measured since the last one.** A performer standing still and a
+The consequence is that **a frame is not evidence that anything was measured
+since the last one.** A performer standing still and a
 rig that has stopped delivering look identical for about half a second, after
 which tracks begin to coast and their velocities go to exactly zero. If you
 need to know whether the measurement is fresh, watch the device count on
@@ -154,8 +153,8 @@ state where you should stop doing that.
 
 {: .warning }
 `clustered` is the field most likely to be misread. It does not mean "two
-people are close together", it means **this id's position is real, but which
-body it belongs to may be wrong**. Positions stay usable — for forces, fields,
+people are close together". It means **this id's position is real, but which
+body it belongs to may be wrong**. Positions stay usable for forces, fields,
 anything spatial. What should hold or fade is anything keyed to *who* a
 performer is: a personal colour, a per-person score.
 
@@ -170,19 +169,19 @@ semantics are still being pinned down with the client in
 
 ## Where the position actually comes from
 
-Two things about `x, y, z` are worth knowing before you build on them.
+Know two things about `x, y, z` before you build on them.
 
 **It is not the average of the points.** A body in a depth cloud drags a tail:
 the patch of wall it was just standing in front of stays briefly in the
 foreground and is attached to the body by adjacency. Averaging all of that puts
 the performer behind where they are, and the error grows with how fast they
-move. So the position is a **density core** — find the densest ten-centimetre
+move. So the position is a **density core**: find the densest ten-centimetre
 cell in plan view, then average only the points within 45 cm of it. The tail is
 outside that radius and does not vote.
 
 **While two performers are merged, one of the two ids is dead reckoning.** A
 merge gives the tracker one blob where it wants two. The id that matches the
-blob gets the real density-core position. The other id — the swallowed one —
+blob gets the real density-core position. The other id, the swallowed one,
 is carried at the **offset it last had** from its neighbour, for up to ten
 seconds, so that when they separate there are still two tracks to assign and
 the split can be decided.
@@ -192,7 +191,7 @@ if you read the other fields:
 
 | Field | What it says while swallowed |
 |---|---|
-| velocity | exactly zero on all three axes — it is coasting |
+| velocity | exactly zero on all three axes, because it is coasting |
 | confidence | a flat 0.30 |
 | `clustered` | 1 |
 
@@ -218,7 +217,7 @@ Then it is multiplied by 0.75 while `clustered` is 1, replaced outright by
 Read it as a usability score: **high means a well-sampled, body-shaped,
 established track**. Low means thin, oddly proportioned, brand new, clustered
 or coasting, and the other fields tell you which. Do not threshold it as if it
-were a detection probability; threshold on the thing you actually care about
+were a detection probability; threshold on the thing you care about
 (`clustered`, coasting, device count) and use confidence to rank.
 
 ## Guarantees the console makes
@@ -236,19 +235,18 @@ probe cannot see from outside:
 - the frame timestamp strictly increases
 
 A violation is counted and reported in the console rather than sent. If you
-find one of these broken on the wire, it is worth reporting as a bug rather
-than defended against.
+find one of these broken on the wire, report it as a bug rather than
+defending against it.
 
 ## What a placement change does to you
 
 Moving a phone, or a phone rejoining the stream, changes what that phone
-contributes to a scene the tracker has already learned. The handling is worth
-knowing because it is **per phone**, and because one setting turns it into
-something much blunter.
+contributes to a scene the tracker has already learned. The handling is
+**per phone**, and one setting turns it into something much blunter.
 
 **Normally:** that phone's points are left out for about thirty seconds while
 its view is re-learned. **Every other phone keeps tracking, and performer ids
-survive** — you lose one view's contribution, not the cast list. If you would
+survive**. You lose one view's contribution, not the cast list. If you would
 rather not wait, telling the console the stage is empty ends it immediately.
 
 **With the background frozen** (an option for keeping a performer who stands
@@ -260,9 +258,9 @@ costs you an automatic recovery from moving a phone.
 
 {: .warning }
 If you move a stand during a show with the background frozen, the tracking
-output goes to nobody and stays there until a person acts. That is not a
-failure to diagnose, it is the setting doing what it says — but it is worth
-knowing before the first time it happens rather than during it.
+output goes to nobody and stays there until a person acts. That is the setting
+doing what it says, not a failure to diagnose. Learn it before the first time
+it happens rather than during it.
 
 The button an operator presses is **Stage is empty now**, in the Live view, and
 every message that asks for it calls it by that name.

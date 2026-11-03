@@ -10,15 +10,14 @@ How to produce a number you can defend, and how to say what the system does
 without saying more than is true.
 
 This page exists because the expensive mistakes in this kind of project are
-not engineering mistakes. They are claims made to a client that turn out to
-be a simulation figure, or a feature that was written but never run on real
+claims made to a client rather than engineering mistakes. The claim turns out
+to be a simulation figure, or a feature that was written but never run on real
 hardware. Those get discovered at an integration, in front of people.
 
 ## How a claim becomes evidence
 
-A number is not evidence because it is a number. It becomes evidence when it
-can be re-produced by someone else and when it carries the conditions it was
-produced under.
+A number becomes evidence when someone else can reproduce it and when it
+carries the conditions it was produced under.
 
 ```mermaid
 flowchart TD
@@ -44,11 +43,11 @@ no statement of real or simulated, and no command attached is an impression
 with a decimal point on it. It will be quoted anyway, by someone who was not
 there, to someone who will hold you to it.
 
-So the rule is: a figure travels with its conditions or it does not travel.
+The rule is that a figure travels with its conditions or it does not travel.
 
 ## The four words
 
-Conformance is tracked with four results, and they are not interchangeable.
+The conformance table uses four results, and they are not interchangeable.
 
 | Result | What it means |
 |---|---|
@@ -87,8 +86,8 @@ very different values depending on how it was produced.
 | Built, not verified | It runs. No rig evidence. |
 | Not yet verified | Needs hardware we have not had. |
 
-Current state worth being honest about: real-phone evidence is **one phone**.
-Every multi-phone figure is simulation. Simulated phones do not get hot, do
+Real-phone evidence today is **one phone**. Every multi-phone figure is
+simulation. Simulated phones do not get hot, do
 not drop frames on a congested switch, and do not occlude each other the way
 bodies do.
 
@@ -107,12 +106,12 @@ it tells you which questions a demonstration can and cannot answer.
 | Does the system separate performers who cluster? | **No.** Separation is a multi-view property. One view has nothing to fuse. |
 
 The last two are the interesting ones, and they are the ones a client will
-ask about. Both are structural: they are not short of testing time, they are
-short of phones. Say that rather than implying the test is pending.
+ask about. Both are structural, waiting on phones rather than on testing time.
+Say that rather than implying the test is pending.
 
 ## Producing tracking evidence
 
-Tracking output can be recorded and then scored, which turns an impression
+You can record the tracking output and score it, which turns an impression
 into a number.
 
 1. Record the tracking output from the console while the thing you want to
@@ -138,10 +137,10 @@ and position error against marks. Useful options:
 `--gap` sets how soon a new identity after a lost one counts as the same
 person reappearing rather than as a fresh loss.
 
-The options above are the ones that matter, not the full set, and their
+The table lists the options that matter; the full set is longer, and the
 defaults are the tool's to change. Run `python3 Tools/track_score.py --help`
 for the current list rather than trusting this page for a default, and quote
-the value you actually ran with when you report a score.
+the value you ran with when you report a score.
 
 ### The distinction that matters in the room
 
@@ -160,10 +159,11 @@ Say which one you are showing.
 
 ## Running a session, and the pack that comes out of it
 
-A measurement session is the place where good intentions turn into a notebook
-nobody can read three weeks later. So it is scripted end to end, and the
-scripting matters more than it sounds: **the numbers are read out of the
-console rather than typed in by whoever is holding the phone.**
+A measurement session is where good intentions turn into a notebook nobody
+can read three weeks later, so the session is scripted end to end. The
+scripting matters more than it sounds, because **the script reads the numbers
+out of the console rather than leaving whoever is holding the phone to type
+them in.**
 
 ```mermaid
 flowchart LR
@@ -174,15 +174,15 @@ flowchart LR
 
 `Tools/phone_session.py` walks the runbook a step at a time: it prints what to
 do, waits for you, then records everything the console can tell it about that
-step — telemetry, clock offsets, capture age and its split, frame rates. It
-calls the specialised tools where a step needs one, and it can be listed,
-narrowed to a few steps, or resumed into the same file if the session is
-interrupted.
+step (telemetry, clock offsets, capture age and its split, frame rates). It
+calls the specialised tools where a step needs one. You can list its steps,
+narrow a run to a few of them, or resume an interrupted session into the same
+file.
 
 `Tools/evidence_pack.py` then turns that file into the pack, with the build
 facts read off disk rather than remembered: which commits, which project
-version. What a person still has to supply is the judgement — the venue, and
-the limitations.
+version. A person still has to supply the judgement: the venue, and the
+limitations.
 
 | Tool | The measurement it is for |
 |---|---|
@@ -199,16 +199,16 @@ The pack's sections are what the agreement asks for: what was tested and on
 what, a table per scenario, the limits stated plainly, and the recordings.
 
 **The limits section is the one that builds trust.** A pack with no limitations
-reads as a pack nobody looked at hard, and the tools cannot write it for you —
-they know what was measured, not what the measurement failed to cover.
+reads as a pack nobody looked at hard, and the tools cannot write it for you.
+They know what was measured, not what the measurement failed to cover.
 
 ## What never to claim
 
-Identity through sustained physical contact. When two bodies are physically
-together there is no measurement that separates them, and this is true of
-every markerless system at any number of cameras. Identity in that moment is
-carried by prediction, and the output flags it as uncertain so the receiving
+Never claim identity through sustained physical contact. When two bodies are
+physically together there is no measurement that separates them, and this is
+true of every markerless system at any number of cameras. Prediction carries
+identity in that moment, and the output flags it as uncertain so the receiving
 side can decide what to do.
 
-Say that plainly and early. It is a property of the physics, not a defect in
-this implementation, and it does not improve with more phones.
+Say that plainly and early. The physics sets that limit, so it is not a defect
+in this implementation, and it does not improve with more phones.

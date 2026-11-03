@@ -14,9 +14,9 @@ package installed for one is invisible to the others.
 This page is for someone building a machine from nothing, or auditing what the
 system actually needs. Every version here was read off a file or probed from
 the installed software on 2026-10-27, not copied from a comment. Where a
-declared dependency and a used dependency disagree, the disagreement is written
-down rather than smoothed over, because those are the things that break on a
-fresh machine and nowhere else.
+declared dependency and a used dependency disagree, this page records the
+disagreement, because those are the things that break on a fresh machine and
+nowhere else.
 
 ## The three Python interpreters
 
@@ -36,7 +36,7 @@ flowchart TB
 ```
 
 The console picks the worker interpreter at import time in
-`WebConsole/yolo_seg.py`, and the order is now short and honest:
+`WebConsole/yolo_seg.py`, and the order is short:
 
 1. `TDSTAGE_YOLO_PYTHON`, taken as given. A wrong one fails with an error that
    names it.
@@ -107,9 +107,9 @@ These are imported across `WebConsole/*.py` and need nothing installed:
 `re`, `shutil`, `signal`, `socket`, `statistics`, `struct`, `subprocess`,
 `sys`, `tempfile`, `threading`, `time`, `traceback`, `urllib`, `uuid`, `zlib`.
 
-The console's own cross-process link to the YOLO worker (`ipc_local.py`) is
-built on `multiprocessing.connection`, so a Unix socket on POSIX and a named
-pipe on Windows with no package behind either.
+The console's own cross-process link to the YOLO worker (`ipc_local.py`) uses
+`multiprocessing.connection`: a Unix socket on POSIX, a named pipe on Windows,
+and no package behind either.
 
 ### Bundled model files
 
@@ -151,13 +151,14 @@ WebConsole/.venv/bin/python WebConsole/doctor.py --wait 0
 ```
 
 The PyPI wheels for torch on macOS include Metal support, so no separate index
+is needed.
 
-`doctor.py` is the check that matters. It is read-only, it never changes the
-system, and it checks the Python version, every import, the compute device **in
-the interpreter the worker will actually use**, the model files, whether the
-ports are free, the firewall rules with the exact commands to add the missing
-ones, this machine's addresses, and whether any phone telemetry arrives. Exit
-code 0 means no failures.
+`doctor.py` is the check that matters. It is read-only and never changes the
+system. It checks the Python version, every import, the compute device **in the
+interpreter the worker will actually use**, the model files, whether the ports
+are free, the firewall rules (with the exact commands to add the missing ones),
+this machine's addresses, and whether any phone telemetry arrives. Exit code 0
+means no failures.
 
 ### MediaPipe is installed without its dependencies, deliberately
 
@@ -176,7 +177,7 @@ bundled as `models/hand_landmarker.task`, so there is no download at a venue.
 
 `--no-deps` means pip will not tell you if a future MediaPipe needs something
 new. That is the cost of keeping both libraries in one environment, and it is
-a deliberate trade rather than an oversight.
+a deliberate trade.
 
 ### Running the Windows vision path on a Mac
 
@@ -188,8 +189,8 @@ pose plus MediaPipe hand landmarks, all inside the worker process.
 TDSTAGE_VISION=portable python3 server.py --http 9080 --listen 9001
 ```
 
-Worth knowing before a get-in: it is the only way to test what the show
-machine will actually do without being in front of the show machine.
+Before a get-in, it is the only way to test what the show machine will do
+without standing in front of the show machine.
 
 ### Declared against actual: the mismatches
 
@@ -198,8 +199,8 @@ Probed on 2026-10-27, `WebConsole/.venv` is Python 3.14.7 and was created with
 `--system-site-packages`. Only `pip`, the pyobjc frameworks and `cyndilib` were
 installed into it. Everything else it can import, including `numpy` 2.4.6,
 `pillow`, `lz4` and `mcap`, comes from the Homebrew system interpreter that
-leaks through that flag. It cannot import `psutil`, `ultralytics` or `torch` at all. The consequence is
-specific: `_worker_python()` finds no `ultralytics` here, so unless
+leaks through that flag. It cannot import `psutil`, `ultralytics` or `torch` at all. So
+`_worker_python()` finds no `ultralytics` here, and unless
 `TDSTAGE_YOLO_PYTHON` is set this Mac runs **without YOLO**, on Apple Vision
 masks alone, and says so once at boot and in Rig health.
 
@@ -260,8 +261,8 @@ daemon and no tunnelling software anywhere in the path.
 ### What is explicitly not needed
 
 `iproxy`, and the whole `libimobiledevice` family it belongs to, is obsolete
-here. It only ever forwarded TCP, which is precisely why the old wired path had
-to use the legacy TCP depth protocol. The current protocol is UDP, the cable
+here. It only ever forwarded TCP, which is why the old wired path had to use
+the legacy TCP depth protocol. The current protocol is UDP, the cable
 carries UDP, and so the forwarder has nothing left to do. The remaining
 mentions of `iproxy` in the source are comments explaining why it was removed
 and one diagnostic that used to run an `iproxy` migration on a wrong premise.
@@ -275,8 +276,8 @@ tooling on the receiving machine. The receiving machine needs an IP stack.
 **The link-local address drifts.** Both ends self-assign without any authority
 to coordinate them, and the host's chosen address changes across a replug. The
 project has seen it move within two days on one rig. A phone configured with
-the old address keeps sending into nothing and the stream simply stops, with no
-error on either side. The console resolves the address fresh on every check
+the old address keeps sending into nothing and the stream stops, with no error
+on either side. The console resolves the address fresh on every check
 rather than storing it, and its auto-fix moves a phone onto the current cable
 address when it finds one.
 
@@ -295,8 +296,8 @@ rather than a failure.
 **Pinning a dead adapter must not park a phone.** The app requires the wired
 interface when the operator asks for it, but if that connection has not become
 ready within five seconds it is rebuilt once without the requirement, and the
-link line on the phone says so. A routing-dead adapter costs a warning, not a
-phone.
+link line on the phone says so. A routing-dead adapter costs you a warning, and
+you keep the phone.
 
 Measured on this rig: about 0.55 ms round trip over the cable against about
 8 ms over Wi-Fi (measured, real phone, one phone). Cellular is never used for
@@ -399,8 +400,8 @@ interpreter, which is why those packages sit in the console's requirements file
 rather than being a TouchDesigner concern.
 
 The shared isolation library is written as pure `numpy` and `cv2` with no
-TouchDesigner imports, specifically so the same file runs inside the tox and in
-an offline test. Adding a TouchDesigner import to it breaks the offline tests
+TouchDesigner imports, so the same file runs inside the tox and in an offline
+test. Adding a TouchDesigner import to it breaks the offline tests
 and is the one change to avoid.
 
 ### Starting it
@@ -413,9 +414,9 @@ Tools/show_mac.sh                 # macOS
 WebConsole\windows\show.bat       # show machine
 ```
 
-Those start the bridge, which receives the phones outside TouchDesigner and
-hands whole frames to both TouchDesigner and the console through one
-memory-mapped file, and the console itself. Note that `show_mac.sh` invokes
+Those start the console and the bridge. The bridge receives the phones outside
+TouchDesigner and hands whole frames to both TouchDesigner and the console
+through one memory-mapped file. Note that `show_mac.sh` invokes
 `python3` from the path rather than the console's virtualenv, so on a Mac the
 console runs under whichever interpreter `python3` resolves to. Set `PYTHON` to
 override it.
@@ -435,8 +436,10 @@ the tox's code.
 
 ## Summary of what a fresh machine gets wrong
 
-   the cross-platform path are absent on any machine built from the installer,
-   and nothing reports it as an error.
+1. MediaPipe is installed with `--no-deps`, and the installer only warns when
+   that install does not take, so hand landmarks on the cross-platform path can
+   be absent on a machine built from the installer, and nothing reports it as
+   an error. Hands then fall back to the body pose's wrists.
 2. There is no macOS installer, and the virtualenv in this repository is not
    reproducible from the declared files: it was created with system site
    packages. It no longer relies on another project's path for the heavy

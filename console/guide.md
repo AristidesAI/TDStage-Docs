@@ -6,7 +6,7 @@ nav_order: 2
 
 # Guided walkthrough
 
-Three screens, with the controls that matter numbered on the picture. Read
+Four screens, with the controls that matter numbered on the picture. Read
 this once before a get-in and you will know where everything is.
 
 The numbers are drawn on the images so the pairing survives being printed,
@@ -16,8 +16,8 @@ somewhere else.
 {: .note }
 **About these screens.** They were captured on 2026-10-27 at a narrow browser
 width so nothing is cut off; the console reflows, so a wide window puts the
-same controls on fewer rows. Since then the console has had a visual pass —
-plainer buttons, labelled control rows, explanations moved into hover text — so
+same controls on fewer rows. Since then the console has had a visual pass
+(plainer buttons, labelled control rows, explanations moved into hover text), so
 the chrome around the controls looks different from what you see here. Every
 control named on this page still exists, in the same place, under the same
 label. One caption burned into the markers screen is now wrong, and is called
@@ -42,22 +42,23 @@ button. If you walk away, you lose it.
 **Start all** (5) sends start to every enabled phone at once, with no check, no
 retry and no show-running latch, so a phone that drops later is nobody's
 problem. It is faster and it tells you less. Use it when you already know the
-rig is healthy and you just want pictures.
+rig is healthy and only want pictures.
 
 Both read "is it streaming" from telemetry, so if telemetry is not reaching
-this console every phone gets named as failed while streaming perfectly. Fix
+this console, the start report names every phone as failed while it streams
+perfectly. Fix
 the telemetry port first and the start reports become trustworthy.
 
-**Blackout all** (6) is not a stop. It turns the enabled phones' screens off
-while they keep streaming, which is what a phone on a stand should look like
+**Blackout all** (6) does not stop anything. It turns the enabled phones'
+screens off while they keep streaming, which is what a phone on a stand should look like
 during a performance: dark, and working. A lit screen is visible from the
-audience, so blackout is worth doing for that reason alone. It is **not** a
-cooling measure: a ninety-minute run on two phones found no measurable thermal
+audience, so blackout is worth doing for that reason alone. The console asks
+for confirmation first. It is **not** a cooling measure: a ninety-minute run on two phones found no measurable thermal
 difference from blacking out a plugged-in phone.
 
-What heat does cost is frame rate, through the ladder: a phone at **serious**
+Heat does cost frame rate, through the thermal ladder: a phone at **serious**
 is capped at `stage.thermalSeriousFPS`, and at **critical** it halves its
-nominal rate with a floor of 10. The console asks for confirmation first.
+nominal rate with a floor of 10.
 
 {: .note }
 **That cap is now 30, which means a hot phone is not slowed down at all** at a
@@ -72,7 +73,7 @@ worse than these two did.
 the colour plane off the wire at fair or at serious, ahead of any rate cut. It
 was briefly the default, and Ari turned it off on 2026-10-28: the run showed
 that losing colour did not visibly change the thermal state either, so it was
-paying a real cost — no person masks, no hands from that phone — for no
+paying a real cost (no person masks, no hands from that phone) for no
 measured thermal gain.
 
 **Ping all** (3) asks every phone with a known IP for a reply, disabled ones
@@ -101,7 +102,7 @@ A rig drifts. Someone changes a setting on one phone to test something at
 ones that disagree.
 
 The panel is honest about when it cannot help (2): it states how many phones
-are actually reporting, and names the ones that are offline rather than
+are reporting, and names the ones that are offline rather than
 quietly leaving them out of the comparison. **Parity needs two reporting
 phones.** A green page with five phones offline means nothing was compared.
 
@@ -114,7 +115,7 @@ the summary line (2) first: it names who could not be compared.
 To fix a drifted rig: pick the phone you trust as the reference (4), then
 **Match every phone to this one** (5).
 
-It sends only the settings that actually differ, and only to phones that have
+It sends only the settings that differ, and only to phones that have
 that control, so a phone running the other app is not sent something it does
 not understand. Device ids and the stream and telemetry hosts are never
 copied, for the obvious reason. Link and UDP port **are**, as part of the
@@ -123,8 +124,8 @@ stored profile.
 {: .warning }
 Two things to know before pressing it. If the reference phone is the one that
 drifted, you have just spread the problem to the whole rig: look at the
-differences first, not after. And a phone that reports nothing — offline, or an
-older build — is sent every value blind, because "no answer" is not treated as
+differences first, not after. And a phone that reports nothing (offline, or an
+older build) receives every value blind, because "no answer" is not treated as
 "agrees".
 
 ## Markers, and the mistake that does not announce itself
@@ -134,6 +135,8 @@ older build — is sent every value blind, because "no answer" is not treated as
 A phone calibrates by looking at a printed marker whose real-world size it has
 been told. It solves for where it is standing from the size the square appears
 to be against the size it was told to expect.
+
+![Calibration marker 01: the QR code with the white margin around it.](../assets/img/marker-01.webp)
 
 {: .warning }
 **Measure the whole image, not the black square.** Printed size is the side of
@@ -149,17 +152,16 @@ square"; both have since been corrected.
 | A4 at true size | **195 mm** | about 174 mm |
 | A3 at true size | **280 mm** | about 249 mm |
 
-**It does not fail loudly if it is wrong**, and what it does instead is worth
-knowing precisely, because the obvious guess is wrong. The declared size does
-not rescale the stage. It only tells the phone how far away the marker is, so
+**A wrong size does not fail loudly**, and the effect is not the obvious one.
+The declared size does not rescale the stage. It only tells the phone how far away the marker is, so
 the phone places *itself* at the wrong distance along its own line of sight.
 Depth is measured by the LiDAR and stays metric, so inside one phone's cloud
 every distance is still correct.
 
-The direction is predictable, and it is the opposite of what most people
-guess. ARKit works out how far away the marker is from how big you said it is
+The direction is predictable, and it is the opposite of the first guess.
+ARKit works out how far away the marker is from how big you said it is
 against how big it looks, so **declaring it too small makes the phone believe
-it is standing nearer its marker than it is** — 11 % of its distance to it.
+it is standing nearer its marker than it is**, by 11 % of its distance to it.
 
 The phone's own depth readings are still true metres, so it then lays its
 points out from a starting position that is too near. The whole cloud moves
@@ -167,16 +169,16 @@ rigidly **away from the phone**, along its line of sight toward the marker, by
 `(1 − declared ÷ true)` times the phone-to-marker distance. About 0.66 m for a
 phone 6 m from its marker.
 
-That has one consequence that reads as nonsense until you have followed the
-arithmetic: the patch of floor where the marker actually sits lands 0.66 m
+One consequence reads as nonsense until you follow the arithmetic: the patch
+of floor where the marker sits lands 0.66 m
 **beyond** the marker, not nearer it. The phone starts 0.66 m too close and
 then adds the full measured range.
 
-So the result is not a stage that is uniformly too small, and the floor does
-not tilt — a rigid translation cannot tilt anything. What you get is each
-phone's cloud sliding in its own direction. **Two phones facing each other
+So the stage does not come out uniformly too small, and the floor does not
+tilt (a rigid translation cannot tilt anything). Each phone's cloud slides in
+its own direction. **Two phones facing each other
 across the stage slide in opposite directions, so their copies of one performer
-separate by the sum of both shifts** — about 1.3 m for two phones 6 m out. The
+separate by the sum of both shifts**, about 1.3 m for two phones 6 m out. The
 symptom to look for is one performer appearing twice, not a blur. A phone
 mounted high and looking down also drops its cloud, by 11 % of the height it
 has on the marker.
@@ -194,7 +196,7 @@ is solving against the same number, then export (3) or print (4).
 **A loaded stage layout does not reach the phones.** It sets the size in the
 console's roster only and sends nothing. Line (5) reads that roster, so it will
 say `every phone 280 mm` while each phone still holds whatever it was last
-sent — a phone sent 195 mm, calibrating on a 280 mm print, is out by 30 %.
+sent. A phone sent 195 mm, calibrating on a 280 mm print, is out by 30 %.
 Press **Apply to all phones** (2), or Sync markers, after loading a plan. The
 console's own log line after a layout load says the same thing.
 
@@ -206,17 +208,17 @@ This is the panel another system is waiting on. The stage view beside it is
 the console's own picture and is not what anyone downstream receives.
 
 **Send /track** (3) starts the tracking output to the host (4) and port (5)
-beside it. Nothing is emitted until that is on, which is worth checking before
-telling anyone their receiver is broken.
+beside it. Nothing goes out until that is on; check it before telling anyone their
+receiver is broken.
 
 **Record /track** (6) writes a trace of each emitted frame to a file: host and
 capture time, which device frames fed it, and each track's id, plan position,
 clustered flag and whether it was coasting. It is not a copy of the OSC bundle
-— no heights, velocities or hands — and it only writes while **Send /track** is
+(no heights, velocities or hands), and it only writes while **Send /track** is
 on.
 
-That file is what turns an impression into a number: it can be scored
-afterwards for time to acquire, identity losses and position error. See
+That file turns an impression into a number: you can score it afterwards
+for time to acquire, identity losses and position error. See
 [Evidence and claims](../operations/evidence.html).
 
 **Hands** (7) decides whether hand positions ride in the bundle.
@@ -233,14 +235,14 @@ so in the log.
 Look at **8**. The video output is reporting itself unavailable, and the line
 under it gives the reason: a module is missing.
 
-That is the system working as designed rather than failing. The console boots
+That is by design. The console boots
 with optional pieces absent instead of refusing to start, so a missing video
 library costs you the video output and nothing else. The alternative, a
 console that will not start because one optional dependency is absent, is
 worse at 6pm on a show day.
 
-The cost of that choice is that a dead feature can look like a bug. Which is
-why the reason is printed next to it, and why
+The cost of that choice is that a dead feature can look like a bug, which is
+why the console prints the reason next to it, and why
 [Rig health](troubleshooting.html) exists.
 
 ## Where to go next

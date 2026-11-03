@@ -50,16 +50,15 @@ to produce was never finished. What exists is a component edited live in
 TouchDesigner, which is the normal way to work in TouchDesigner and is not
 going to change.
 
-The consequence is that the artefact is a binary, so git can store it but
-cannot tell you what changed in it. The numbered snapshots are therefore the
-only usable history: a snapshot is a thing you can open, and a diff of two
-snapshots is a thing you cannot read. That asymmetry is the whole reason for
-the discipline below, and the reason the **code** inside the component is also
-kept as plain text in the repository, where it can be diffed and reviewed like
-anything else.
+So the artefact is a binary. Git can store it but cannot tell you what changed
+inside it. The numbered snapshots are the only usable history, because you can
+open a snapshot but you cannot read a diff of two snapshots. That is why the
+discipline below exists, and why the **code** inside the component is also kept
+as plain text in the repository, where you can diff and review it like anything
+else.
 
-`tox_drift.py` is what keeps the two copies honest. Without it, the repository
-is a hopeful account of what is in the binary rather than a record of it.
+`tox_drift.py` keeps the two copies honest. Without it, nobody knows whether
+the repository matches what is in the binary.
 
 ## The versioning rule
 
@@ -70,7 +69,7 @@ working copy is re-saved.**
 TD/TDStageConductor.tox         <- the working copy, always the latest
 TD/TDStageConductor_v01.tox     <- history
 ...
-TD/TDStageConductor_v86.tox     <- the highest number at the time of writing
+TD/TDStageConductor_v87.tox     <- the highest number at the time of writing
 ```
 
 List the directory before picking a number:
@@ -97,8 +96,8 @@ The symptom is file size. A clean working copy is around 130 KB. One that
 baked `pcstate` reached 1 MB; one that baked the merged Script CHOP's cloud
 reached 340 KB.
 
-Worse than the size: a baked `pcstate` comes back on the next load with
-timestamps from the previous session. `absTime` restarts at zero, so those
+The size is the lesser problem. A baked `pcstate` comes back on the next load
+with timestamps from the previous session. `absTime` restarts at zero, so those
 devices read as newer than now, stay LIVE for ever, and show a frozen cloud
 that never updates. This happened on 2026-09-04. The hub now clears `pcstate`
 in `udp_pc_exec.onStart`, which logs `pcstate cleared on start (fresh
@@ -107,7 +106,7 @@ bloated, and the save is still wrong.
 
 ### Clean save with a phone or a sim streaming
 
-Do this in separate steps, not one script. Module and callback reloads in
+Do this in separate steps rather than one script. Module and callback reloads in
 TouchDesigner are lazy, so a single script that changes something and then
 depends on the change sees the old state.
 
@@ -135,19 +134,20 @@ for byte with the repository file of the same name.
 
 ```
 python3 TD/newtox/tox_drift.py                            # the working copy
-python3 TD/newtox/tox_drift.py TD/TDStageConductor_v86.tox
+python3 TD/newtox/tox_drift.py TD/TDStageConductor_v87.tox
 python3 TD/newtox/tox_drift.py --diff                     # print the differing lines
-python3 TD/newtox/tox_drift.py --extract /tmp/v86-dats    # every DAT's text as files
+python3 TD/newtox/tox_drift.py --extract /tmp/v87-dats    # every DAT's text as files
 ```
 
 Run it after every numbered save. The result you want is **0 differ and 0 in
-the tox only**: then the repository is the tox's code.
+the tox only**, which means the repository is the tox's code.
 
 `--extract` is also a backup worth having. It writes the tox's code out as
 plain text files, readable and diffable without TouchDesigner.
 
-`toeexpand` exits 1 even when it worked, on current TouchDesigner. The tool
-judges it by its output, not its exit code, so do not be alarmed.
+On current TouchDesigner, `toeexpand` exits 1 even when it worked. The tool
+judges it by its output rather than its exit code, so do not be alarmed by
+that.
 
 Give `--extract` a path **outside** the repository. Expanding a tox writes a
 `.tox.dir` folder and a `.tox.toc` beside it, and left in `TD/` those show up
@@ -163,15 +163,15 @@ TD/TDStageConductor.tox: 32 DATs with a repo copy identical, 1 differ,
   DIFFERS  TDStageConductor/tdp4_receiver vs TD/newtox/tdp4_receiver.py (53 lines)
 ```
 
-The repository's receiver was ahead of the tox's copy by one commit. The fix
-is to load the repository file into the DAT, not to copy the DAT back. Which
-direction is correct is a judgement the tool cannot make for you; it only tells
-you that a judgement is needed.
+The repository's receiver was ahead of the tox's copy by one commit, so the
+fix was to load the repository file into the DAT rather than copy the DAT back.
+The tool cannot tell you which direction is right; it only tells you that you
+have to decide.
 
-That is the whole value of running it. The missing commit was the device-id
-collision naming, so a rig with two phones sharing an id would have been warned
-by the console and told nothing by TouchDesigner, and nobody would have known
-why the two disagreed.
+That decision is the value of running it. The missing commit was the device-id
+collision naming. With two phones sharing an id, the console would have warned
+and TouchDesigner would have said nothing, and nobody would have known why the
+two disagreed.
 
 Loading the repository file and saving produced v77 and then v78, and the same
 command now reads:
@@ -211,8 +211,9 @@ after every scripted callback-text edit.
 ## Where learned state lives
 
 Learned numpy state is large, and component storage is the wrong place for it.
-It lives on disk as numpy checkpoints, the learned background compressed and the floor and level state not, reloaded lazily when a module
-recompiles.
+It lives on disk as numpy checkpoints, and a module reloads it lazily when it
+recompiles. The learned background is stored compressed; the floor and level
+state are not.
 
 | Platform | Directory |
 |---|---|
@@ -224,7 +225,7 @@ recompiles.
 | `learned_bg.npz` | The learned background grid, the thing `Segmode` = `learned` subtracts | A `Learnbg` pass |
 | `stage_level_state.npz` | The solved stage level and lens unwarp | A level or unwarp solve |
 
-Two consequences.
+Two consequences follow.
 
 **Back this directory up before testing in learned mode.** A learn overwrites
 the background, and a learn run against a simulator throws away a real one.
@@ -279,8 +280,7 @@ Run it before anything you might want to undo.
 
 ## Rules that hold inside the tox
 
-These are not style preferences. Each one is here because breaking it caused a
-specific failure.
+Each rule is here because breaking it caused a specific failure.
 
 - **Never write to a table per frame on the hot path.** Ingest, merge, cleanup,
   fusion and output use storage dictionaries.

@@ -13,8 +13,8 @@ steps need internet the venue will not have.
 
 ## Order of work
 
-The order is not a preference. Each step is the thing that lets the next one
-be checked, so doing them out of order means doing them twice.
+The order is not a preference. Each step is what lets you check the next one,
+so doing them out of order means doing them twice.
 
 ```mermaid
 flowchart TD
@@ -30,15 +30,15 @@ flowchart TD
   M -- "nothing can be verified<br/>before it is calibrated" --> V
 ```
 
-Read each arrow as the reason, not as a sequence number.
+Each arrow is the reason the step above it comes first.
 
 - **Network before phones**, because an unaddressed phone cannot appear in
   the console, and a phone you cannot see is a phone you cannot check.
-- **Phones before stands**, because aiming is done from the live view. Doing
+- **Phones before stands**, because you aim from the live view. Doing
   stands first means climbing to every stand twice: once to mount, once
   again when you find out what it sees.
-- **Stands before calibration**, because calibration solves for where a
-  phone actually is. Move a stand afterwards and the solve is stale and
+- **Stands before calibration**, because calibration solves for the phone's
+  real position. Move a stand afterwards and the solve is stale and
   silently wrong.
 - **Calibration before verification**, because every check at the end is a
   check of the calibrated rig.
@@ -49,15 +49,15 @@ Phones reach the receiving machine over Ethernet. Wi-Fi works and is the
 fallback, but it costs latency and drops frames under load, so it is not what
 a show runs on.
 
-The gap is not marginal. A phone on a cable measured **0.55 ms** to the
+The gap is large. A phone on a cable measured **0.55 ms** to the
 receiving machine against roughly **8 ms** over Wi-Fi (measured, real phone,
 one phone). An iPhone on a USB-C cable presents a real network link, so the
 stream crosses the cable with nothing special done to it.
 
-That matters more than the raw numbers suggest, because of what the depth
-stream is. One frame from one phone is about a hundred packets, and a frame
-missing any one of them is discarded whole rather than resent. Eight phones
-with colour offer around 49,000 packets per second at the simulator's grid, and
+The raw numbers understate the gap, because of how the depth stream is sent.
+One frame from one phone is about a hundred packets, and the receiver discards
+whole any frame that is missing one of them; nothing is resent. Eight phones
+with colour send around 49,000 packets per second at the simulator's grid, and
 about 76,000 at the grid real phones send.
 Wi-Fi under load drops packets in bursts, and a burst that costs single
 packets across many frames costs those whole frames. See
@@ -69,7 +69,7 @@ packets across many frames costs those whole frames. See
 addresses. If the rig has no router and no DHCP server on it, nothing on that
 network gets an address automatically and every phone needs a static one.
 
-Work out which case you are in before the get-in, not during it.
+Work out which case you are in before the get-in.
 
 ```mermaid
 flowchart TD
@@ -138,20 +138,28 @@ both before deciding the network is fine.
 
 Each phone goes where the coverage plan puts it. Coverage is the whole reason
 there is more than one phone: a performer hidden from one camera has to be
-visible to another, and that only happens if the angles were planned.
+visible to another, and that only happens if you planned the angles.
+
+![Coverage model of the Stroud 8 x 6 m playing area with six phones on 2.25 m stands: floor cells coloured by how many phones see them, phone positions P1 to P6 with their yaw and pitch, markers M1 to M10, the gauze and the rear screen.](../assets/img/stroud-coverage-6-phones.webp)
+
+*Plotted 2026-10-25. The entrance partition and the front of the low stage are marked UNVERIFIED on the plot itself.*
+
+![The same coverage model at three phones, P1 to P3 with markers M1 to M5: most of the playing area is seen by one phone or by none.](../assets/img/stroud-coverage-3-phones.webp)
+
+*The three-phone layout, plotted the same day, 2026-10-25, with the same two positions marked UNVERIFIED.*
 
 Aim with the console's live view rather than by eye. What matters is what the
 phone sees, not where the phone points.
 
 ### Why aiming is a coverage decision, not a framing one
 
-Occlusion has exactly one answer: another viewpoint. A performer behind
-another performer cannot be recovered by any amount of processing of the view
-that cannot see them, and is recovered trivially by a camera that can. That
-is the entire reason there is more than one phone.
+The only cure for occlusion is another viewpoint. No amount of processing
+recovers a performer hidden behind another performer in a view that cannot
+see them, and a camera that can see them recovers them with no effort at all.
+That is the entire reason there is more than one phone.
 
-So the test of a phone position is not whether the picture looks good. It is
-whether that phone sees something the others do not.
+So the test of a phone position is whether that phone sees something the
+others do not, however good its picture looks.
 
 ```mermaid
 flowchart TD
@@ -174,11 +182,11 @@ showing them printed markers at known positions.
 ### The marker size trap
 
 **The size in the console must match the size you actually printed**, and the
-thing you measure is not the obvious one.
+right thing to measure is easy to get wrong.
 
 {: .warning }
 Measure the **whole marker image**, white margin included, between the centres
-of the four crop marks. Not the black square: that is about 89 % of the image,
+of the four crop marks. The black square alone is about 89 % of the image,
 so ruling it and typing what you read sets every phone 11 % small.
 
 | Printed on | Between the crop marks | The black square alone |
@@ -189,21 +197,21 @@ so ruling it and typing what you read sets every phone 11 % small.
 A fresh roster defaults to **195 mm**, which is A4 printed at true size. So
 printing A4 and leaving it alone is correct. **Printing A3 and leaving it alone
 is not**, and nothing warns you, because a wrong size solves perfectly well. It
-just solves to the wrong answer.
+solves to the wrong answer.
 
-What that wrong answer looks like is worth knowing, because the obvious guess
-is wrong twice over. Depth is metric LiDAR, so nothing is rescaled and the
-floor does not tilt. The phone simply believes it stands nearer its marker than
-it does, and slides its **whole cloud** away from itself along that sight line
-by that fraction of its distance to the marker — about 0.66 m for a phone 6 m
-out at 11 % small. Each phone slides its own way, so the rig stops agreeing
-with itself. The full working is in
+The wrong answer is worth recognising, because the obvious guess is wrong
+twice over. Depth is metric LiDAR, so nothing is rescaled and the floor does
+not tilt. The phone believes it stands nearer its marker than it does, and
+slides its **whole cloud** away from itself along that sight line by that
+fraction of its distance to the marker (about 0.66 m for a phone 6 m out at
+11 % small). Each phone slides its own way, so the rig stops agreeing with
+itself. The full working is in
 [the console walkthrough](../console/guide.html#markers-and-the-mistake-that-does-not-announce-itself).
 
 **A loaded stage layout does not reach the phones.** The plan import reads each
 marker's sheet size and applies one rig-wide size to the console's **roster**,
 and sends nothing. Until you press **Apply to all phones**, every phone still
-holds whatever it was last told — so the console can read `every phone 280 mm`
+holds whatever it was last told, so the console can read `every phone 280 mm`
 while the phones calibrate on 195. Press it after every layout load, and
 confirm the number against the paper that came out of your printer rather than
 the paper the plan assumed.
@@ -224,14 +232,15 @@ clouds themselves see.
 It works because the phones already know which way is down. Each one streams a
 gravity-levelled view, so pitch and roll are right and only four numbers are
 unknown between two phones: a heading and a position. The floor gives one of
-them — the height difference between two phones' floors. For the other three,
-the console looks at both clouds from above, rasterises what stands between
-knee and head height, and cross-correlates the two pictures at every heading in
-turn. The best match wins, then gets refined.
+them, the height difference between the two phones' floors. For the other
+three, the console looks at both clouds from above, rasterises what stands
+between knee and head height, and cross-correlates the two pictures (slides
+one over the other and scores the match) at every heading in turn. The best
+match wins, then gets refined.
 
-That is a **global** search, which matters: the finer alignment step it then
-runs can only polish a rig that is already within about ten degrees and half a
-metre, so on its own it cannot find the answer from nothing.
+That is a **global** search, and the distinction matters: the finer alignment
+step it then runs can only polish a rig that is already within about ten
+degrees and half a metre, so on its own it cannot find the answer from nothing.
 
 ```mermaid
 flowchart TD
@@ -244,15 +253,15 @@ flowchart TD
 ```
 
 **Every answer is graded, and the grade is the useful part.** OK means the
-solver settled — not that the pose is right. A WARN is applied with its reason
-attached; a FAIL is refused and that phone is left alone rather than moved
-somewhere confident and wrong.
+solver settled; it does not certify that the pose is right. The console applies
+a WARN with its reason attached, and refuses a FAIL, leaving that phone alone
+rather than moving it somewhere confident and wrong.
 
 {: .warning }
 **A finished solve is not proof that every phone moved.** A refused phone is
 left exactly where it was, so a solve can report itself finished with two
-phones still at whatever positions they had before — on a fresh roster, the
-defaults. Rig health now names them: which phones were left, why each one was
+phones still at whatever positions they had before (on a fresh roster, the
+defaults). Rig health now names them: which phones were left, why each one was
 refused, and what to try, including placing just those phones with walk
 calibration. Read that row rather than treating "the align finished" as an
 answer.
@@ -262,23 +271,23 @@ Three things the grading is looking for, each worth recognising on a get-in:
 - **Overlap.** How much of what one phone sees the other sees too. This is the
   failure no setting fixes: two phones pointed at different halves of the stage
   have nothing to match, and the answer is to move a phone, not to retry.
-- **Consensus.** The match is re-run on subsets of the points. If those runs
-  disagree with each other, the scene is ambiguous and it warns even when the
-  score looks healthy.
-- **Chaining.** Phones are matched pairwise and then composed along the
-  strongest route back to the anchor, so a phone that shares nothing with the
-  anchor — the back phone facing the front row — can still land through a
-  neighbour it does share with.
+- **Consensus.** The solver re-runs the match on subsets of the points. If
+  those runs disagree with each other, the scene is ambiguous and it warns even
+  when the score looks healthy.
+- **Chaining.** The solver matches phones pairwise and then composes the
+  results along the strongest route back to the anchor, so a phone that shares
+  nothing with the anchor (the back phone facing the front row) can still land
+  through a neighbour it does share with.
 
 {: .warning }
 Two rooms defeat it, and both are rooms you might be standing in. An empty box
 with a flat floor and bare walls has nothing to correlate, and a symmetric room
 can match 180 degrees out. The solver reports its score and how far ahead the
-winner was, for exactly that reason: a low score or a close second place means
+winner was, for that reason: a low score or a close second place means
 look at the result before trusting it.
 
-It runs as a background job — eight phones is twenty-eight pairs and takes tens
-of seconds — so the console stays responsive and reports progress while it
+It runs as a background job (eight phones is twenty-eight pairs and takes tens
+of seconds), so the console stays responsive and reports progress while it
 works. One solve at a time.
 
 {: .note }
@@ -290,21 +299,21 @@ for every pair, and only polish a match that is already good.
 
 ### Walking the stage instead
 
-Cloud matching has one failure no amount of care fixes: **two phones that face
-each other share no surfaces at all.** The back phone looking at the front row
+**Two phones that face each other share no surfaces at all**, and no amount of
+care in cloud matching fixes that. The back phone looking at the front row
 and the front phone looking back see opposite sides of the same room, and
-nothing in one view appears in the other. That is not an edge case on this rig,
-it is the normal arrangement for covering a stage from both sides.
+nothing in one view appears in the other. On this rig that is the normal
+arrangement for covering a stage from both sides.
 
-So there is a second solver that matches something every phone can see at once,
-from any side: **one person walking.** Each phone reports where it thinks that
-person is, frame by frame, in its own levelled frame. Line two phones' paths up
-in time, and the shape of the walk gives the heading and the offset between
-them — no shared scenery required.
+So a second solver matches **one person walking**, which every phone can see
+at once, from any side. Each phone reports where it thinks that person is,
+frame by frame, in its own levelled frame. Line two phones' paths up in time,
+and the shape of the walk gives the heading and the offset between them, with
+no shared scenery required.
 
-Because latency differs per phone, the paths are first slid against each other
-in time to find the best fit: fifty milliseconds at walking pace is six
-centimetres, which is worth correcting before fitting anything.
+Because latency differs per phone, the solver first slides the paths against
+each other in time to find the best fit: fifty milliseconds at walking pace is
+six centimetres, which is worth correcting before fitting anything.
 
 **The procedure:**
 
@@ -316,12 +325,12 @@ centimetres, which is worth correcting before fitting anything.
 
 A recording you forget about stops itself after two minutes.
 
-Graded per phone exactly as the cloud solve is, on different evidence — how
-many samples matched, how well they fit, the time offset it found, and how far
-the walk actually spanned. The most common failure is the one the name gives
-away: **the walk was too short**. A walk of less than a metre across gives it
-nothing to fit a heading to, and the fix is to walk a proper loop rather than
-to re-run the solve.
+The solver grades each phone exactly as the cloud solve does, on different
+evidence: how many samples matched, how well they fit, the time offset it
+found, and how far the walk spanned. The most common failure is the one the
+name gives away: **the walk was too short**. A walk of less than a metre across
+gives it nothing to fit a heading to, and the fix is to walk a proper loop
+rather than to re-run the solve.
 
 ### A second opinion from Open3D
 
@@ -329,23 +338,23 @@ There is a third solver, which runs the method TDStage's cloud matching took
 its principles from: Darien Brito's TDXDepthCamMerger, using Open3D's own
 feature matching and fine alignment rather than this project's plan-view
 correlation. It is available from the same align control, and runs in a
-separate Python — Open3D never loads inside the console or TouchDesigner, the
+separate Python. Open3D never loads inside the console or TouchDesigner, the
 same rule his component follows.
 
-The interesting part is what gets added to it, and why:
+The part worth knowing is what TDStage adds to it, and why.
 
 **His method assumes a camera could be tipped any way. Ours cannot be.** Every
 phone levels itself on gravity, so pitch and roll are already known and only a
-heading and a position are in question. So the rough match is run eight times
-and the answers, flattened to heading and position, **vote** — fewer than three
-agreeing is a failure rather than an answer — and the fine alignment starts
-from the best three. The height comes from the floor sweep rather than from the
-match at all.
+heading and a position are in question. So the solver runs the rough match
+eight times, flattens the answers to heading and position and lets them
+**vote** (fewer than three agreeing is a failure rather than an answer), and
+the fine alignment starts from the best three. The height comes from the floor
+sweep rather than from the match at all.
 
-That is the improvement: not a better algorithm, but an algorithm told
-something true about this rig that it could not assume in general. It is also
-why his own consensus warning fired on every run of the real pair — it was
-correctly reporting the ambiguity that gravity resolves for us.
+The improvement is an algorithm told something true about this rig that it
+could not assume in general. That is also why his own consensus warning fired
+on every run of the real pair: it was correctly reporting the ambiguity that
+gravity resolves for us.
 
 On a real pair of phones it repeated to **0.02 degrees of heading and 19 mm of
 height**, with a fit of 14.5 mm against 16.6 mm for the plan-view solve. The
@@ -353,8 +362,8 @@ position repeated to 65 mm in one axis, and that number is honest rather than
 noise: it is the direction the shared surfaces do not pin down.
 
 {: .note }
-Not yet run on the live rig — the phones were offline when it was measured.
-Which solver to prefer is therefore still open, and the pair of them disagreeing
+Not yet run on the live rig; the phones were offline when it was measured.
+The choice of solver is therefore still open, and the pair of them disagreeing
 on a real stage would itself be worth knowing.
 
 ### Correcting a phone that is not quite level
@@ -373,28 +382,28 @@ makes it usable while standing behind the phone.
 
 {: .warning }
 **Two pitch-and-roll pairs exist and they do different jobs.** The **plan aim**
-is a drawing — it points the frustum in the plan view and moves nothing. The
-**Tilt** row is geometry, and it moves that phone's cloud. The console labels
-the plan aim as drawing-only; if a cloud is leaning and the plan aim did not
-fix it, that is why.
+is a drawing. It points the frustum (the wedge of view drawn for the phone) in
+the plan view and moves nothing. The **Tilt** row is geometry, and it moves
+that phone's cloud. The console labels the plan aim as drawing-only; if a cloud
+is leaning and the plan aim did not fix it, that is why.
 
 A tilt edit also counts as checking that phone's pose, so it releases a held
 phone to TouchDesigner the same way a move or a turn does.
 
 ### Using both on one rig
 
-They compose, and this is the arrangement worth knowing, because neither
-solver covers a whole rig on its own:
+The two solvers compose, and neither covers a whole rig on its own, so this is
+the arrangement worth knowing:
 
 1. **Run the cloud solve first.** It places every phone that shares scenery
    with a neighbour.
 2. **Run the walk solve for the phones it refused**, by listing them.
 
 Every phone whose pose has already been checked stays exactly where it is and
-is reported as `FIXED` — the walk places only the phones you listed, into the
-frame the others already define. A pose nobody has confirmed is never used as a
-root, so a seeded or restored position cannot quietly become the thing the rest
-of the rig is measured against.
+is reported as `FIXED`. The walk places only the phones you listed, into the
+frame the others already define. The solver never uses a pose nobody has
+confirmed as a root, so a seeded or restored position cannot quietly become the
+thing the rest of the rig is measured against.
 
 ## 5. Verification before you release the rig
 
@@ -414,9 +423,9 @@ Do not call a rig built until all of these pass:
 
 ### The one-person test
 
-Put somebody in the centre of the stage, where two phones on opposite sides
-can both see them, and have calibrated on **different** markers. Then look at
-the cloud.
+Put somebody in the centre of the stage, where two phones on opposite sides,
+calibrated on **different** markers, can both see them. Then look at the
+cloud.
 
 | What you see | What it means |
 |---|---|
@@ -424,11 +433,11 @@ the cloud.
 | **Two bodies**, separated along the line between the two stands | A marker size is wrong. The gap is roughly 11 % of the two phones' distances to their markers added together, so about 1.3 m for two phones 6 m out. |
 | One body, in the wrong place | Both phones are off the same way. Check the size, then check the marker positions in the plan. |
 
-What it does not catch, which matters as much as what it does:
+The test misses two things, and they matter as much as what it catches:
 
 - **Shifts that happen to cancel.** If every phone's marker lies in roughly the
   same direction from it, every cloud slides the same way: they still agree
-  with each other, and the whole stage is simply in the wrong place. Two bodies
+  with each other, and the whole stage is in the wrong place. Two bodies
   prove an error; one body does not prove correctness.
 - **Small errors.** A 1 % size error at 6 m is 6 cm, which you will not see by
   eye.
@@ -437,13 +446,13 @@ So run it a second time with a pair of phones at ninety degrees to the first,
 which covers the other axis and breaks the cancelling case.
 
 **The console can now do both halves for you** ([#41](https://github.com/AristidesAI/TDStage/issues/41),
-built 2026-10-27). It compares what each phone thinks the centroid of that one
-person is, which catches disagreement; and given a marked spot whose stage
-coordinates you know, it compares the agreed position against that spot, which
-is the half that can tell you the whole rig is offset rather than merely
-self-consistent. Use it with the marked spot if you have one, because agreement
-alone cannot prove correctness — which is the same reason this test needs a
-second pair at ninety degrees.
+built 2026-10-27). It compares what each phone thinks the centroid (the centre
+point of the person's cloud) is, which catches disagreement; and given a marked
+spot whose stage coordinates you know, it compares the agreed position against
+that spot, which is the half that can tell you the whole rig is offset rather
+than merely self-consistent. Use it with the marked spot if you have one,
+because agreement alone cannot prove correctness, the same reason this test
+needs a second pair at ninety degrees.
 
 The walking test is still the one that catches coverage problems. A rig can
 pass every other check and still have a gap that only shows when someone walks
@@ -451,7 +460,7 @@ through it.
 
 ## What to record before you leave
 
-Write down what the rig actually is, not what it was planned to be:
+Write down what the rig is as built, rather than as planned:
 
 - Which phone id is on which stand.
 - The addressing scheme used.

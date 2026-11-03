@@ -40,16 +40,16 @@ except ImportError as e:                    # console must boot without numpy;
 answers "numpy missing" instead of answering nothing.
 
 {: .warning }
-**That particular message can never actually be shown**, and the gap between
-the intent and the fact is the useful part of this section. `server.py`
-imports the tracking and video-output modules *unwrapped*, and both import
-numpy the same way, so a console without numpy does not boot at all — it dies
-on the import, before any of this careful degradation gets a chance to run.
+**That particular message can never be shown**, and the gap between the
+intent and the fact is the useful part of this section. `server.py` imports
+the tracking and video-output modules *unwrapped*, and both import numpy the
+same way, so a console without numpy does not boot at all. It dies on the
+import, before any of this careful degradation gets a chance to run.
 Verified by blocking numpy and running `server.py --help`:
 `ModuleNotFoundError` at the bare `import track_emit`. Pillow missing does
 boot, as the table below says.
 
-`WebConsole/server.py` wraps five other modules in one block — settings, the
+`WebConsole/server.py` wraps five other modules in one block: settings, the
 RGB stream, and the three person-model paths, which are the ones that really
 are optional:
 
@@ -63,16 +63,16 @@ except Exception as _e:
 
 Note `except Exception`, not `except ImportError`. A module that imports but
 raises while initialising, a missing model file, a pyobjc bridge that loads and
-then fails on a symbol, all land in the same place. The import is allowed to
+then fails on a symbol, all land in the same place. The block lets the import
 fail for any reason at all.
 
 ### What dies with each one absent
 
 | Missing | What stops | What still works |
 |---|---|---|
-| numpy | **everything: the console does not start.** The tracking and video-output modules import it unwrapped | nothing — fix the install |
+| numpy | **everything: the console does not start.** The tracking and video-output modules import it unwrapped | nothing; fix the install |
 | the TDP4 receiver modules | ingest of point frames into the console | everything that does not need points, including control of every phone |
-| `settings.py` | the Settings page — and worse, **the first save after such a boot erases the saved tunables**, because the configuration is rewritten whole and without that section. They survive only in the backups | every module keeps its own compiled in defaults |
+| `settings.py` | the Settings page, and worse, **the first save after such a boot erases the saved tunables**, because the console rewrites the configuration whole and without that section. They survive only in the backups | every module keeps its own compiled in defaults |
 | `rgb_stream.py` | `/api/rgb/*`: every camera view, JPEG, PNG, MJPEG and overlay | the point cloud and the masks themselves |
 | Pillow | JPEG encoding inside `rgb_stream`, so the streams | the stdlib PNG debug grab |
 | `person_obs.py` (pyobjc) | Apple Vision instance masks and body pose | YOLO, which is the primary model anyway |
@@ -93,15 +93,15 @@ if path == "/api/settings":
 A console that cannot draw a point cloud is still the only thing in the rig
 that can set a phone's identity, push a profile, retarget telemetry, start and
 stop streams and print the marker plan. If it refuses to start because Pillow
-is missing, the rig has no management surface at all, and the moment that
-discovery happens is a get in, with a stage full of people waiting.
+is missing, the rig has no management surface at all, and you discover that
+at a get in, with a stage full of people waiting.
 
-The cost is real and worth stating: a feature that is dead because of a failed
-import looks exactly like a feature that is broken. Three things exist to close
-that gap. `WebConsole/doctor.py` checks every import the console and the worker
-need and prints the `pip install` line for each (it is read only and never
-changes the machine). `GET /api/live` carries the import error text. The Rig
-health panel surfaces the same facts in the browser.
+There is a cost. A feature that is dead because of a failed import looks
+exactly like a feature that is broken. Three things exist to close that gap.
+`WebConsole/doctor.py` checks every import the console and the worker need and
+prints the `pip install` line for each (it is read only and never changes the
+machine). `GET /api/live` carries the import error text. The Rig health panel
+surfaces the same facts in the browser.
 
 ---
 
@@ -109,14 +109,14 @@ health panel surfaces the same facts in the browser.
 
 The person segmentation model does not run inside the console. It runs in
 `WebConsole/yolo_worker.py`, as a separate operating system process, under a
-different interpreter, talking over a local socket — a unix socket on macOS
-and Linux, a named pipe on the Windows show machine. Its own header gives
+different interpreter, talking over a local socket (a unix socket on macOS
+and Linux, a named pipe on the Windows show machine). Its own header gives
 three reasons, and they are different in kind:
 
 1. **The interpreters cannot be shared.** The console's virtual environment has
    numpy and Pillow and deliberately no torch. The worker's environment has a
-   different numpy and a different Python minor version. This is not a
-   preference, it is a packaging fact: the two cannot inhabit one interpreter.
+   different numpy and a different Python minor version. That is a packaging
+   fact: the two cannot inhabit one interpreter.
 2. **The library owns its own post processing.** Ultralytics does the non
    maximum suppression and the mask prototype decoding. Reimplementing those on
    the console side would create a second copy of model logic to keep in
@@ -180,16 +180,15 @@ Respawns are backed off, `BACKOFF_S = (0.5, 1.0, 2.0, 4.0, 8.0, 15.0)`, so a
 worker that cannot start (missing weights, broken environment) settles at one
 attempt every fifteen seconds instead of forking a process every tick.
 
-A start is given ninety seconds before it counts as failed, which is generous
-on purpose: loading the model library and its weights really can take that
+A start is given ninety seconds before it counts as failed, and that is
+generous on purpose: loading the model library and its weights can take that
 long on a cold machine. So a worker that *hangs* rather than failing fast
 retries somewhere between fifteen and a hundred and five seconds, not every
 fifteen.
 
-Without the split, the failure is simple to describe: a native fault in the
-model library ends the console, and with it the roster, the control path, the
-tracking output and the operator's only view of the rig, in the middle of a
-performance.
+Without the split, a native fault in the model library ends the console, and
+with it the roster, the control path, the tracking output and the operator's
+only view of the rig, in the middle of a performance.
 
 Verification: `python yolo_seg.py` under the console environment runs a self
 test whose TEST 4 kills the worker and checks that it restarts on its own and
@@ -201,7 +200,7 @@ exercise a real native crash.
 ## 3. Every warning carries its fix
 
 The console can log sixty distinct warnings and errors. Every one of them
-arrives with an action attached. This is enforced, not merely intended.
+arrives with an action attached, and `Tools/check_fix_hints.py` enforces that.
 
 `FIX_HINTS` in `server.py` pairs a pattern against the message with the thing
 to try:
@@ -236,29 +235,30 @@ It runs inside the self test step of
 `.github/workflows/windows-console.yml` and exits 1 on a miss.
 
 {: .warning }
-**Nothing in that workflow has actually run since 2026-10-27.** Every GitHub
+**Nothing in that workflow has run since 2026-10-27.** Every GitHub
 Actions job on the system repository fails within a few seconds on an account
 billing block, so a red run there says nothing about the code. The self-tests
-are run by hand instead — all 31 of them passed on a development Mac on
-2026-10-28. Treat every check in this section as a thing somebody ran, not as a
-gate that is standing guard, and run them yourself before pushing.
+run by hand instead; all 31 of them passed on a development Mac on 2026-10-28.
+Treat every check in this section as a thing somebody ran, not as a gate that
+is standing guard, and run them yourself before pushing.
 
-Even when the billing is fixed, it is red rather than blocked: that workflow
-runs on pushes to `main`, and work here lands on `main` directly, so an
-unhinted warning is caught **after** the commit rather than before it.
+Even once the billing is fixed, a miss shows as a red run rather than a
+blocked one: that workflow runs on pushes to `main`, and work here lands on
+`main` directly, so the check catches an unhinted warning **after** the commit
+rather than before it.
 
-The gate also has a blind spot worth knowing: it reads `server.py` as text and
-only sees calls whose level and message are literals. The autofix path logs
-through a variable level, so its messages — "phone offline, pinging it",
-"heal storm in progress", "watchdog is STILL healing" — are outside the check
-and arrive without a fix. So do messages printed by the other modules.
+The gate has a blind spot. It reads `server.py` as text and only sees calls
+whose level and message are literals. The autofix path logs through a variable
+level, so its messages ("phone offline, pinging it", "heal storm in progress",
+"watchdog is STILL healing") are outside the check and arrive without a fix. So
+do messages printed by the other modules.
 
-That turns a nicety into a rule: **an operator is never shown a problem without
-a next step**. The operator in a show is often not the person who wrote the
-code, is often not in the same country, and has minutes. A line reading "TDP4
-receiver is NOT running" is a riddle. The same line with "check Udpactive is on
-and Udpport is free; another process on that port is the usual cause" is an
-instruction.
+That turns a nicety into a rule: **the console never shows an operator a
+problem without a next step**. The operator in a show is often not the person
+who wrote the code, is often not in the same country, and has minutes. A line
+reading "TDP4 receiver is NOT running" is a riddle. The same line with "check
+Udpactive is on and Udpport is free; another process on that port is the usual
+cause" is an instruction.
 
 The hints also feed the generated troubleshooting list on this site, so that
 page cannot drift from the software.
@@ -350,13 +350,14 @@ seeded a fresh six device session, and the next save wrote that seed over
 `config.json` and filed it as the newest backup.
 
 The case between "wrong shape" and "wrong values" used to fall through the
-floor. A file with the right shape holding one value that cannot be read — a
-position written `1,5` instead of `1.5` — did not go to the backups at all: it
-seeded a fresh six-phone session, which was then written over `config.json`,
-while a perfectly good backup sat beside it. That is fixed. A file whose values
-will not apply is now treated like a file that will not parse, and the console
-walks back through the backups until it finds one that both parses and applies,
-skipping any that do not and naming each one it skipped.
+floor. A file with the right shape holding one value that cannot be read (a
+position written `1,5` instead of `1.5`) did not go to the backups at all: it
+seeded a fresh six-phone session, which the console then wrote over
+`config.json`, while a perfectly good backup sat beside it. That is fixed. A
+file whose values will not apply is now treated like a file that will not
+parse, and the console walks back through the backups until it finds one that
+both parses and applies, skipping any that do not and naming each one it
+skipped.
 
 Two consequences of the seed path that remain, and are now deliberate:
 
@@ -364,11 +365,11 @@ Two consequences of the seed path that remain, and are now deliberate:
   The console pushes poses on every link-up, so an unconfirmed position used to
   move the live cloud as a side effect of reconnecting. The hold covers every
   phone of a seeded roster, every phone of a roster restored from a backup, and
-  any slot added with **+**. It is released **per phone**, by saving an edit
-  that moves or turns that one — its position or its yaw, compared against what
-  it was. A pitch, roll or field-of-view edit releases nothing, because those
-  are not what TouchDesigner's registration stores, and neither does a click
-  that does not actually change a value. Push poses releases everything. The
+  any slot added with **+**. The console releases it **per phone**, when
+  somebody saves an edit that moves or turns that one (its position or its yaw,
+  compared against what it was). A pitch, roll or field-of-view edit releases
+  nothing, because those are not what TouchDesigner's registration stores, and
+  neither does a click that does not change a value. Push poses releases everything. The
   held set is saved with the configuration, so a restart does not release it,
   and Rig health names who is still held.
 - **The newest backup is still a minute old at worst.** Backups are taken at
@@ -376,8 +377,8 @@ Two consequences of the seed path that remain, and are now deliberate:
   calibration after any restore rather than assuming it is the state you left.
 
 Because the console cannot tell a good file from a plausible one, it tells the
-operator instead. Boot problems are collected into a **list** that sits at the
-top of Rig health, so the fact that this boot came from a backup does not
+operator instead. The console collects boot problems into a **list** that
+sits at the top of Rig health, so the fact that this boot came from a backup does not
 scroll away with the log, and a boot with three things wrong reports three
 rather than the first one:
 
@@ -394,8 +395,8 @@ so the warning stops being true at exactly that point rather than after a
 timeout or a page refresh.
 
 There is a second note for the subtler case: a fresh seed **while** a valid
-roster exists in `backups/`. That is logged at error level and names the
-backup, because it is the exact path by which a show's roster gets silently
+roster exists in `backups/`. The console logs that at error level and names
+the backup, because it is the exact path by which a show's roster gets silently
 replaced.
 
 Verified: a deliberately broken config, and every invalid shape, restored a six
@@ -425,8 +426,8 @@ a small helper:
 keep() {   # keep <name> <cmd...>: run, restart on exit
 ```
 
-Crucially, the state that matters across a restart is persisted. Auto recover
-and the "show is running" latch are written to `config.json` and restored,
+The console persists the state that matters across a restart. It writes auto
+recover and the "show is running" latch to `config.json` and restores them,
 because the loop used to come back disarmed with the show forgotten, mid
 performance. The console also says at boot what the restored supervisor will
 do, before it does anything.
@@ -434,8 +435,8 @@ do, before it does anything.
 Since 2026-10-27 that includes **whether `/track` and NDI were switched on**.
 It used to include only their targets, so the outputs came back off after a
 watchdog restart and stayed off until somebody pressed their buttons. The
-console looks perfectly healthy in that state, which is what made it dangerous:
-nothing is wrong, nothing is logged, and the client simply receives nothing.
+console looks healthy in that state, which is what made it dangerous: nothing
+is wrong, nothing is logged, and the client receives nothing.
 
 ### Thread level
 
@@ -445,11 +446,13 @@ the recovery supervisor, the simulator watch, the bridge reader, the
 segmentation engine and the camera view rebuild. There is no task queue and no
 event loop, so a thread that wedges **outside** the shared locks stops exactly
 one job and the rest keeps answering. One that wedges while holding the
-server-wide lock, or the point store's, stalls everything that takes it —
-which includes the state the browser reads, and logging itself. That is not
-hypothetical: the lock ordering note below was earned by exactly that. The staleness sweep runs every two seconds, decides whether each
-phone is online from **either** evidence channel, and carries a lock ordering
-note earned the hard way:
+server-wide lock, or the point store's, stalls everything that takes it, which
+includes the state the browser reads, and logging itself. That has happened:
+the lock ordering note below came out of exactly that wedge.
+
+The staleness sweep runs every two seconds, decides whether each phone is
+online from **either** evidence channel, and carries a lock ordering note
+earned the hard way:
 
 ```python
 # Ask the store BEFORE taking the server lock. Everywhere else the
@@ -481,8 +484,8 @@ except Exception as e:
     # link-up and the thread died while LISTEN said running).
 ```
 
-It is reported once per distinct address and error, so a message arriving at 30
-Hz does not fill the log with one fault.
+The listener reports it once per distinct address and error, so a message
+arriving at 30 Hz does not fill the log with one fault.
 
 ### Rig level
 
@@ -539,9 +542,9 @@ with self.cond:
     self.pending[did] = job
 ```
 
-A slow worker therefore loses frames and never builds a queue. The drop is
-counted and reported, so slowness is visible instead of arriving later as
-growing latency. The point store behind the Live view works the same way: one
+A slow worker therefore loses frames and never builds a queue. The console
+counts and reports the drop, so slowness is visible instead of arriving later
+as growing latency. The point store behind the Live view works the same way: one
 latest frame per device, with a change condition for long polling.
 
 ### Work moved off the path that must not stall
@@ -564,8 +567,8 @@ def _apply(groups):
     hook must not take the console down mid-show."""
 ```
 
-Errors are collected and returned to the caller, which reports them in the
-Settings response. The console keeps running on the values it has.
+`_apply` collects the errors and returns them to the caller, which reports
+them in the Settings response. The console keeps running on the values it has.
 
 That holds when somebody changes a setting. **At boot it does not:** the
 startup path applies everything from the saved configuration and discards the
@@ -584,7 +587,7 @@ Two phones left on the same device id interleave their packets into one
 reassembler. The reassembler then sees a frame id sequence that jumps
 backwards and forwards, treats each jump as a stream restart, and delivers
 almost nothing. The measured result, recorded in the code, is **0 of 60 frames
-delivered and 3,060 restarts**, with that device id simply going quiet and
+delivered and 3,060 restarts**, with that device id going quiet and
 nothing saying why. Every fresh install starts at id 1, so two unconfigured
 phones is not a hypothetical.
 
@@ -608,13 +611,13 @@ and it is reported in `stats()`. Two refinements followed, both from review:
 The console aggregates collisions from every ingest path into one Rig health
 row, and the fix hint names the exact cause and the two places to change an id.
 
-The same instinct runs elsewhere. A roster host that disagrees with the address
-a phone actually reports from is warned about after ten seconds, naming both
-addresses, because the typed host silently wins for every control message. A
-phone's stored profile revision is echoed back in telemetry so that a phone
-running last night's configuration is visible at a glance. Frames arriving
-twice, from both the bridge file and a socket, are dropped but counted, and the
-console warns with the single sentence that fixes it.
+The same instinct runs elsewhere. When a roster host disagrees with the
+address a phone reports from, the console warns after ten seconds and names
+both addresses, because the typed host silently wins for every control
+message. The phone echoes its stored profile revision back in telemetry, so a
+phone running last night's configuration is visible at a glance. Frames
+arriving twice, from both the bridge file and a socket, are dropped but
+counted, and the console warns with the single sentence that fixes it.
 
 ---
 
@@ -691,8 +694,8 @@ sees a gap. There is no buffering and no handover.
 
 They do come back on by themselves now. Until 2026-10-27 only the *targets*
 were saved, so `/track` and NDI returned switched **off** and stayed off until
-somebody noticed and pressed their buttons — which is the kind of thing nobody
-notices during a show, because the console looks healthy. The on-state is
+somebody noticed and pressed their buttons, which is the kind of thing nobody
+notices during a show, because the console looks healthy. The on-state is now
 saved with them, and the boot switches them back on last.
 
 Two cases where they deliberately do not come back, each with its own warning
@@ -714,14 +717,14 @@ comes back up the console pushes it the phone poses it loaded. A console that
 came back from a **backup** no longer does so blindly: every phone in a
 restored roster is held until somebody confirms it, exactly as in a seed. What
 reaches TouchDesigner on a link-up is the set of phones whose positions a
-person has actually checked since.
+person has checked since.
 
 **App distribution expiry is a standing deadline.** Test builds expire 90 days
 after upload. The decision of 2026-10-30 is to stay on TestFlight and re-upload
 about every 80 days through to April 2027 ([#16](https://github.com/AristidesAI/TDStage/issues/16)), keeping ten days of
-margin. It is not a gap in the sense the others here are — it is a known cost
-with a date attached — but it belongs on this list because the failure mode is
-total: every phone stops launching on the same day.
+margin. It is a known cost with a date attached rather than a gap like the
+others here, but it belongs on this list because the failure mode is total:
+every phone stops launching on the same day.
 
 **`graceSeconds` was dead code until 2026-10-27**, and the shape of the bug is
 worth keeping even though it is fixed ([#40](https://github.com/AristidesAI/TDStage/issues/40)). The value was documented,
@@ -732,22 +735,20 @@ used it.
 
 It now does what it always said: a phone that comes back is acted on only after
 staying back for `graceSeconds` (12 s by default), and a drop inside the grace
-restarts its clock. One caveat worth knowing, because it moves the number: the
-console keeps a phone "online" for six to eight seconds after its last packet,
-so the grace counts from the first sighting of a return, not from the instant
-the phone actually came back.
+restarts its clock. One caveat moves the number: the console keeps a phone
+"online" for six to eight seconds after its last packet, so the grace counts
+from the first sighting of a return, not from the instant the phone came back.
 
 **Most of the fallbacks are verified in code, not on the rig.** The distinction
-is in the "Verified" column of `Notes/Fallbacks.md` and it is worth taking
-seriously. The worker respawn and the fix hint
-gate have automated tests. Config corruption recovery and concurrent saves were
-verified once, by scratch-console probes on 2026-10-27, and nothing re-runs
-them. Since the Actions billing block of 2026-10-27, **none of the automated
-tests run on a push** — they are run by hand, which means they are as reliable
-as somebody remembering. The
-spare phone swap, the profile push on a real phone, the heat test and the
-wired adapter rebuild are **designed and not yet seen working on the rig**. Any
-of them could be wrong in a way that only a stage will show.
+is in the "Verified" column of `Notes/Fallbacks.md`. The worker respawn and the
+fix hint gate have automated tests. Config corruption recovery and concurrent
+saves were verified once, by scratch-console probes on 2026-10-27, and nothing
+re-runs them. Since the Actions billing block of 2026-10-27, **none of the
+automated tests run on a push**. Somebody runs them by hand, which makes them
+as reliable as somebody remembering. The spare phone swap, the profile push on
+a real phone, the heat test and the wired adapter rebuild are **designed and
+not yet seen working on the rig**. Any of them could be wrong in a way that
+only a stage will show.
 
 **Shape is not sanity.** Repeating it here because it is the most likely silent
 failure in the whole system: a configuration file of the right shape with the

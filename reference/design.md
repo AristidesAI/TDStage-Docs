@@ -29,40 +29,38 @@ flowchart LR
 
 Every arrow points away from the phone. That is the single organising idea:
 **the phone measures and sends, the receiver decides.** Each decision below
-is a consequence of it.
+follows from it.
 
 ## 1. UDP everywhere, and no TCP option
 
 A depth frame is useful for about 33 ms. After that the next frame has
-replaced it and the old one is worthless.
-
-That one fact settles the transport.
+replaced it and the old one is worthless. That one fact settles the
+transport.
 
 | | UDP, drop incomplete frames | TCP |
 |---|---|---|
 | Cost of one lost packet | One frame from one phone is dropped. The next frame arrives 33 ms later and replaces it. | The lost segment is resent, which takes about one round trip. |
-| What happens to the frames behind it | Nothing. They arrive and are used. | They are held in the buffer until the resend completes. Head-of-line blocking. |
+| What happens to the frames behind it | Nothing. They arrive and are used. | They wait in the buffer until the resend completes. That is head-of-line blocking. |
 | When the resent packet arrives | Not applicable. | Already stale, and it has delayed fresh data to get there. |
 
 The TCP column is not a small inefficiency. A resent packet arrives after
 the frame it belongs to is worthless, *and* it holds up every fresh frame
-queued behind it. On an eight-phone rig inside a latency budget of around
-120 ms that stall is fatal, and it happens exactly when the network is
-busiest, which is during a show. Every real-time media protocol sits on UDP
-for this reason.
+queued behind it. On an eight-phone rig inside a latency budget of around 120 ms
+that stall is fatal, and it happens when the network is busiest, which is
+during a show. Every real-time media protocol sits on UDP for this reason.
 
 So the policy is: **no retransmission, no negative acknowledgement, drop any
-frame with a missing packet, and let the next frame fix it.** The frame is
-split into numbered packets and reassembled by frame id on the receiver. If
-any packet is missing the whole frame is discarded.
+frame with a missing packet, and let the next frame fix it.** The phone
+splits each frame into numbered packets and the receiver reassembles them by
+frame id. If any packet is missing, the receiver discards the whole frame.
 
 A frame is around 150 KB and a safe datagram is 1472 bytes, so a frame is
-about a hundred packets. Application-layer fragmentation is unavoidable;
-this is the same approach video-over-IP protocols take.
+about a hundred packets. The app has to split frames itself (application-layer
+fragmentation), which is what video-over-IP protocols do too.
 
-**There is therefore no TCP mode and no TCP fallback.** Any TCP found in this
-system is a leftover to be removed, not an option to be offered. The
-phone-side TCP streamer was deleted in September 2026.
+**There is therefore no TCP mode and no TCP fallback.** Any TCP you find in
+this system is a leftover; remove it. The phone-side TCP streamer was deleted in
+September 2026.
 
 > **A name that misleads.** A setting called `stage.tcpHost` holds the
 > destination IP address. It is not a transport selector. The UDP point
@@ -71,86 +69,84 @@ phone-side TCP streamer was deleted in September 2026.
 
 ## 2. Depth crosses the wire, points do not
 
-The obvious design is for the phone to work out where each point is in space
-and send a list of coordinates. It is the wrong design, and the cost is
-measured in multiples rather than percentages: five times the bytes against
-the setting a show actually uses, seven and a half against depth alone.
+The obvious design has the phone work out where each point is in space and
+send a list of coordinates. It is the wrong design, and the cost comes in
+multiples rather than percentages: five times the bytes of the setting a show
+uses, seven and a half times depth alone.
 
 A phone's depth camera produces a grid of distances. A point's position in
 space is `depth × ray direction (u,v)`, and the ray direction is fixed by the
 camera's calibration. The receiver already has the calibration, because the
 phone sends it in every frame header. So the coordinates are a deterministic
-function of data the receiver already holds.
-
-Sending them anyway means paying for bandwidth to transmit information that
-was already there.
+function of data the receiver already holds, and sending them anyway means
+paying bandwidth to transmit information that was already there.
 
 {: .warning }
 **The grid is the phone's choice, not a constant, and it decides every number
 below.** The app takes the smallest float depth format the camera offers, which
-is **320×240 on an iPhone 17 Pro** — 1.56 times the cells of the 256×192 that
-the simulator uses and that most figures in this project were originally
-computed at. A `stage.depthgrid` setting exists and is inert. So read the right
+is **320×240 on an iPhone 17 Pro**, 1.56 times the cells of the 256×192 that
+the simulator uses and that most figures in this project were first computed
+at. A `stage.depthgrid` setting exists and is inert. So read the right
 column for a real rig, and the left one only when you are reasoning about
 simulated phones.
 
-At 30 fps over a gigabit link with roughly 940 Mbit/s usable. These are
-**arithmetic from the transport spec**, not measurements: cell count times
-bytes times frame rate. The transport was then measured separately, at the
+The table assumes 30 fps over a gigabit link with roughly 940 Mbit/s usable.
+Its figures are **arithmetic from the transport spec** (cell count times bytes
+times frame rate), not measurements. The measured transport numbers are at the
 bottom of this page.
 
 | What is sent | Bytes per cell | Eight phones at 256×192 | **Eight phones at 320×240** | On the wire, framed | Share |
 |---|---:|---:|---:|---:|---:|
-| Coordinates and colour, unprojected on the phone | 15 | 1,416 Mbit/s | **2,212 Mbit/s** | — | 235 per cent. Does not fit. |
+| Coordinates and colour, unprojected on the phone | 15 | 1,416 Mbit/s | **2,212 Mbit/s** | Not applicable | 235 per cent. Does not fit. |
 | Depth, confidence and colour as a grid | 6 | 566 Mbit/s | **885 Mbit/s** | **937 Mbit/s** | 94 per cent of a gigabit link, 37 per cent of the 2.5 Gbit/s the show uses |
 | **Depth and confidence as a grid (the show setting)** | 3 | 283 Mbit/s | **442 Mbit/s** | 469 Mbit/s | 47 per cent |
 | Depth alone as a grid | 2 | 189 Mbit/s | **295 Mbit/s** | 313 Mbit/s | 31 per cent |
 
-The two right-hand columns are two **bases**, and saying which one a figure uses
-avoids an argument later. The 320×240 column is payload at the IP layer:
-cells × bytes × frame rate, compared against the roughly 940 Mbit/s a gigabit
-link carries once its own overhead is taken out. The framed column adds what
-Ethernet charges per packet — 38 bytes of preamble, header, checksum and
-inter-frame gap, plus the UDP, IP and TDP4 headers — and is compared against
-the full 1,000 Mbit/s line rate.
+The **Eight phones at 320×240** column and the **On the wire, framed** column are two **bases**, and saying which one a figure uses
+avoids an argument later. The 320×240 column is payload at the IP layer: cells × bytes ×
+frame rate, compared against the roughly 940 Mbit/s a gigabit link carries once
+its own overhead is taken out. The framed column adds what Ethernet charges per
+packet (38 bytes of preamble, header, checksum and inter-frame gap, plus the
+UDP, IP and TDP4 headers) and compares against the full 1,000 Mbit/s line rate.
 
 They agree to within half a percentage point, which is the useful part: the
 conclusion does not depend on which basis you pick. For a claim about whether
 something fits on a cable, the framed number is the honest one, because that is
-what the cable actually carries.
+what the cable carries.
 
 The first row does not fit on a gigabit network at all, which is the argument
 for sending a grid. The chosen row fits twice over.
 
-The second row is the one that changed character when the grid did. At 256×192
-colour on a full rig looked like a 60 per cent load, which is a decision about
-taste; at 320×240 it is 937 Mbit/s of framed traffic on a 1,000 Mbit/s line,
-which is not a decision anyone should take during a show. **Colour is for three
+The second row is the one that changed character when the grid did. At
+256×192, colour on a full rig looked like a 60 per cent load, which is a
+decision about taste. At 320×240 it is 937 Mbit/s of framed traffic on a
+1,000 Mbit/s line, which is not a decision anyone should take during a show. **Colour is for three
 phones and for measurement, not for eight phones live.**
 
-Which of the two ceilings binds is now settled, and it is the link. A load
-test on 2026-10-27 took the receiving bridge to 114,500 packets per second —
-twelve phones of 320×240 with colour — with no incomplete frames and every
-phone still at 30.0 fps, at 55 per cent of one core. Eight colour phones offer
-76,300, so the bridge has about half as much again in hand. The 61,000 figure
-in older notes was the highest load tested, not a limit.
+Two ceilings could bind, the receiving software or the link, and it is now
+settled that the link does. A load test on 2026-10-27 took the receiving
+bridge to 114,500 packets per second (twelve phones of 320×240 with colour)
+with no incomplete frames and every phone still at 30.0 fps, at 55 per cent of
+one core. Eight colour phones offer 76,300, so the bridge has about half as
+much again in hand. The 61,000 figure in older notes was the highest load
+tested, not a limit.
 
 So the constraint is 937 Mbit/s of framed traffic on a 1,000 Mbit/s line, with
 nothing left for a burst. That is a cabling decision rather than a software
-one — and on 2026-10-30 it was taken.
+one, and on 2026-10-30 it was taken.
 
 ### The decision: a faster link, not less colour
 
-**The show runs 2.5 gigabit** — a switch with a 2.5G uplink and a 2.5G card in
-the show machine — and **every phone sends colour** ([#42](https://github.com/AristidesAI/TDStage/issues/42)).
+**The show runs 2.5 gigabit** (a switch with a 2.5G uplink and a 2.5G card in
+the show machine) and **every phone sends colour** ([#42](https://github.com/AristidesAI/TDStage/issues/42)).
 
 Eight colour phones on a 2.5 Gbit/s link is 937 of 2,500 Mbit/s: **37 per
-cent**, which is headroom rather than a tightrope. The alternatives all bought
-the same relief by giving something up — colour from most of the rig, colour
-detail, colour frame rate, or days of protocol work — and this one costs a
-switch and a network card.
+cent**, which is headroom rather than a tightrope. Every alternative bought the
+same relief by giving something up: colour from most of the rig, colour detail,
+colour frame rate, or days of protocol work. This one costs a switch and a
+network card.
 
-That is worth stating as a principle, because the same choice will come again:
+The same choice will come again, so the principle is worth stating:
 **the cheapest thing in this system is usually the hardware.** A protocol
 change costs days of work across the phone, TouchDesigner, the console, the
 simulators, the take format and the spec, and it costs them again every time
@@ -158,33 +154,33 @@ somebody reads the wire. A faster link costs a purchase order.
 
 {: .note }
 Still to be measured: the receive path through a real network card and the
-venue's switch, rather than loopback. The bridge is proven to 114,500 packets a
-second on loopback, and eight colour phones offer about 76,300 — but loopback
-skips the card's own receive path, which is exactly where a real rig would
-struggle. That test is part of [#42](https://github.com/AristidesAI/TDStage/issues/42).
+venue's switch, rather than loopback (sender and receiver on the same machine,
+no card involved). The bridge is proven to 114,500 packets a second on
+loopback, and eight colour phones offer about 76,300, but loopback skips the
+card's own receive path, which is where a real rig would struggle. That test is
+part of [#42](https://github.com/AristidesAI/TDStage/issues/42).
 
 ### What a show without colour gives up
 
-This is the part that makes the decision rather than the megabits, and it is
-easy to miss, because "colour" sounds like appearance.
+This, rather than the megabits, is what decides it, and it is easy to miss
+because "colour" sounds like appearance.
 
 The console's person vision reads the phones' colour plane. Without it there
 are **no person masks**, so performers are separated by geometry alone, and
 **no hands**, because the wrist detector works on a colour image. The system
-keeps tracking and keeps publishing positions — the mask stage is built to fail
-open, so a phone with no mask contributes all of its points rather than none —
-but two of the things that make the tracking good are simply absent.
+keeps tracking and keeps publishing positions (the mask stage fails open, so a
+phone with no mask contributes all of its points rather than none), but two of
+the things that make the tracking good are absent.
 
 So depth-and-confidence is not "the same thing, smaller". It is a different
 product: positions without appearance, and bodies separated by shape instead of
-by who they look like. Worth knowing before the link budget decides it for
-you.
+by who they look like. Know that before the link budget decides it for you.
 
 ### The fact that makes the trade cheaper than it looks
 
 The person model has a **total** budget of inferences per second shared across
-every phone — 70 by default. Each phone therefore runs at the budget divided by
-the phone count, so **at eight phones each one is already being looked at about
+every phone, 70 by default. Each phone therefore runs at the budget divided by
+the phone count, so **at eight phones the model already looks at each one about
 nine times a second**, not thirty.
 
 Two consequences follow, and they turn an apparently brutal choice into a mild
@@ -198,29 +194,29 @@ one:
 
 The options, with their link loads and what each gives up, are in
 [#42](https://github.com/AristidesAI/TDStage/issues/42). The decision is
-Ari's; this page's job is to make sure it is taken knowing that the model's
-appetite for colour is smaller than the wire's.
+Ari's; this page exists so that whoever takes it knows the model's appetite for
+colour is smaller than the wire's.
 
 Two things make reduced-rate colour work rather than merely cost less, and both
-were built because sending colour intermittently used to break something:
+exist because sending colour intermittently used to break something:
 
 - **A frame without colour keeps the colours it had.** Each point borrows the
   phone's last real image, up to a second old and on the same grid. Without
   that, every point of a colourless frame was **black**, so the coloured cloud,
   the video output and the appearance colours the tracker uses would have
-  blinked black on every such frame — which is precisely what sending colour
-  less often was supposed to protect.
+  blinked black on every such frame, which is what sending colour less often
+  was supposed to protect.
 - **A phone that is moving gets slightly stale colours** for up to that second,
   because the held image is pinned to the grid rather than to the scene. On a
-  phone on a stand this is invisible; it is worth knowing before anybody hand
-  holds one.
+  phone on a stand this is invisible; know it before anybody hand-holds one.
 
 **A hot phone can do this by itself, and currently does not.** The thermal
-ladder is able to shed the colour plane before it cuts frame rate, which would
-halve that phone's bandwidth while keeping its rate. It is switched off by
-default: the heat run of 2026-10-28 found that taking colour off the wire did
-not visibly change a phone's thermal state, so it cost the person masks and the
-hands from that phone and bought nothing measurable.
+ladder (the ordered list of things a phone sheds as it heats up) can drop the
+colour plane before it cuts frame rate, which would halve that phone's
+bandwidth while keeping its rate. It is switched off by default because the
+heat run of 2026-10-28 found that taking colour off the wire did not visibly
+change a phone's thermal state, so it cost the person masks and the hands from
+that phone and bought nothing measurable.
 
 {: .note }
 Those bridge figures were measured over loopback. That is the right way to find
@@ -232,7 +228,7 @@ from the grid on the GPU, where unprojecting around 614,000 cells is
 sub-millisecond work. The phone's CPU is spared and the network carries less
 than half the traffic.
 
-Two consequences worth knowing:
+Two consequences:
 
 - Compression was considered and rejected. On a dedicated gigabit LAN there
   is bandwidth to spare, and compression costs latency and CPU to save
@@ -243,11 +239,11 @@ Two consequences worth knowing:
 
 ## 3. The grid is kept, and that is what gives continuity
 
-The grid is not just a convenient container. Keeping it is what makes the
+The grid is more than a convenient container: keeping it is what makes the
 point cloud stable.
 
 Cell `(u,v)` is **the same camera ray every frame**. So the point that cell
-produces does not appear and disappear between frames, it moves along that
+produces does not appear and disappear between frames; it moves along that
 ray as the measured distance changes.
 
 ```mermaid
@@ -262,10 +258,10 @@ flowchart TD
   N1 --> N2["Smoothing adds lag<br/>and invents geometry"]
 ```
 
-That is the whole trick: **coherent identity, raw positions.** The system
-keeps identity per cell, and it does *not* low-pass the position. Each frame
-shows the raw current depth. You get a point cloud that does not strobe into
-the generative visuals, without the lag of positional smoothing.
+The whole trick is **coherent identity, raw positions.** The system keeps
+identity per cell, and it does *not* low-pass (smooth over time) the position.
+Each frame shows the raw current depth. You get a point cloud that does not
+strobe into the generative visuals, without the lag of positional smoothing.
 
 Three things fall out of it:
 
@@ -291,7 +287,7 @@ on top. Do not describe it as tracking the same piece of a body over time.
 ## 4. Performer separation happens on the receiving side
 
 Separating performers is the hard requirement, and no part of it can happen
-on a phone. This was researched before it was decided.
+on a phone. The research came before the decision.
 
 ```mermaid
 flowchart TD
@@ -307,20 +303,24 @@ flowchart TD
   R2 --> R3
 ```
 
-The on-device route fails on definitions, not on tuning. ARKit's body anchor
-tracks a single person per device. Vision's 3D body pose returns only the most
-prominent person. The one genuinely multi-person API caps at a handful of
-people, is two-dimensional, and Apple's own documentation warns it may miss
-people or combine them when they cluster, which is precisely the case that
+The on-device route fails on the APIs' own definitions, so no tuning rescues
+it. ARKit's body anchor tracks a single person per device. Vision's 3D body
+pose returns only the most prominent person. The one multi-person API caps at
+a handful of people, is two-dimensional, and Apple's own documentation warns
+it may miss people or combine them when they cluster, which is the case that
 has to work. And no phone can associate what it sees with what another phone
 sees, because it does not know the other phone exists.
 
-**Occlusion has exactly one real answer: more viewpoints.** A body behind
-another body cannot be recovered by any amount of processing of the view
-that cannot see it. It can be recovered trivially by a second camera that
-can. This is why the rig has six to eight phones rather than one good one,
+**Occlusion has one answer: more viewpoints.** No amount of processing
+recovers a body behind another body from the view that cannot see it. A
+second camera that can see it recovers it at once. This is why the rig has
+six to eight phones rather than one good one,
 and it is why the aiming step at a get-in is a coverage decision and not a
 framing decision.
+
+![Concept drawing: a plan view of six phones around a stage with overlapping view cones and one performer seen by three of them, and a side elevation with truss-rigged phones within 4 to 5 m of an aerial performer and a floor phone out of range.](../assets/img/multi-view-concept.webp)
+
+*The original brief's concept drawing. Its 14 m stage and truss rig are superseded by Stroud's 8 x 6 m area with phones on stands; the idea it shows, one performer covered by several angles, is unchanged.*
 
 That makes the camera positions a design input, not a convenience. Angles
 planned on paper are what make separation possible later; a rig where every
@@ -347,10 +347,9 @@ and is worse for fusing several, because it invents geometry that the other
 phones will contradict. Apple's own guidance is that computer-vision work
 should prefer the unfiltered path.
 
-**ARKit is used for one brief job and then the phone swaps back**, that job
-being marker-based calibration, which needs no camera motion and works on a
-static device. It is not used for capture, and the reasons are not
-preferences:
+**The phone uses ARKit for one brief job, marker-based calibration, and then
+swaps back.** Calibration needs no camera motion and works on a static device.
+ARKit is not used for capture, and the reasons are not preferences:
 
 | | AVFoundation, unfiltered | ARKit scene depth |
 |---|---|---|
@@ -364,8 +363,8 @@ depth. It costs resolution and forces smoothing on.
 
 ## 6. The limit that must never be claimed away
 
-**Identity through sustained physical contact is not measurable. Not by this
-system, and not by any markerless system, at any number of cameras.**
+**Identity through sustained physical contact is not measurable, by this
+system or by any markerless system, at any number of cameras.**
 
 When two bodies are physically together there is no low-density gap for
 clustering to find and no seam in the fused surface. The information is not
@@ -383,8 +382,8 @@ shortfall:
 - **Flag the identity as uncertain**, so whatever consumes the output can
   decide for itself whether to trust it.
 
-That flag is the feature. A system that says "I am guessing" is usable by a
-downstream designer. A system that guesses silently is not.
+That flag is the feature. A downstream designer can use a system that says
+"I am guessing", and cannot use one that guesses silently.
 
 More phones do not fix this. More phones fix occlusion, which is a different
 problem: occlusion means the information exists but this camera cannot see
@@ -397,7 +396,7 @@ improve with budget.
 
 ## What this all costs, measured
 
-For context on whether the decisions paid off. Every figure here is from
+These figures show whether the decisions paid off. Every one is from
 synthetic streams, not from phones.
 
 | Figure | Value | Label |

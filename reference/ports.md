@@ -19,8 +19,8 @@ lost one until it was resent. On a rig of eight phones inside a latency
 budget of around 120 ms, that stall is fatal, and it arrives exactly when the
 network is busiest, which is during a show.
 
-So there is no TCP mode and no TCP fallback. Any TCP found in this system is
-a leftover to remove, not a choice to offer.
+So there is no TCP mode and no TCP fallback. Treat any TCP you find in this
+system as a leftover and remove it.
 
 The full argument, with the bandwidth arithmetic behind it, is in
 [Why it is built this way](design.html).
@@ -35,7 +35,7 @@ The full argument, with the bandwidth arithmetic behind it, is in
 | One socket serves every device | Every datagram identifies its own sender, so demultiplex by the device id in the data and not by source address. |
 | Datagrams are kept inside a normal MTU | A frame is split across roughly a hundred numbered packets and reassembled by frame id. Do not rely on IP fragmentation. |
 
-Packet rates are worth a moment, because the number most often quoted is the
+Check which packet rate you are quoting. The number quoted most often is the
 **simulator's**, and real phones send more.
 
 | Eight phones, 30 fps | 256×192 (the simulator) | **320×240 (iPhone 17 Pro)** |
@@ -49,34 +49,34 @@ the left column: the simulator sends 256×192. A rig of iPhone 17 Pros sends
 320×240, so the show setting is about 38,000 packets per second and colour on
 eight phones is about 76,000.
 
-**The bridge is not the limit.** It was measured on 2026-10-27 at 114,500
-packets per second — twelve phones' worth of 320×240 with colour — with no
+**The bridge is not the limit.** In a test on 2026-10-27 it handled 114,500
+packets per second (twelve phones' worth of 320×240 with colour) with no
 incomplete frames, every phone still at 30.0 fps, and 55 per cent of one core.
 Eight colour phones offer 76,300, so there is about half as much again in hand.
 
 An earlier figure of 61,000 appears in this project's launcher comments and in
-older notes. **That was the highest load anyone had tried, not a ceiling**, and
-it is worth knowing the difference, because a number quoted as a limit tends to
-become one in people's planning.
+older notes. **That was the highest load anyone had tried, and it was never a
+ceiling.** Keep the difference in mind, because a number quoted as a limit tends
+to become one in people's planning.
 
 {: .note }
-**The link, not the software, was the limit — so the link changed.** Eight
+**The link was the limit, so the link changed.** Eight
 phones with colour is 937 Mbit/s of framed traffic, which is 94 per cent of a
 gigabit line and 37 per cent of the 2.5 Gbit/s the show now runs: a switch with
 a 2.5G uplink and a 2.5G card in the show machine, decided 2026-10-30
 ([#42](https://github.com/AristidesAI/TDStage/issues/42)). Every phone sends colour.
 
 The bridge figures were measured over loopback, which skips a real network
-card's receive path and the switch, so the software half is proven and the
-end-to-end path through the venue's switch is not. That measurement is still
-open on the same issue.
+card's receive path and the switch. The software half is proven; the
+end-to-end path through the venue's switch still needs measuring, and that
+measurement is open on the same issue.
 
 The retired fan-out relay lost packets above about 30,000 per second, which is
 why it is retired.
 
 A receiver that does not drain on a dedicated thread with a raised socket
-buffer will lose packets as buffer overflow, which looks like network loss and
-is not.
+buffer will lose packets to buffer overflow. That loss looks the same as network
+loss, but it happens inside the receiver.
 
 > **A name that misleads.** A setting called `stage.tcpHost` holds the
 > destination IP address. It is not a transport selector. The UDP point
@@ -118,9 +118,9 @@ running inside TouchDesigner, so the receiving cannot live there.
 
 ## Which surface is which protocol
 
-People assume everything is HTTP, because the console is a web page. It is
-not. Almost nothing here is HTTP, and the exceptions are the two surfaces a
-person or a browser touches.
+The console is a web page, so people assume everything is HTTP. Almost
+nothing here is HTTP. The two exceptions are the surfaces a person or a browser
+touches.
 
 ```mermaid
 flowchart TD
@@ -149,13 +149,15 @@ newer one replaced it.
 **Port 9001 is two different things depending on protocol.** 9001/udp is the
 console's own telemetry listener, which is where phone health goes when
 telemetry is retargeted away from TouchDesigner. 9001/tcp is the field
-stream's websocket. Same number, different protocol, unrelated purposes. This
-confuses people and is worth checking before assuming a port conflict.
+stream's websocket. Same number, different protocol, unrelated purposes. Check
+which one you are looking at before you assume a port conflict.
 
 **The bridge to TouchDesigner hop is not a network hop.** It is a
 memory-mapped file, published under the name 9004 so that TouchDesigner's own
-port setting needs no change. Nothing is listening on 9004. A port scan will
-not find it, and a firewall rule for it does nothing.
+port setting needs no change. While the bridge is running, nothing is
+listening on 9004: a port scan will not find it, and a firewall rule for it
+does nothing. Only when the bridge is not running does TouchDesigner bind
+9004 itself.
 
 ## Ports
 
@@ -177,10 +179,10 @@ TouchDesigner binds 9004, it predates the bridge.
 
 ## What must never carry depth
 
-**Not over the tracking or telemetry channels.** Those have no way to split a
+**The tracking and telemetry channels.** Those have no way to split a
 message across packets, so a depth frame does not fit and does not arrive.
 
-**Not over video.** Video compression is built to throw away detail the eye
+**Video.** Video compression is built to throw away detail the eye
 will not miss. Depth values are not pixels, and a codec that is invisible on
 a picture corrupts distances. Video output is for finished visuals only.
 
@@ -190,6 +192,5 @@ The telemetry port, 9000, is a common default. If another piece of software
 on the same machine already holds it, telemetry silently goes nowhere and
 every phone reads as offline while streaming perfectly.
 
-The symptom is specific and worth memorising: **points arrive, health does
-not**. Start the console on a different listening port and point the phones
-at it.
+The symptom to remember is **points arrive, health does not**. Start the
+console on a different listening port and point the phones at it.

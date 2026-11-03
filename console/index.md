@@ -42,22 +42,22 @@ that a dead feature looks like a bug until you ask it why, which is what
 
 **The heavy model runs in its own process.** YOLO person segmentation lives in
 `yolo_worker.py`, launched with its own interpreter and talking over a unix
-domain socket, not imported. Three reasons, from the worker's own header: the
-console's virtual environment deliberately has no torch and must not grow one,
-because the two cannot share an interpreter; ultralytics does the non maximum
-suppression and mask prototype decoding, so there is no hand rolled post
-processing to keep in lockstep with anything; and a **native** crash inside
-torch or OpenMP would take the console down with it. The console has already
-lost a process to a segfault in a C extension once. A dead worker here is a
-`waitpid` and a respawn, not a lost show. Data rides the socket rather than
+domain socket rather than imported. The worker's own header gives three reasons.
+The console's virtual environment deliberately has no torch and must not grow
+one, because the two cannot share an interpreter. The ultralytics library does
+the non maximum suppression and mask prototype decoding, so there is no hand
+rolled post processing to keep in lockstep with anything. And a **native** crash
+inside torch or OpenMP would take the console down with it; the console has
+already lost a process to a segfault in a C extension once. A dead worker here
+is a `waitpid` and a respawn, not a lost show. Data rides the socket rather than
 stdout because ultralytics, torch and their downloaders all print to stdout
 unbidden, and one stray byte would desynchronise a length prefixed stream
 permanently.
 
 **Nothing starts itself.** No background loop launches a process or reaches for
 a phone. Every repair, bridge start, profile push and heal is something an
-operator pressed. Auto recover is the one supervised exception, it is off by
-default, and `Start show` is what arms it.
+operator pressed. Auto recover is the one supervised exception. It is off by
+default, and `Start show` arms it.
 
 ## What it is for
 
@@ -95,10 +95,10 @@ flowchart LR
   C --> O["Tracking output,<br/>field stream,<br/>video output"]
 ```
 
-Two separate pipelines over one shared source. The segmentation, merge and
-fusion that drive the visuals all live on the TouchDesigner side. The console
-runs its own ingest and its own segmentation, for its own outputs only, and
-**never writes back into TouchDesigner's cloud**. That is what makes the
+The result is two separate pipelines over one shared source. The segmentation,
+merge and fusion that drive the visuals all live on the TouchDesigner side. The
+console runs its own ingest and its own segmentation, for its own outputs only,
+and **never writes back into TouchDesigner's cloud**. That is what makes the
 independence real rather than nominal: there is no path by which the console
 could corrupt or starve the visual pipeline, because it does not touch it.
 
@@ -136,10 +136,9 @@ rather than TouchDesigner's. That relay is gated on the tox's `Consoleactive`
 parameter, and it needs to know where the console is, which it learns from the
 console's own 2 second ping.
 
-The consequence to remember: **while TouchDesigner is down and the phones still
-target 9000, the console shows phones as online from their point data but with
-no battery, no temperature and no frame rate.** It looks like a dead rig and is
-not one. `Send telemetry here`, or `POST /api/telemetry/retarget`, moves each
+So **while TouchDesigner is down and the phones still target 9000, the console
+shows phones as online from their point data but with no battery, no temperature
+and no frame rate.** It looks like a dead rig and is not one. `Send telemetry here`, or `POST /api/telemetry/retarget`, moves each
 phone's telemetry to the console's own listener, after which those readings
 survive a TouchDesigner outage. See
 [Troubleshooting](troubleshooting.html#a-phone-is-not-behaving).
@@ -175,11 +174,11 @@ relay copy racing the bridge file is not counted twice.
 
 **The motion engine runs on a fixed cadence over a snapshot of the store, never
 per incoming frame.** It is one daemon thread. `segment.py` keeps a per voxel
-leaky integrator of occupancy, promotes what stays still to background, and
-suppresses that promotion inside the plan footprint of every tracked foreground
-cluster, so a performer who holds a pose, or lies prone, does not fade into the
-scenery. All of its state lives in parallel sorted numpy arrays found through a
-dense cell to row table, with no per point Python.
+leaky integrator of occupancy and promotes whatever stays still to background.
+It suppresses that promotion inside the plan footprint of every tracked
+foreground cluster, so a performer who holds a pose, or lies prone, does not
+fade into the scenery. All of its state lives in parallel sorted numpy arrays
+found through a dense cell to row table, with no per point Python.
 
 **That tick is the dominant server side latency lever**, which is why
 `latency.segTick` matters more than any other number in the settings. `/track`
@@ -192,7 +191,7 @@ own work is about **15 ms per tick with eight devices in frame**, down from abou
 background frozen). Eight real phones have never been run, and simulated devices
 do not get hot or drop frames, so treat that as a ceiling on the code's cost and
 not as a rig figure. Setting a period shorter than the work takes does not make
-the engine faster, it only makes it late every tick.
+the engine faster; it only makes it late every tick.
 
 The engine stayed on the CPU on purpose. A GPU engine would have to import torch
 into the console, which is exactly what the YOLO worker exists to avoid, or be a
@@ -223,8 +222,8 @@ which is 20 Hz. The comment is stale; the schema's default is the live value.
 
 `config.json` is the whole of the console's persistent state: the roster, every
 pose, the marker plan, the person figures, the listen port, the client output
-targets, the recovery policy and every tunable. It is rewritten whole on every
-change, through a private temporary file that is fsynced before it is renamed
+targets, the recovery policy and every tunable. The console rewrites it whole on
+every change, through a private temporary file that it fsyncs before renaming
 into place, under one lock so that concurrent POST handlers cannot truncate each
 other's write. Before 2026-10-27 they shared one `config.json.tmp`, and the
 second writer truncated the first's file: the rename raised a 500 for the
@@ -232,15 +231,15 @@ operator, and a reader could find `config.json` empty or half written.
 
 Each save first copies the file it is about to replace into
 `WebConsole/backups/`, at most once a minute, keeping the newest 50. The rate
-limit is the point: a burst of edits preserves the state from **before** the
-burst rather than filling the folder with 50 copies of one minute.
+limit matters because a burst of edits then preserves the state from **before**
+the burst, instead of filling the folder with 50 copies of one minute.
 
-**What the fallback actually tests.** If `config.json` cannot be used, the
+**What the fallback tests.** If `config.json` cannot be used, the
 console keeps it aside as `config.json.corrupt-<timestamp>` and loads the newest
 backup that passes `_config_invalid`: it must be a JSON object, it must have a
 device list, every device must have an integer id, and the marker list must hold
-markers with `id`, `label`, `x`, `y` and `z`. That is a **shape** test, not a
-sanity test. A file that parses and has the right shape but holds the wrong
+markers with `id`, `label`, `x`, `y` and `z`. That checks the file's **shape**
+and nothing more. A file that parses and has the right shape but holds the wrong
 poses, the wrong roster size or last month's marker plan is accepted in silence.
 Shape checking is itself recent: before 2026-10-27, `{}`, `[]` and
 `"devices": null` all parsed, each seeded a fresh six device session, and the
@@ -249,9 +248,9 @@ backup.
 
 So the console now **says** when it did this. **Rig health's first row reports
 when the session started from a backup rather than from `config.json`**, with
-what went wrong and what to check. It is the first check in `hands_diag()`,
-deliberately, and it stays for the whole session, because the Log page scrolls a
-boot message away long before anyone looks for it. Restoring a configuration is
+what went wrong and what to check. It is deliberately the first check in
+`hands_diag()`, and it stays for the whole session, because the Log page scrolls
+a boot message away long before anyone looks for it. Restoring a configuration is
 still not a proven path. See
 [Running the console](running.html#backups-and-what-is-not-proven).
 
@@ -286,13 +285,11 @@ than packets.
 **`udp_fanout.py` is legacy, and optional.** It still exists and still works,
 and the console can start and stop it, but it is not the show path. It copied
 every datagram with three syscalls and lost packets above about 30,000 per
-second, and eight phones with colour are 49,000 at the simulator's grid. The
-bridge alone received 114,500 per second with no loss at twelve colour
-streams; the 61,000 in older notes was the highest load then tried, not a
-limit. *Measured, simulation* —
-and note that real phones send a bigger grid, so eight of them with colour
-would offer about 76,000. Keep the relay only for
-a no bridge CPU path.
+second. Eight phones with colour are 49,000 at the simulator's grid. The bridge
+alone received 114,500 per second with no loss at twelve colour streams; the
+61,000 in older notes was the highest load then tried, not a limit. *Measured,
+simulation*. Real phones send a bigger grid, so eight of them with colour would
+offer about 76,000. Keep the relay only for a no bridge CPU path.
 
 The architecture **diagram** in the system repository's `CLAUDE.md` still shows
 the relay as the show path. That diagram is stale. Its **port table** is still
@@ -313,11 +310,11 @@ not on the LAN: **5 frames per second and 20,000 points shared across all
 phones**. A `100.64/10` Tailscale address counts as off LAN, because it is a
 tunnel. `WebConsole/README.md` describes remote operation without that caveat.
 
-The cap is arithmetic, not policy. A LAN view is about 2 MB per poll at 30 Hz,
-which is over 60 MB/s: no remote uplink carries that, and the console's own
-threads stall writing into a socket that cannot drain. 20,000 points at 5 Hz is
-about 147 KB a frame, roughly 6 Mbit/s, which a tunnel can actually move. The
-budget is per client address, so two tabs on one remote machine share it.
+Arithmetic sets the cap. A LAN view is about 2 MB per poll at 30 Hz, which is
+over 60 MB/s: no remote uplink carries that, and the console's own threads stall
+writing into a socket that cannot drain. 20,000 points at 5 Hz is about 147 KB a
+frame, roughly 6 Mbit/s, which a tunnel can move. The budget is per client
+address, so two tabs on one remote machine share it.
 
 Everything else in the UI behaves the same remotely. Details in
 [Running the console](running.html#the-off-lan-cap).

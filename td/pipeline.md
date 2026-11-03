@@ -6,20 +6,20 @@ nav_order: 3
 
 # How the pipeline is built
 
-This page is the thing you cannot see by opening the tox. The operators are
-visible; the order they run in, which of them stand down, and where each
-transform is applied are not. Opening the component shows a network. It does
-not show that two complete merge pipelines sit side by side, that only one of
-them runs, or that the phone poses are applied inside a texture row.
+This page covers what you cannot see by opening the tox. The network shows
+the operators. It does not show the order they run in, which of them stand
+down, or where each transform is applied. Nothing on screen tells you that two
+complete merge pipelines sit side by side, that only one of them runs, or that
+the phone poses are applied inside a texture row.
 
-Everything below was read from the DAT text in the saved component and from
+Everything below comes from the DAT text in the saved component and from
 the lockstep copies under `TD/newtox/tox_dats/`. The operator that **reads** a
 value is the contract. Where a figure appears it is labelled.
 
 ## From the wire to a landed frame
 
 Every path shares this front end. It runs on TouchDesigner's main thread, once
-per cooked frame, and it is deliberately short.
+per cooked frame, and it is short by design.
 
 ```mermaid
 flowchart TD
@@ -43,8 +43,8 @@ Two things in that picture are easy to get wrong.
 
 **The console is not downstream of TouchDesigner.** It reads the same
 memory-mapped file, as a second independent reader. Its own outputs do not
-depend on TouchDesigner's pipeline at all, which is why closing one does not
-affect the other.
+depend on TouchDesigner's pipeline, which is why closing one does not affect
+the other.
 
 **Where the floor offset, the level solve and the lens unwarp are applied
 depends on which merge path is running, and the two differ.**
@@ -55,8 +55,8 @@ merges the frame is already level and already at the right height.
 On the **GPU path**, which is how the saved project ships, landing stores the
 raw grid and does no transforming at all. The same corrections arrive later,
 baked into the per-phone pose row the atlas builder writes, as
-`Trim . Registration . Floor . Level . Extrinsic`. The result is the same
-geometry; the place it happens is not.
+`Trim . Registration . Floor . Level . Extrinsic`. Both paths produce the same
+geometry. They compute it in different places.
 
 That distinction matters when a cloud is in the wrong place: on the GPU path
 there is nothing to inspect at landing, because the numbers are still raw.
@@ -72,13 +72,13 @@ queueing behind it.
 That policy is the whole reason the transport works, and it only works because
 of the grid. See [Why depth crosses the wire as a grid](#why-depth-crosses-the-wire-as-a-grid).
 
-The receiver also tells a stream restart from a straggler, by keeping a
+The receiver also tells a stream restart from a straggler. It keeps a
 high-water mark of the highest frame id **seen** rather than the highest
 delivered. Judging against the delivered id alone wedged the receiver on the
-rig: a lossy run left two partial slots far above a stale delivered id, and
-every later packet fell between the two and was discarded as stale for ever
-while the thread ran and the socket drained happily. The signature of that
-fault is packets and stale counts rising in lockstep with completed frames
+rig. A lossy run left two partial slots far above a stale delivered id, every
+later packet fell between the two, and the receiver discarded each one as
+stale for ever while the thread ran and the socket drained. The signature of
+that fault is packets and stale counts rising in lockstep with completed frames
 flat.
 
 ### What landing does, and what it skips
@@ -92,16 +92,16 @@ On the GPU merge path the per-frame CPU unprojection is **skipped**. The GLSL
 chain unprojects every cell itself, so computing the same points on the CPU
 first is pure waste. Measured, simulation: 0.9 to 1.7 ms per phone frame,
 which is 25 to 40 per cent of the main thread at eight streams. The frame is
-stored with a lazy marker instead, and the few occasional readers that really
-need CPU points call `ensure(did)` to compute them on demand: the auto-frame
-camera, the floor pulse (which asks for every device at once), hand detection
-on any lazy phone where a hand was found, and the CPU merge, which asks for
-every device on each merge. A level solve in progress forces the full path,
-because it needs every frame.
+stored with a lazy marker instead, and the few readers that need CPU points
+call `ensure(did)` to compute them on demand: the auto-frame camera, the floor
+pulse (which asks for every device at once), hand detection on any lazy phone
+where a hand was found, and the CPU merge, which asks for every device on each
+merge. A level solve in progress forces the full path, because it needs every
+frame.
 
 The RGB views are **not** among them. A view of a phone with no colour plane
-is drawn as a depth shade rather than by unprojecting points for it, which is
-why opening one costs nothing on the GPU path.
+draws as a depth shade rather than by unprojecting points for it, which is why
+opening one costs nothing on the GPU path.
 
 ## The two merge paths
 
@@ -178,12 +178,11 @@ GPU without a uniform per phone:
 | 7 | The device tint |
 
 `keep` is a custom float on every point: 0 rejected, 1 kept, and **2 for a
-point in the floor band just under `Floorcut`**. The band is stashed rather
-than discarded so that `gpu_clean` can rescue feet, which would otherwise be
-cut off the bottom of every performer.
+point in the floor band just under `Floorcut`**. The shader stashes the band
+rather than discarding it so that `gpu_clean` can rescue feet, which would
+otherwise be cut off the bottom of every performer.
 
-Three cook decisions in `gpu_exec` are worth knowing, because each one was a
-measured problem:
+Three cook decisions in `gpu_exec` each fix a measured problem:
 
 - The atlases are force-cooked at frame start. A Script TOP has no cook
   dependency on the Python state it reads, so without this the GLSL chain
@@ -218,8 +217,9 @@ The toggle is permission rather than instruction. The first cook always runs
 on the main thread, and the work only moves off it once the measured
 segmentation cost passes about 20 ms, returning to synchronous when it drops
 back under about 12 ms. So a light scene stays synchronous with the toggle on,
-and a profile that shows no worker is not evidence the toggle is off. The worker touches numpy and plain module dictionaries
-only, never the TouchDesigner API.
+and a profile that shows no worker is not evidence the toggle is off. The
+worker touches numpy and plain module dictionaries only, never the
+TouchDesigner API.
 
 The tail is shared between the cook paths: `Maxpoints` caps the output by
 striding evenly across the merged cloud, so the cloud thins rather than being
@@ -252,9 +252,8 @@ The CPU path applies the same terms in the same order, in `merged_callbacks`
 and `level_ops` rather than in a matrix row.
 
 `Posesource` decides where `Reg` comes from: the console roster, or the Align
-page knobs. Note that the registration yaw is not the same number as the
-roster's plan heading, so a figure typed in by hand from a plan will be ninety
-degrees out.
+page knobs. The registration yaw is not the same number as the roster's plan
+heading, so a figure typed in by hand from a plan will be ninety degrees out.
 
 What **is** true, and worth keeping, is the consequence: a point read from
 `out_pop` is already in the space the content works in. No further transform
@@ -289,21 +288,21 @@ TouchDesigner's main thread holds the Python global interpreter lock through
 GPU work. A receive thread living inside TouchDesigner is starved for the
 duration, the socket buffer fills, and the kernel discards what it cannot hand
 over. The loss is invisible from inside: the thread is running, the socket is
-draining, and frames simply never complete.
+draining, and frames never complete.
 
 Measured, simulation, 2026-10-26: three streams of depth and confidence into
 TouchDesigner's own socket lost about 25,000 of 55,080 packets over six
 seconds, about 48 per cent, reproducibly. With the GPU merge path off, none.
 
-So the receiving moved into its own process, with its own lock, running the
-**same** `tdp4_receiver` with the same reassembly and the same policy, but it
-runs **in the bridge process**, not inside TouchDesigner. TouchDesigner's
-reader takes whole frames out of the file and never sees a packet. The
-bridge does not interpret the data; it reassembles frames and publishes each
-device's latest one.
+So the receiving moved into its own process, with its own lock. It runs the
+**same** `tdp4_receiver`, with the same reassembly and the same policy, but
+**in the bridge process** rather than inside TouchDesigner. TouchDesigner's
+reader takes whole frames out of the file and never sees a packet. The bridge
+does not interpret the data; it reassembles frames and publishes each device's
+latest one.
 
-The implementation choices inside the bridge are all about not taking
-TouchDesigner down with it:
+Every implementation choice inside the bridge protects TouchDesigner from a
+bridge fault:
 
 - A plain file plus `mmap`, not `multiprocessing.shared_memory`. That module
   starts a resource-tracker helper by re-running `sys.executable`, which
@@ -315,7 +314,7 @@ TouchDesigner down with it:
 - Every slot and the metadata block is seqlocked: the writer makes the
   sequence odd, writes, makes it even, and a reader keeps a copy only if the
   sequence was even and unchanged. There are no memory barriers; a per-slot
-  checksum is the upgrade if a torn frame is ever actually seen.
+  checksum is the upgrade if a torn frame is ever seen.
 - A heartbeat in the header, with a two-second freshness window, is what hands
   the socket over in either direction without either process knowing about the
   other. See [Running the hub](running.html#handover).
@@ -337,13 +336,13 @@ the GPU. At eight streams:
 | Depth, confidence and colour | about 566 Mbit/s | 60 per cent |
 | xyz points on device | about 1.4 Gbit/s | does not fit |
 
-Those are arithmetic from the frame size, not measurements. The conclusion is
-not marginal: xyz on device is 7.5 times depth-only, and it does not fit on
-the link at all.
+Those figures are arithmetic from the frame size, not measurements. xyz on
+device is 7.5 times depth-only and does not fit on the link at all, so the
+conclusion is not a close call.
 
-The grid is also planar, not interleaved, specifically so that each plane can
-be omitted independently and so that a depth plane uploads straight into a GPU
-texture with no repacking. That is what makes the atlas build cheap enough to
+The grid is also planar, not interleaved, so that each plane can be omitted
+independently and so that a depth plane uploads straight into a GPU texture
+with no repacking. That is what makes the atlas build cheap enough to
 run on the main thread.
 
 ### Why the organized grid gives identity without smoothing
@@ -365,17 +364,17 @@ have to invent your way out of.
 
 And it removes the reason to smooth positionally. Temporal smoothing exists to
 stop points flickering between frames. Here they do not flicker, so the
-smoothing is not needed, and that matters because smoothing is actively
-harmful to multi-view fusion: it invents geometry, and two views that have
+smoothing is not needed, and that matters because smoothing harms multi-view
+fusion: it invents geometry, and two views that have
 each invented slightly different geometry fuse worse than two noisy honest
 ones. This is why the phone captures with Apple's depth filtering switched
 off.
 
 Two stages carry state across frames. `gpu_hyst` keeps a feedback buffer and
 its own counters, which is what hysteresis means. The other is
-`gpu_temporal`, and it is careful about it: a
-cell is averaged **only while it holds still**, gated against a depth-noise
-model, and the average resets the moment the cell moves. It is off by default,
+`gpu_temporal`, and it is careful about it. It averages a cell **only while
+it holds still**, gated against a depth-noise model, and the average resets
+the moment the cell moves. It is off by default,
 and the offline check for it requires that body error on moving performers
 stays within one millimetre of raw.
 
@@ -402,8 +401,8 @@ component ships in. The CPU path is not dead weight, for three reasons.
 2. **It is the readable reference.** `hlib.py` and `hlib_grid.py` are pure
    numpy and OpenCV, with no TouchDesigner imports, so the same files run
    inside the component and in offline tests. A GLSL shader cannot be tested
-   that way. The parity test exists precisely to hold the shaders to the
-   numpy references, and that only works while the references are real working
+   that way. The parity test exists to hold the shaders to the numpy
+   references, and that only works while the references are real working
    code.
 3. **It survives a GPU problem.** The CPU path needs no bridge and no
    compute-capable POP chain. It is slower, and on a loaded rig it is the merge
@@ -418,7 +417,7 @@ second, 38 ms each. There is no multi-phone rig measurement of either.
 {: .warning }
 **Read those as headroom on a quiet machine, not as show figures.** They were
 taken on a development Mac with the person model idle and no content
-rendering — which is three of the things a show machine does at the same time.
+rendering, which is two of the things a show machine does at the same time.
 The number that matters for a venue is the same test on the show machine with
 its real load, and nobody has run it.
 
@@ -441,7 +440,7 @@ voxels two or more phones share:
 
 Across all voxels there was no difference at all. So weighting buys a few
 tenths of a millimetre at the median and **gives them back at the tail**, which
-is the end that matters — the tail is where a limb edge lives. For that, it is
+is the end that matters because a limb edge lives there. For that, it is
 not worth a shader change on the show path ([#13](https://github.com/AristidesAI/TDStage/issues/13)).
 
 The weights are still there in the CPU fallback, with the confidence

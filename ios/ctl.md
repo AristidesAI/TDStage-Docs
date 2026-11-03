@@ -22,8 +22,8 @@ rather than the last value it happened to send.
 | Discovery | Advertised over Bonjour as `_tdlidar-ctl._udp` |
 
 Supported argument types are float (`f`), int (`i`), string (`s`) and the
-booleans `T` and `F`. Any other type tag drops the whole packet. Malformed
-packets are dropped silently, and unknown addresses are ignored.
+booleans `T` and `F`. Any other type tag drops the whole packet. The listener
+drops a malformed packet silently and ignores an unknown address.
 
 The model is LAN trust. There is no authentication on this port.
 
@@ -58,11 +58,12 @@ changes until something else is touched.
 A deaf phone is the one failure an operator cannot fix from front of house,
 because every other remedy is delivered over this socket. So:
 
-- Re-asserting a port the listener already holds is a no-op, not a teardown.
-- A genuine port change waits for the old listener to actually release the
-  socket before binding the new one.
-- A failed bind is retried with backoff, from 0.25 s up to 4 s, and never gives
-  up.
+- Re-asserting a port the listener already holds does nothing to the socket;
+  nothing is torn down.
+- A genuine port change waits for the old listener to release the socket
+  before binding the new one.
+- The listener retries a failed bind with backoff, from 0.25 s up to 4 s, and
+  never gives up.
 - A watchdog polls whether the listener is bound, and rebuilds only the
   listener if it is not. Capture is never stopped for it: restarting a capture
   session cannot free a port another process holds, so a self-heal that tore
@@ -70,13 +71,13 @@ because every other remedy is delivered over this socket. So:
 
 ### The phone learns where you are from your packets
 
-The source address of every accepted command is remembered. This is the only
-way a phone can discover a computer's address on a USB cable, because both ends
+The phone remembers the source address of every accepted command. This is the
+only way it can discover a computer's address on a USB cable, because both ends
 pick a random link-local address and iOS blocks the discovery broadcast.
 
-Cable addresses and network addresses are kept in separate slots, so one never
-overwrites the other, and a cable address is only trusted while a cable is
-actually attached.
+The phone keeps cable addresses and network addresses in separate slots, so one
+never overwrites the other, and it trusts a cable address only while a cable is
+attached.
 
 ---
 
@@ -90,11 +91,11 @@ exception is `rawmode`: turning it on *is* doing less, so a bare pulse arms the
 fast path.
 
 **A non-finite number reads as no number.** A NaN or an infinity is a legal OSC
-float. Converting one to an integer in Swift is a trap, not an error: it
+float. Converting one to an integer in Swift does not raise an error; it
 terminates the process. One stray value from one console control would have
 taken a phone off a truss, and a supervised phone would have relaunched into
-the same push. Non-finite values are now dropped before anything reads them,
-and what survives is clamped to a billion either way and then clamped again to
+the same push. The listener now drops non-finite values before anything reads
+them. It clamps what survives to a billion either way, then clamps it again to
 each key's own range, so two bad clamps would both have to be wrong for a value
 to reach a key unbounded.
 
@@ -159,10 +160,10 @@ A stored calibration survives a relaunch. Calibration replies on
 Entering calibration is a hard swap, because the rear LiDAR cannot feed
 AVFoundation and ARKit at once. It therefore also ends a replay and stops a
 recording first: the phone must not be emitting two different clouds, and a
-take cannot span a camera change. Whether streaming resumes on the way out is
-decided from the state on the way in, `streaming` **or** auto-resume set, and
-auto-resume is not cleared by a replay. So a phone that was streaming, then
-replayed a take, then was sent to calibrate, comes back streaming.
+take cannot span a camera change. The phone decides whether streaming resumes
+on the way out from the state on the way in, `streaming` **or** auto-resume
+set, and a replay does not clear auto-resume. So a phone that was streaming,
+then replayed a take, then was sent to calibrate, comes back streaming.
 
 Marker calibration works end to end in the code and has unit tests. It has not
 been confirmed on a phone against a printed marker (**built, not verified**).
@@ -177,19 +178,20 @@ been confirmed on a phone against a printed marker (**built, not verified**).
 | `/tdlidar/ctl/health` | none | One-shot health and recovery report. Replies on `/device/health`, `/device/health/cause` and `/device/profile/name` |
 | `/tdlidar/ctl/reset` | none | Clear the crash history, which leaves safe mode |
 
-A profile that cannot be parsed is never silently dropped: it replies with
+The phone never silently drops a profile it cannot parse. It replies with
 `accepted = 0`, because an operator who believes a phone is reconfigured when
 it is not is worse off than one who knows the push failed. A URL fetch that
 fails replies the same way.
 
 {: .warning }
 **A profile pushed while a take is recording is dropped, and no ack is sent.**
-It is not queued and not applied later. The only report is one line of text on
-`/device/rec/note`, reading "Profile push deferred — a take is recording",
-which a console shows on the phone's row but which is easy to miss and is
-overwritten by the recorder's next note. The two `accepted = 0` acks exist for
-an unparseable document and for a failed URL fetch, so the absence of an ack is
-the only signal that a push went nowhere.
+The phone does not queue it or apply it later. The only report is one line of
+text on `/device/rec/note`, reading
+`Profile push deferred — a take is recording`, which a console shows on the
+phone's row. It is easy to miss, and the recorder's next note overwrites it.
+The two `accepted = 0` acks exist for an unparseable document and for a failed
+URL fetch, so the absence of an ack is the only signal that a push went
+nowhere.
 <br><br>
 The refusal itself is right: a profile can carry a grid size, a plane set and a
 transport, and a take is one file with one geometry in its header. Push the
@@ -235,7 +237,7 @@ none of them can take a phone off its LiDAR.
 
 ## Armed starts: how several phones begin together
 
-Two forms are accepted, and both are honest about what an OSC float can carry.
+The phone accepts two forms, and both stay within what an OSC float can carry.
 
 - **A number is a delay in seconds from receipt**, 0 to 60. On a LAN the packet
   jitter this adds is sub-millisecond, which is far tighter than the tens of
@@ -245,14 +247,14 @@ Two forms are accepted, and both are honest about what an OSC float can carry.
   phones' clocks.
 
 {: .note }
-A wall-clock deadline in unix microseconds as a float cannot be represented. A
-32-bit float carries 24 mantissa bits, so unix seconds alone quantise to about
+A float cannot represent a wall-clock deadline in unix microseconds. A 32-bit
+float carries 24 mantissa bits, so unix seconds alone quantise to about
 128 seconds. Do not send one.
 
-Either way this is a shared-second start, not a frame lock. Frame-locking
-several phones is separate, later work.
+Either way the phones share a start to the second; this does not lock their
+frames. Frame-locking several phones is separate, later work.
 
-An armed start is reported back on `/device/rec/arm` as a countdown in seconds
+The phone reports an armed start on `/device/rec/arm` as a countdown in seconds
 and a label, so a console can show it.
 
 ## Fault injection
@@ -269,12 +271,12 @@ than a hope.
 
 # Telemetry the phone sends back
 
-Device-namespaced, so several phones coexist on one receiver. Everywhere below,
-`<id>` is the device id on the wire, which during a replay with **Send as** set
-is the stand-in id rather than the phone's own.
+Every path carries the device id, so several phones coexist on one receiver.
+Everywhere below, `<id>` is the device id on the wire, which during a replay
+with **Send as** set is the stand-in id rather than the phone's own.
 
-Emitted at 2 Hz as one batch, because this is health rather than signal. A
-marker sighting is pushed immediately as well.
+The phone sends it at 2 Hz as one batch, because this is health rather than
+signal. A marker sighting goes out immediately as well.
 
 ## Device and power
 
@@ -297,7 +299,7 @@ The thermal ladder acts on the worse of `pressure` and `thermal`.
 | Address | Arguments |
 |---|---|
 | `/tdlidar/<id>/device/streaming` | 0 or 1 |
-| `/tdlidar/<id>/device/video` | 0 or 1. Is the colour plane actually on the wire |
+| `/tdlidar/<id>/device/video` | 0 or 1. Whether the colour plane is on the wire |
 | `/tdlidar/<id>/device/screenoff` | 0 or 1. Blackout active |
 | `/tdlidar/<id>/device/fps` | Measured delivery rate |
 | `/tdlidar/<id>/device/points` | Valid depth cells in the last frame sent |
@@ -305,27 +307,6 @@ The thermal ladder acts on the worse of `pressure` and `thermal`.
 | `/tdlidar/<id>/device/net` | `framesSent` `packetsSent` `framesAbandoned` |
 | `/tdlidar/<id>/device/captureage` | `p50` `p95` in ms. The capture-to-**socket** age of the last 64 live frames: the phone's own photon-to-wire latency |
 | `/tdlidar/<id>/device/agesplit` | Seven medians in ms, in order: capture delivery, depth and colour prep, hop to the main thread, main-thread work, send queue, pack, socket. Where that age goes, so a warning can name the slowest stage |
-
-#### What `captureage` measures, exactly
-
-It is stamped when the **last datagram of the frame has left the socket**, in
-that datagram's send completion, against the capture timestamp in the frame's
-own header. Not when the frame was packed. The pack-to-socket leg was the one
-leg the telemetry could not see, and it is the leg that grows first when a link
-is congested, so measuring to the packer would have reported a healthy phone on
-a saturated switch. The seventh entry in `agesplit`, `socket`, is that leg on
-its own.
-
-Both figures are kept in a 64-sample ring, which is about two seconds at
-30 fps, so they describe now rather than the session. The ring is cleared when
-streaming starts and when it stops, so a new session never reports the old
-one's ages. Replayed frames are not sampled: the player rewrites each frame's
-capture time to now, so an age measured against it would be meaningless.
-
-{: .note }
-The accessor in the source is still named and commented as a capture-to-packet
-age. The code behind it stamps at the socket. Trust the code: the figure
-includes the fragmenter and the send queue.
 | `/tdlidar/<id>/device/link` | `"wired"|"wifi"|"none"` `wiredUp` `preferWired` `cableAttached`. A phone on a cabled rig reading `wifi` has a link problem. Read the second argument before concluding which: see below |
 | `/tdlidar/<id>/device/source` | `"live"` or `"playback"`. The only thing on the wire that distinguishes a replay from a live phone |
 | `/tdlidar/<id>/device/tcp` | **Always 0.** There is no TCP link. The address is kept so that consoles which parse it keep working |
@@ -333,6 +314,27 @@ includes the fragmenter and the send queue.
 {: .warning }
 `/device/tcp` is not a transport report. It is a constant, left in place for
 compatibility after the TCP streamer was deleted. Do not read anything into it.
+
+#### What `captureage` measures, exactly
+
+The phone stamps it when the **last datagram of the frame has left the
+socket**, in that datagram's send completion, against the capture timestamp in
+the frame's own header, rather than when the frame was packed. The
+pack-to-socket leg was the one leg the telemetry could not see, and it is the
+leg that grows first when a link is congested, so measuring to the packer would
+have reported a healthy phone on a saturated switch. The seventh entry in
+`agesplit`, `socket`, is that leg on its own.
+
+Both figures live in a 64-sample ring, which is about two seconds at 30 fps, so
+they describe now rather than the session. The phone clears the ring when
+streaming starts and when it stops, so a new session never reports the old
+one's ages. The ring skips replayed frames: the player rewrites each frame's
+capture time to now, so an age measured against it would be meaningless.
+
+{: .note }
+The accessor in the source is still named and commented as a capture-to-packet
+age. The code behind it stamps at the socket. Trust the code: the figure
+includes the fragmenter and the send queue.
 
 #### Reading `link = "wifi"` on a cabled rig
 
@@ -344,11 +346,11 @@ Three causes, and the second argument, `wiredUp`, separates them.
 | `wifi` | 1, `preferWired` 0 | Nobody asked for the wire. Set `stage.preferWired 1` |
 | `wifi` | 1, `preferWired` 1 | **The wired requirement was dropped after its five-second grace.** The adapter's link is up and its routing is not |
 
-The third is the one that is read wrong. The phone required wired Ethernet,
-the connection did not come up within five seconds, and the streamer rebuilt it
+People read the third one wrong. The phone required wired Ethernet, the
+connection did not come up within five seconds, and the streamer rebuilt it
 once without the requirement so the phone would not sit silent for the whole
-session. The LIVE page reads "Wi-Fi (Ethernet waiting)" in amber. It is a
-routing fault, not a cable fault: check which subnet the adapter has an
+session. The LIVE page reads "Wi-Fi (Ethernet waiting)" in amber. The fault is
+in the routing rather than the cable: check which subnet the adapter has an
 address on and whether the receiver is reachable there. The requirement
 re-arms on the next wired path change, so bouncing the link makes the phone
 try the wire again. See
@@ -370,15 +372,14 @@ try the wire again. See
 | `/tdlidar/<id>/device/state` | `"idle"`, `"streaming"`, `"calibrating"` or `"playing"` |
 | `/tdlidar/<id>/device/settings` | A JSON object: every setting a person can change on the phone's screens, keyed by its UserDefaults key. Sent when it changes, and every 2 s regardless, so a console that starts late still converges. A key absent from it is a control the app does not have |
 | `/tdlidar/<id>/device/app` | `appName` `version` `build` `commit`. On connect, on a device-id change, and every 2 s. The commit is empty when the build did not embed one |
-| `/tdlidar/<id>/device/built` | `date` `days` — when this build was **archived** (`yyyy-MM-dd` UTC) and whole days since. `""` and `-1` for a build made without the stamp, which never warns. Every 2 s, with `/device/app` |
+| `/tdlidar/<id>/device/built` | `date` `days`. When this build was **archived** (`yyyy-MM-dd` UTC) and whole days since. `""` and `-1` for a build made without the stamp, which never warns. Every 2 s, with `/device/app` |
 | `/tdlidar/<id>/device/recovery` | `launches` `crashes` `recentCrashes` `safeMode` `heals` `lastTier` `profileRevision`. The phone's own account of how stable it has been |
 
-{: .note }
 {: .warning }
 **`/device/built` is the archive date, and the expiry clock runs from upload.**
 A TestFlight build stops working 90 days after it is *uploaded*, and this
 field says how long since it was *built*. The two are usually days apart and
-occasionally much more — a build that sat on a laptop for a fortnight before
+occasionally much more. A build that sat on a laptop for a fortnight before
 anybody uploaded it reports itself a fortnight older than its expiry warrants.
 So treat the number as an early warning that is deliberately pessimistic,
 never as the countdown. The real date is upload plus ninety
@@ -427,7 +428,7 @@ precision.
 The host clock offset is approximately
 `deviceTime - (hostSend + hostReceive) / 2`.
 
-The reply is sent straight back to the ping's source address and port as well
-as on the telemetry path, so a console's round trip does not include the hub's
-processing. A console that keeps the smallest round trip of its recent pings
-will take the direct copy whenever it arrives.
+The phone sends the reply straight back to the ping's source address and port
+as well as on the telemetry path, so a console's round trip does not include
+the hub's processing. A console that keeps the smallest round trip of its
+recent pings will take the direct copy whenever it arrives.

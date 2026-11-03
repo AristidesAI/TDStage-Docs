@@ -89,6 +89,8 @@ here is what an operator sees at the desk.
 | retarget .* sent to 0 | No phone took the retarget: they need a known IP first (telemetry or a host set on the device page). |
 | HEAL STORM | Something keeps killing this phone's stream: check its link (Wi-Fi drops, cable), thermal state and the app log; heals cannot fix a cause outside the app. |
 | last failure cause | The phone's own account of why it last failed; the heal and crash lines around it say what it did about it. |
+| config.json is missing and no backup applies | config.json is untracked since #46, so a git pull from an older clone deletes it. Stop the console, copy a snapshot's console/config.json (Tools/backup_state.sh) to WebConsole/config.json, start it again. |
+| saved setting(s)? not | This build refused a value saved in config.json (a renamed option, an out-of-range number, or a module that raised while applying it). Settings shows what is in use now: set it again and save. |
 | cable address moved | Click Autofix on the phone (device page): it re-teaches the phone the Mac's new cable address. |
 | cable_watch | The USB cable check itself failed (ifconfig / arp); the cable path may still work. Full error in logs/console.log. |
 | sim loop / simulator stopped | Expected when a timed run ends. Tick Loop on the Simulator panel to keep it running; start it again from there or the Live view. |

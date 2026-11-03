@@ -7,8 +7,8 @@ nav_order: 6
 # Installing and preparing a phone
 
 Getting the app onto a phone, and the phone onto a rig. Work through this at
-base, with internet, days before the phone travels. Several steps cannot be
-done at a venue.
+base, with internet, days before the phone travels. You cannot do several of
+these steps at a venue.
 
 ## What the phone must be
 
@@ -36,8 +36,8 @@ The app is distributed privately as a test build, not on the App Store.
 
 - **An Apple Account, signed in on the phone.** TestFlight will not install
   anything without one.
-- **Internet.** Not the show LAN. TestFlight talks to Apple. A rig network with
-  no route out cannot install or update the app.
+- **Internet, not the show LAN.** TestFlight talks to Apple, so a rig network
+  with no route out cannot install or update the app.
 
 Do both at base.
 
@@ -72,22 +72,22 @@ Eighty rather than ninety is the whole point of the decision. It leaves ten
 days of margin, so a build that fails review, an expired certificate or a week
 when nobody is free does not land on a show date.
 
-**What that commits somebody to.** Roughly five more uploads before April 2027,
-each one a bump, an archive, an upload and the testers accepting it. It is
-nobody's favourite afternoon, and it is cheaper than the alternatives: the App
-Store means review of an app that is not for the public, and Business Manager
-means an organisation and its paperwork.
+That commits somebody to roughly five more uploads before April 2027, each one
+a bump, an archive, an upload and the testers accepting it. It is nobody's
+favourite afternoon, and it is cheaper than the alternatives: the App Store
+means review of an app that is not for the public, and Business Manager means
+an organisation and its paperwork.
 
 {: .warning }
-**The expiry is a show-stopper, not an inconvenience.** An expired build does
-not warn and does not degrade: the app refuses to launch, on every phone at
-once, because they were all uploaded the same day. Treat the re-upload date as
-a production deadline and not as maintenance.
+**The expiry is a show-stopper.** An expired build gives no warning and does
+not degrade: the app refuses to launch, on every phone at once, because they
+were all uploaded the same day. Treat the re-upload date as a production
+deadline.
 
 The phones warn as the date approaches, and the console's Rig health carries
 the same warning, so the rig tells you before the calendar does. That warning
 counts from when the build was **archived**, not uploaded, so it fires early by
-however long a build waited before upload — pessimistic on purpose.
+however long a build waited before upload. That is pessimistic on purpose.
 
 ### Doing the re-upload
 
@@ -101,8 +101,8 @@ a debugging problem nobody needs:
 
 The same script exists in both repositories. Without `--upload` the IPA lands
 in `build/export/` for Transporter; with it, three App Store Connect
-environment variables have to be set, and they are **Ari's key** — nobody else
-can push the upload button.
+environment variables have to be set, and they are **Ari's key**, so nobody
+else can push the upload button.
 
 Each run stamps the build with its archive date, which is what the phones then
 report.
@@ -127,14 +127,14 @@ iOS asks for two things, and both must be allowed.
 | Camera | The LiDAR depth stream | Nothing is captured |
 | Local Network | Sending depth and telemetry, and receiving commands | **No packets reach the app at all.** The phone appears dead to the console while looking fine on its own screen |
 
-Motion is used to work out how the phone is mounted, so the cloud arrives level
-at any mounting angle. Raw motion does not prompt.
+The app uses motion to work out how the phone is mounted, so the cloud arrives
+level at any mounting angle. Raw motion does not prompt.
 
 {: .note }
 A declined Local Network permission is one of the hardest faults to read,
-because the phone's own screen looks healthy. The app's own stats come from its
-own counters, and a UDP socket reaches ready whether or not anything can leave,
-so the phone reports frames and packets rising while nothing reaches the LAN.
+because the phone's own screen looks healthy. The app's stats come from its own
+counters, and a UDP socket reaches ready whether or not anything can leave, so
+the phone reports frames and packets rising while nothing reaches the LAN.
 Nothing on the phone contradicts it. If a phone is silent and everything else
 checks out, look in Settings, the app's entry, Local Network.
 
@@ -144,12 +144,13 @@ A fresh install carries device id 1 and a flag saying nobody chose it. While
 that flag is unset and the id is still 1, the app refuses to start streaming
 and shows a red banner on the LIVE page.
 
-The id is in the packet header of every datagram, and a receiver reassembles
-fragments per `(device id, frame id)`. Two phones on one id therefore do not
-make two streams that a receiver can tell apart: they make one stream whose
-packets interleave, so frames get assembled from two phones' halves. The
-symptom is a cloud that delivers almost nothing, or geometry that cannot exist,
-and it reads like a hardware fault. Hence a refusal rather than a warning.
+Two phones sharing an id wreck each other's frames. The id is in the packet
+header of every datagram, and a receiver reassembles fragments per
+`(device id, frame id)`, so two phones on one id look to the receiver like one
+stream whose packets interleave, and it assembles frames from two phones'
+halves. The symptom is a cloud that delivers almost nothing, or geometry that
+cannot exist, and it reads like a hardware fault. Hence a refusal rather than a
+warning.
 
 The guard is on the *flag*, not on the number, so phone 1 is reachable: the
 banner's own confirm button clears it without changing anything.
@@ -186,7 +187,7 @@ the LIVE page's **Cable** button becomes usable.
 
 ## Phone settings before it ships to a venue
 
-Do all of these at base. Several of them cannot be undone remotely, and one of
+Do all of these at base. You cannot undo several of them remotely, and one of
 them needs internet.
 
 | Setting | Set it to | Why |

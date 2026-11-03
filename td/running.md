@@ -10,7 +10,7 @@ The hub is one component: `TD/TDStageConductor.tox`. Open it in TouchDesigner
 and it receives every phone, builds one point cloud in stage coordinates,
 cleans and fuses it, and publishes the result on its output connectors.
 
-There is no build step. The tox is edited live in TouchDesigner and saved as
+There is no build step. You edit the tox live in TouchDesigner and save it as
 numbered snapshots, so the file in the repository is the working hub.
 
 `TDStageShow.tox` was never built. If a document mentions it, or mentions
@@ -27,8 +27,10 @@ numbered snapshots, so the file in the repository is the working hub.
 `TD/` also holds numbered snapshots, `TDStageConductor_v01.tox` through to the
 current highest number. These are history. Always work from
 `TDStageConductor.tox`, which is re-saved alongside each new snapshot. On
-2026-10-27 the working copy was byte-identical to `TDStageConductor_v86.tox`,
-checked by checksum.
+2026-11-03 the working copy was byte-identical to `TDStageConductor_v87.tox`,
+checked by checksum; v87 is the clean save that removed the Sydney bench
+registration rows from the file, so a fresh show machine no longer starts with
+three phones placed where they stood in a living room.
 
 ## The topology
 
@@ -66,8 +68,8 @@ flowchart LR
   PH2 -. "nothing arrives" .-> CON2
 ```
 
-That fallback is a safety net, not a configuration. On the GPU merge path it
-loses packets, badly, which is the reason the bridge exists at all.
+That fallback is a safety net only. On the GPU merge path it loses packets,
+badly, which is the reason the bridge exists at all.
 
 ### Why the receiving is not inside TouchDesigner
 
@@ -75,7 +77,7 @@ TouchDesigner's main thread holds the Python global interpreter lock through
 GPU work. A receive thread living inside TouchDesigner is starved for the
 duration, its socket buffer fills, and the kernel discards what it cannot hand
 over. The loss is invisible from inside: the thread is running, the socket is
-draining, and frames simply never complete.
+draining, and frames never complete.
 
 Measured, simulation, 2026-10-26: three streams of depth and confidence into
 TouchDesigner's own socket lost about 25,000 of 55,080 packets over six
@@ -85,19 +87,18 @@ The bridge runs the **same** `tdp4_receiver` module, with the same reassembly
 and the same drop-incomplete policy, in its own process with its own lock. It
 does not interpret the data. The wire, the phones and the tox are unchanged.
 
-A few implementation details are worth knowing because they decide how it
-fails:
+These implementation choices decide how the bridge fails:
 
 | Choice | Why |
 |---|---|
 | A plain file plus `mmap`, not `multiprocessing.shared_memory` | That module starts a resource-tracker helper by re-running `sys.executable`, which inside TouchDesigner is TouchDesigner |
 | The layout version is in the filename | A bridge and a tox from different builds miss each other and TouchDesigner keeps its own socket, instead of one process resizing a file the other has mapped, which crashes TouchDesigner on macOS |
 | Sixteen device slots, least-recently-written evicted | A seventeenth device takes a slot rather than growing the file |
-| Each slot and the metadata block is seqlocked | The writer makes the sequence odd, writes, makes it even; a reader keeps a copy only if the sequence was even and unchanged. No memory barriers, so a per-slot checksum is the upgrade if a torn frame is ever actually seen |
+| Each slot and the metadata block is seqlocked | The writer makes the sequence odd, writes, makes it even; a reader keeps a copy only if the sequence was even and unchanged. No memory barriers, so a per-slot checksum is the upgrade if a torn frame is ever seen |
 | A frame larger than 512 KB is refused, counted, and not written | A 320 by 240 grid with depth, confidence and colour is 460,920 bytes, so the slot has headroom but not unlimited headroom |
 
-How the frames then become a point cloud is
-[How the pipeline is built](pipeline.html).
+[How the pipeline is built](pipeline.html) covers how the frames then become
+a point cloud.
 
 The bridge publishes its file under a port name. The show launchers bind
 `:9003` and publish under the name `9004`, so a tox left on `Udpport` 9004
@@ -136,9 +137,9 @@ In practice the launchers close that gap from the other side: each watchdog
 restarts the process it supervises two seconds after it exits, so a crashed
 bridge is usually back at about the same moment TouchDesigner would have taken
 over. Which of the two wins the race is not deterministic, and it does not
-need to be: whichever binds, the other reads or stands down. What you should
-expect after a bridge crash is a couple of seconds of missing frames and a log
-line naming the new source, not a dead rig needing a restart.
+need to be: whichever binds, the other reads or stands down. After a bridge
+crash, expect a couple of seconds of missing frames and a log line naming the
+new source. The rig does not need a restart.
 
 ### The fan-out relay is not in the show path
 
@@ -148,14 +149,17 @@ remains only as an option for the CPU merge path with no bridge.
 
 Measured, simulation: the relay is bound by its three syscalls per datagram and
 tops out near 30,000 packets per second on an M-series Mac (no loss at 25,000,
-24 per cent loss at 40,000, 43 per cent at 50,000). The bridge alone took
-114,500 packets per second with no loss at twelve colour streams of 320×240,
-at 55 per cent of one core. An earlier figure of 61,000 was the highest load
-tried at the time, not a ceiling. Eight phones
-sending depth, confidence and colour would be about 49,000 packets per second
-**at the simulator's 256×192 grid**, and about 76,000 at the 320×240 a real
-iPhone 17 Pro sends. Both are arithmetic from the frame size, not measurements,
-and the second one is above what the bridge was measured to carry.
+24 per cent loss at 40,000, 43 per cent at 50,000).
+
+The bridge alone took 114,500 packets per second with no loss at twelve colour
+streams of 320×240, at 55 per cent of one core. An earlier figure of 61,000 was
+the highest load tried at the time, not a ceiling.
+
+Eight phones sending depth, confidence and colour would be about 49,000 packets
+per second **at the simulator's 256×192 grid**, and about 76,000 at the 320×240
+a real iPhone 17 Pro sends. Both are arithmetic from the frame size, not
+measurements, and the second one is above what the bridge was measured to
+carry.
 
 Do not put the relay in front of the bridge in a show configuration.
 
@@ -256,9 +260,9 @@ Work down this list.
 1. `Udpactive` is off. The single most common cause, because the saved file
    ships that way.
 2. `Udpport` does not match the bridge's published name. The log line names
-   the port the receiver is actually on.
+   the port the receiver is on.
 3. The bridge is not running, and the phones are sending to a port
-   TouchDesigner is not bound to. With the bridge down, TouchDesigner binds
+   TouchDesigner has not bound. With the bridge down, TouchDesigner binds
    `Udpport` itself, so the phones must be sending there.
 4. Two processes want the same port. The `cannot bind` log line says so.
 5. The phones are sending to the wrong address. That is a phone-side setting

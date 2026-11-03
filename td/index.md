@@ -6,8 +6,8 @@ has_children: true
 
 # TouchDesigner hub
 
-The hub receives every phone, merges them into one cloud in stage
-coordinates, cleans and fuses, and produces the visual output.
+The hub receives every phone's stream, merges them into one cloud in stage
+coordinates, cleans and fuses that cloud, and produces the visual output.
 
 ## The pages
 
@@ -20,7 +20,7 @@ coordinates, cleans and fuses, and produces the visual output.
 | [Testing without hardware](testing.html) | Synthetic phones, recorded takes, the receive-side bench and the self-tests |
 | [Maintenance](maintenance.html) | The save-and-verify loop, the drift check, and where learned state lives |
 
-If you are integrating other work with the cloud, read
-[Outputs](outputs.html) first and
-[How the pipeline is built](pipeline.html) second. If you are trying to get a
-rig arriving, read [Running the hub](running.html).
+If you are trying to get a rig arriving, start with
+[Running the hub](running.html). If you are integrating other work with the
+cloud, read [Outputs](outputs.html) first, then
+[How the pipeline is built](pipeline.html).
