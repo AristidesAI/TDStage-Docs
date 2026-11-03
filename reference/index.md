@@ -18,6 +18,7 @@ section. Go to [Operations](../operations/).
 | Page | Answers |
 |---|---|
 | [The tracking output](track.html) | **Start here if you are writing the receiver.** Every message and argument, the coordinate frame, what an id promises, and what the system guarantees and what it does not. |
+| [The field stream](field.html) | The second output: occupied 5 cm voxels, people as floor footprints, and the phones' poses, on a WebSocket. What is in each message and what it was computed from. |
 | [Ports and topology](ports.html) | What listens where, which surface is UDP and which is not, and what must never carry depth. |
 | [Why it is built this way](design.html) | The decisions that look arbitrary from outside: UDP with no TCP option, depth on the wire instead of points, dumb phones, receiver-side separation, and the one limit that must never be claimed away. |
 | [Dependencies and requirements](dependencies.html) | What each side needs to run, where it is declared, and what breaks without it |
@@ -31,7 +32,7 @@ say what shape the data takes.
 | You want | Surface | Shape |
 |---|---|---|
 | Performer positions, live, into a show control system | OSC over UDP | Small typed messages, fire and forget, no delivery guarantee. [The tracking output](track.html) documents them message by message. |
-| Performer positions into something that speaks web protocols | A websocket over TCP | A connected stream. The console reports how many clients are attached. |
+| Occupied space, people as footprints, and the phones' poses, into an engine that speaks web protocols | A websocket over TCP | A connected binary stream. [The field stream](field.html) documents it message by message. |
 | Roster, settings, health, control, anything a person would press | HTTP | Request and response, from a browser or a script |
 | A picture of the cloud, for a video-native system | Video over IP | An image of the data rather than the data itself. |
 | The point values themselves | **Not an integration surface** | They live inside TouchDesigner. Wire from the project's own outputs. |

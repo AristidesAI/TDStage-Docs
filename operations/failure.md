@@ -527,7 +527,13 @@ the console do warn in advance, counting from when the build was archived
 rather than uploaded, so that warning is early rather than late.
 
 Separately, [#21](https://github.com/AristidesAI/TDStage/issues/21) covers the
-source escrow the agreement asks for.
+source escrow the agreement asks for. The deposit itself is scripted:
+`Tools/escrow_deposit.sh` builds one dated folder holding both apps, the
+console with its bundled models, the TouchDesigner hub with its source DATs,
+the wire and take specs and a build guide, taken from the committed state of
+both repositories so the manifest names exact commits and nothing half
+finished leaks in. It never uploads; the folder goes to the escrow agent by
+hand, and the agent is what has not been chosen.
 
 ## Routine that prevents most of this
 

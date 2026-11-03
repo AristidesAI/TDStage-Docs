@@ -90,6 +90,22 @@ CHECKS = [
      "WebConsole/server.py", "--f1-hz"),
     ("reference/track.md", r"to a host and port you give it \((\d+) by convention\)",
      "WebConsole/track_emit.py", "CONTROL_PORT"),
+
+    # The field stream: a receiver sizes its grid from these.
+    ("reference/field.md", r"\*\*Voxels\*\* are (\d+) cm",
+     "WebConsole/f1_field.py", "VOXEL_CM"),
+    ("reference/field.md", r"falls below (\d+) of 255",
+     "WebConsole/f1_field.py", "DROP_W"),
+    ("reference/field.md", r"covers at least (\d+) cells",
+     "WebConsole/f1_field.py", "PRES_MIN_CELLS"),
+    ("reference/field.md", r"no wider than ([\d.]+) m in radius",
+     "WebConsole/f1_field.py", "PRES_R_MAX"),
+    ("reference/field.md", r"\*\*The source id\*\* is (\d+), always",
+     "WebConsole/f1_field.py", "SOURCE_ID"),
+    ("reference/field.md", r"Default rate is (\d+) Hz",
+     "WebConsole/server.py", "--f1-hz"),
+    ("reference/field.md", r"listens on TCP port (\d+) \(`--f1-port`\)",
+     "WebConsole/server.py", "--f1-port"),
 ]
 
 
