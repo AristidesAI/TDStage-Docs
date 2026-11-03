@@ -154,7 +154,10 @@ later is the same show, and a restart the next morning is not — and a
 supervisor that silently starts phones because of yesterday's latch is worse
 than one that waits to be asked. Press Start show when the show should run.
 
-Operator: relaunch the app. Nothing else.
+Operator: relaunch the app. Nothing else — but that means **reaching the
+phone**, because nothing opens an app on a locked one. See the gap below
+([#44](https://github.com/AristidesAI/TDStage/issues/44)): everything after the relaunch is automatic, and the relaunch
+itself is a walk to the stand.
 
 Status: covered by an automated interface test. **Not verified on a rig.**
 
@@ -469,13 +472,27 @@ links its issue where it has one; the full, current list is the
 snapshot onto another machine. Whether the rig runs one machine or two is
 still an open decision.
 
-**A rebooted phone needs a person.** Nothing can open an app on a locked
-phone, so a phone that reboots stays dark until somebody walks to the stand.
-The app does have a self-relaunch path, and it depends on the phone being
-locked into supervised single-app mode — which has not been decided, and
-**which no issue currently tracks**. The distribution question it used to sit
-beside has been settled and closed; this half went with it by accident rather
-than by decision.
+**A phone that crashes or reboots stays down until somebody reaches it.**
+iOS has no supervisor: nothing can open an app on a locked phone. Everything
+downstream recovers the moment the app is running again — the phone re-applies
+its last known good profile and resumes streaming, and the console's
+auto-recover restarts it within about twelve seconds — but getting the app
+running is a person walking to the stand.
+
+There are exactly two ways to close that, and the choice is open
+([#44](https://github.com/AristidesAI/TDStage/issues/44)):
+
+| | What it costs |
+|---|---|
+| **Supervise the phones and lock them into Single App Mode.** The system then relaunches the app after a crash or a reboot | Supervising **wipes each phone**, and the phone is locked to the app — so every app update, roughly every 80 days, means leaving Single App Mode, updating, and re-entering it |
+| **Staff the stands.** Somebody within reach of every phone, relaunch in the show checklist | A person per cluster of stands, for every performance |
+
+{: .warning }
+**Guided Access is the obvious answer and it does not work.** It keeps the app
+in front on an unsupervised phone, which looks like the same thing — but it
+does not survive a reboot and does not relaunch an app that has crashed, which
+are the two cases this is about. Reaching for it would leave the gap open while
+feeling solved.
 
 **Nothing stops the machine sleeping.** There is no wake lock in the system,
 and a sleep mid-show costs every performer id. It is prevented by setting the
