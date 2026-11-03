@@ -275,7 +275,8 @@ wire format, the shaders or the receiver.
 | `python3 TD/newtox/tdp4_bridge.py --selftest` | The bridge round trip: packets, through the bridge's own loop, into the memory-mapped file, out through the reader. Includes a torn write, a slot eviction at seventeen devices, a bad payload, a layout mismatch, and the `--shm-port` republish. Passed 2026-10-27. |
 | `python3 TD/newtox/glsl_parity_test.py` | Shader constants and the pose-row layout against their numpy references. A shader edited without its reference fails here instead of on the rig. Passed 2026-10-27. |
 | `python3 TD/newtox/temporal_test.py` | The static-surface temporal depth filter against the merge simulator: on a still scene the depth error must fall at least 2.5 times; on moving performers the body error must stay within one millimetre of raw. |
-| `python3 TD/newtox/pipeline_test_grid.py` | The organized-grid pipeline offline: wire round trip, isolation purity, angle-aware fusion collapsing a two-phone overlap, and the weighted-fuse mechanism. |
+| `python3 TD/newtox/pipeline_test_grid.py` | The organized-grid pipeline offline: wire round trip, isolation purity, angle-aware fusion collapsing a two-phone overlap, and the weighted-fuse mechanism — all of which is the CPU path. |
+| `python3 Tools/fuse_weight_ab.py` | Weighted against plain fusion on an exact synthetic surface. The measurement behind the show path keeping a plain mean: a few tenths of a millimetre better at the median, slightly worse at the 90th percentile. |
 | `python3 TD/pipeline_test.py` | The older point-based isolation pipeline, offline. |
 
 `hlib.py` and `hlib_grid.py` are pure numpy and OpenCV, with no TouchDesigner

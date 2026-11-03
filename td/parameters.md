@@ -194,7 +194,7 @@ numbered save.
 | Parameter | Label | Type | Default | When | Path | What it does |
 |---|---|---|---|---|---|---|
 | `Mergegpu` | GPU Merge Path | Toggle | False | Get-in | - | Builds the cloud on the GPU: the depth grids go up as one texture and a chain of GLSL POPs unprojects, transforms, crops, cleans and fuses every cell each frame. The **CPU merge stands down**; background removal, cleanup and fusion continue as GPU stages. `out_merged` goes empty. Needs the bridge running. Saved working copy: on. |
-| `Fusionmode` | Fusion Mode | Menu `points` / `grid` / `merged` | `points` | Build | CPU | `grid` runs the angle-aware weighted merge on the full grid rather than on decimated points. |
+| `Fusionmode` | Fusion Mode | Menu `points` / `grid` / `merged` | `points` | Build | CPU | `grid` runs the angle-aware weighted merge on the full grid rather than on decimated points. **CPU path only** — the GPU path the show runs takes a plain mean per voxel, deliberately (see below). |
 | `Mergevoxel` | Merge Voxel (m) | Float | 0.025 | Build | CPU | Voxel size for the grid merge. |
 | `Mergealign` | Pre-align Devices | Toggle | False | Build | CPU | Runs the alignment solve before merging. |
 | `Fuserate` | Fusion Rate (Hz) | Float | 30.0 | Build | CPU | Caps real fusions per second. Below the interval, the last result is re-emitted rather than recomputed. |

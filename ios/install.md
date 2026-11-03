@@ -85,7 +85,32 @@ once, because they were all uploaded the same day. Treat the re-upload date as
 a production deadline and not as maintenance.
 
 The phones warn as the date approaches, and the console's Rig health carries
-the same warning, so the rig tells you before the calendar does.
+the same warning, so the rig tells you before the calendar does. That warning
+counts from when the build was **archived**, not uploaded, so it fires early by
+however long a build waited before upload — pessimistic on purpose.
+
+### Doing the re-upload
+
+Both apps go together, because a rig running two builds from different weeks is
+a debugging problem nobody needs:
+
+```bash
+./Support/testflight.sh                      # bump, archive, export the IPA
+./Support/testflight.sh --upload             # …and upload it
+```
+
+The same script exists in both repositories. Without `--upload` the IPA lands
+in `build/export/` for Transporter; with it, three App Store Connect
+environment variables have to be set, and they are **Ari's key** — nobody else
+can push the upload button.
+
+Each run stamps the build with its archive date, which is what the phones then
+report.
+
+{: .note }
+Two signed builds are waiting to go as of 2026-11-03: **TDStage 1.0 (2)** and
+**TDStage AR 1.1 (4)**, both stamped that date. Their ninety days do not start
+until somebody uploads them, so the clock on this cycle has not begun.
 
 ---
 

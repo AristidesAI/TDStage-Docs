@@ -421,3 +421,31 @@ taken on a development Mac with the person model idle and no content
 rendering — which is three of the things a show machine does at the same time.
 The number that matters for a venue is the same test on the show machine with
 its real load, and nobody has run it.
+
+## Why the show path does not weight its fusion
+
+The CPU merge weights each contribution by the angle it was seen at, its range
+and its confidence. The GPU path the show actually runs takes a **plain mean**
+of the points in each 2.5 cm voxel. That looks like an omission and is a
+measured decision.
+
+Weighting was tested against an exact synthetic surface, six phones, on the
+voxels two or more phones share:
+
+| | plain | weighted |
+|---|---:|---:|
+| median error, ring rig | 8.3 mm | 7.9 mm |
+| 90th percentile, ring rig | 14.8 mm | **15.1 mm** |
+| median, show rig | 9.0 mm | 8.9 mm |
+| 90th percentile, show rig | 16.3 mm | **16.8 mm** |
+
+Across all voxels there was no difference at all. So weighting buys a few
+tenths of a millimetre at the median and **gives them back at the tail**, which
+is the end that matters — the tail is where a limb edge lives. For that, it is
+not worth a shader change on the show path ([#13](https://github.com/AristidesAI/TDStage/issues/13)).
+
+The weights are still there in the CPU fallback, with the confidence
+normalisation fix that prompted the question, and the offline grid test still
+covers them. If the fusion ever moves to a surface where angle matters more
+than it does here, the measurement is `Tools/fuse_weight_ab.py` and it can be
+re-run rather than re-argued.

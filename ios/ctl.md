@@ -370,9 +370,20 @@ try the wire again. See
 | `/tdlidar/<id>/device/state` | `"idle"`, `"streaming"`, `"calibrating"` or `"playing"` |
 | `/tdlidar/<id>/device/settings` | A JSON object: every setting a person can change on the phone's screens, keyed by its UserDefaults key. Sent when it changes, and every 2 s regardless, so a console that starts late still converges. A key absent from it is a control the app does not have |
 | `/tdlidar/<id>/device/app` | `appName` `version` `build` `commit`. On connect, on a device-id change, and every 2 s. The commit is empty when the build did not embed one |
+| `/tdlidar/<id>/device/built` | `date` `days` — when this build was **archived** (`yyyy-MM-dd` UTC) and whole days since. `""` and `-1` for a build made without the stamp, which never warns. Every 2 s, with `/device/app` |
 | `/tdlidar/<id>/device/recovery` | `launches` `crashes` `recentCrashes` `safeMode` `heals` `lastTier` `profileRevision`. The phone's own account of how stable it has been |
 
 {: .note }
+{: .warning }
+**`/device/built` is the archive date, and the expiry clock runs from upload.**
+A TestFlight build stops working 90 days after it is *uploaded*, and this
+field says how long since it was *built*. The two are usually days apart and
+occasionally much more — a build that sat on a laptop for a fortnight before
+anybody uploaded it reports itself a fortnight older than its expiry warrants.
+So treat the number as an early warning that is deliberately pessimistic,
+never as the countdown. The real date is upload plus ninety
+([#16](https://github.com/AristidesAI/TDStage/issues/16)).
+
 `/device/app` is how to answer "which build is this phone running". Use it
 before you trust a behaviour described in these pages. See
 [Installing and preparing a phone](install.html).
