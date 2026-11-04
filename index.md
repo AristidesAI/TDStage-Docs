@@ -34,7 +34,7 @@ flowchart TD
 
   PH -- "depth frames, UDP" --> BR
   BR -- "shared memory file<br/>read as 9004" --> TD
-  BR -- "same frames, UDP :9013" --> CON
+  BR -- "same shared memory file" --> CON
   TD --> VIS
   CON --> OUT
   BROW <--> CON
@@ -59,7 +59,7 @@ tracking output. The console crashing does not touch the point cloud or the
 visuals. Closing the console mid-show is a deliberate, survivable act.
 
 **The health path has two possible destinations.** A phone reports its
-battery, temperature and frame rate to whichever port it has been told to. By
+battery, thermal state and frame rate to whichever port it has been told to. By
 default that is port 9000, which
 TouchDesigner owns, and TouchDesigner relays it to the console. The console
 also has a listener of its own, and the console can tell the phones to send
@@ -82,7 +82,7 @@ calibrate. It is the only path that needs a person.
 | iOS app | Captures raw LiDAR depth and streams it as a grid. | No rendering, no cleanup, no tracking, no decisions. |
 | Receiving bridge | Owns the phone-facing socket, reassembles frames, publishes them once for two readers. | No processing. It does not look at the data. |
 | TouchDesigner hub | Regenerates points from the depth grids on the GPU, merges every phone into one cloud, cleans, fuses, drives the visuals. | Does not manage phones and does not produce the tracking output. |
-| Web console | Device roster, calibration, health, and the tracking outputs to other systems. | Never feeds TouchDesigner's cloud. It is a second reader, not a relay. |
+| Web console | Device roster, calibration, health, and the tracking outputs to other systems. | Never feeds TouchDesigner's cloud with point data; it does send TouchDesigner the phone poses over the TD link. It is a second reader, not a relay. |
 
 Why the parts are split this way, and which of those choices would be
 expensive to revisit, is in
@@ -121,8 +121,9 @@ someone is deciding what the system can do.
 
 A "built" item is not a working item. Do not quote one as proven.
 
-**Today the real-phone evidence is one phone.** Every multi-phone figure on
-this site is simulation. Simulated phones do not get
+**Today the real-phone evidence is two phones in one room** (TDStage AR on
+iPhone 18 Pro, 28 October 2026, read on the dev Mac). Every figure on this
+site for more phones than that is simulation. Simulated phones do not get
 hot, do not fight for a switch and do not stand in front of each other.
 [Evidence and claims](operations/evidence.html) explains how to turn a
 demonstration into a figure that survives being questioned.

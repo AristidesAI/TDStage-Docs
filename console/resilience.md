@@ -49,9 +49,9 @@ Verified by blocking numpy and running `server.py --help`:
 `ModuleNotFoundError` at the bare `import track_emit`. Pillow missing does
 boot, as the table below says.
 
-`WebConsole/server.py` wraps five other modules in one block: settings, the
-RGB stream, and the three person-model paths, which are the ones that really
-are optional:
+`WebConsole/server.py` wraps five other modules, each in its own block:
+settings, the RGB stream, and the three person-model paths, which are the ones
+that really are optional:
 
 ```python
 try:
@@ -101,7 +101,10 @@ exactly like a feature that is broken. Three things exist to close that gap.
 `WebConsole/doctor.py` checks every import the console and the worker need and
 prints the `pip install` line for each (it is read only and never changes the
 machine). `GET /api/live` carries the import error text. The Rig health panel
-surfaces the same facts in the browser.
+surfaces the hand-tracking and Vision import failures and the YOLO worker's
+state in the browser; the five modules above report an import failure only in
+the console's own output (`/api/live` adds just a `person_obs unavailable` flag;
+its import error text is ingest's own).
 
 ---
 
@@ -174,7 +177,7 @@ def ensure(self):
     """True when a request may be sent. Never blocks, never raises."""
 ```
 
-Its docstring gives the reason directly: "a two-second torch import must not
+The class docstring gives the reason directly: "a two-second torch import must not
 stall the observer, it must simply leave the backend down and fail open".
 Respawns are backed off, `BACKOFF_S = (0.5, 1.0, 2.0, 4.0, 8.0, 15.0)`, so a
 worker that cannot start (missing weights, broken environment) settles at one
@@ -199,7 +202,7 @@ exercise a real native crash.
 
 ## 3. Every warning carries its fix
 
-The console can log sixty distinct warnings and errors. Every one of them
+The console can log eighty-nine distinct warnings and errors. Every one of them
 arrives with an action attached, and `Tools/check_fix_hints.py` enforces that.
 
 `FIX_HINTS` in `server.py` pairs a pattern against the message with the thing
@@ -228,7 +231,7 @@ renders each `log(..., "warn"|"error", ...)` message with its placeholders
 blanked, and fails if any message has no hint and no `fix=`:
 
 ```
-check_fix_hints: 60 warn/error messages, 0 without a fix
+check_fix_hints: 89 warn/error messages, 0 without a fix
 ```
 
 It runs inside the self test step of
@@ -357,7 +360,10 @@ seeded a fresh six-phone session, which the console then wrote over
 file whose values will not apply is now treated like a file that will not
 parse, and the console walks back through the backups until it finds one that
 both parses and applies, skipping any that do not and naming each one it
-skipped.
+skipped. One block is softer: a bad value in the client-output or hand-tracking
+section drops that field alone, with a warning, and keeps the rest of the file,
+roster included; a client output with a dropped field stays off, and a dropped
+hand-tracking field keeps its default.
 
 Two consequences of the seed path that remain, and are now deliberate:
 
@@ -368,7 +374,8 @@ Two consequences of the seed path that remain, and are now deliberate:
   any slot added with **+**. The console releases it **per phone**, when
   somebody saves an edit that moves or turns that one (its position or its yaw,
   compared against what it was). A pitch, roll or field-of-view edit releases
-  nothing, because those are not what TouchDesigner's registration stores, and
+  nothing, because those are not what TouchDesigner's registration stores (a
+  tilt correction is, so editing one does release), and
   neither does a click that does not change a value. Push poses releases everything. The
   held set is saved with the configuration, so a restart does not release it,
   and Rig health names who is still held.
@@ -562,19 +569,21 @@ threads writing it, so a remote address gets a reduced rate and a point cap.
 ### A broken hook cannot stop the show
 
 ```python
-def _apply(groups):
+def _dispatch(groups):
     """Call every registered module of each group. Never raises: a broken
-    hook must not take the console down mid-show."""
+    hook must not take the console down mid-show. -> (errors, moved).
 ```
 
-`_apply` collects the errors and returns them to the caller, which reports
-them in the Settings response. The console keeps running on the values it has.
+`_dispatch` collects the errors and returns them; `update` merges them into the
+Settings response (`_apply`, which keeps only the errors, serves boot and
+reset). The console keeps running on the values it has.
 
-That holds when somebody changes a setting. **At boot it does not:** the
-startup path applies everything from the saved configuration and discards the
-errors, then logs that settings were applied. A hook that fails only at boot
-is reported nowhere, so if a tunable seems not to be taking effect after a
-restart, re-save it from the Settings page and watch what comes back.
+That holds when somebody changes a setting, and since 2026-11-03 at boot too:
+the startup path logs each saved setting it refused as a warning, gathers them
+into a Rig health boot note ("N saved setting(s) not read/applied", with the
+fix), and logs that settings were applied only when nothing was refused.
+Before that the boot discarded the errors and always logged success, so a
+hook that failed only at boot was reported nowhere.
 
 ---
 

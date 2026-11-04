@@ -33,7 +33,7 @@ Nothing is acknowledged and nothing is retransmitted.
 ```mermaid
 flowchart TD
   B[["OSC bundle<br/>immediate timetag"]]
-  F["/track/frame<br/>i i f"]
+  F["/track/frame<br/>i f i"]
   P1["/track/performer<br/>id 7"]
   H1["/track/performer/hand<br/>id 7, side 0"]
   H2["/track/performer/hand<br/>id 7, side 1"]
@@ -86,9 +86,10 @@ Absence of hands is not an error and a receiver should not wait for them.
 
 Metres. **Y is up.** The origin is the centre of the stage floor.
 
-`y` is the performer's **base, not their height**: exactly `0.0` when they are
-standing on the stage floor, and the lowest point of the body otherwise, which
-is what you get when somebody is on a rostrum, on a step or lifted. So a
+`y` is the performer's **base, not their height**: exactly `0.0` whenever the
+lowest point of the body is under 0.4 m, so standing on the stage floor or on a
+low step, and the lowest point of the body (its 5th height percentile) otherwise,
+which is what you get when somebody is on a rostrum or lifted. So a
 performer standing centre stage reads `(0, 0, 0)`, and a `y` of 0.4 means their
 feet are 0.4 m up, not that they are 0.4 m tall.
 
@@ -112,8 +113,9 @@ rate you receive is steady even when the phones stutter.
 The consequence is that **a frame is not evidence that anything was measured
 since the last one.** A performer standing still and a
 rig that has stopped delivering look identical for about half a second, after
-which tracks begin to coast and their velocities go to exactly zero. If you
-need to know whether the measurement is fresh, watch the device count on
+which every track starts coasting and, with no neighbour to ride, leaves the
+bundle: the frames keep coming with no performers and a device count of 0. If
+you need to know whether the measurement is fresh, watch the device count on
 `/track/frame` and the coasting signal, not the frame rate.
 
 ## Identity: what an id promises
@@ -129,27 +131,31 @@ flowchart TD
   G -- "yes" --> G1["clustered 0<br/>Identity is as good as it gets"]
   G -- "not yet" --> H
   F -- "yes" --> H["clustered 1<br/>Identity is provisional"]
-  E -- "no" --> I["Coasting: position held,<br/>velocity exactly 0,<br/>confidence 0.30"]
+  E -- "no" --> I["Coasting: left out of the bundle<br/>unless within 0.7 m of a tracked performer<br/>(velocity exactly 0, confidence 0.30)"]
   I --> J{"Back within 3 s?"}
   J -- "yes" --> E
-  J -- "no" --> K["Id released.<br/>Reusable after this point"]
+  J -- "no" --> K["Id retired.<br/>Never issued again"]
 ```
 
 Three numbers in that picture are the contract:
 
 **Five sightings before publication.** A body that appears for four frames is
 never sent. You will not see flicker ids for noise, and in exchange a real
-performer walking on stage appears about 170 ms late at 30 Hz.
+performer walking on stage appears on the fifth sighting, about 130 ms late
+at a 30 Hz cloud.
 
 **Three seconds of reservation.** When a performer is lost, the id is held and
 not reused for three seconds. So an id that disappears and comes back inside
-three seconds is the same person. An id reappearing after longer than that is
-a new identity that happens to have been given a recycled number.
+three seconds is the same person. After that the id is retired: the counter
+only counts up, so a number never comes back under a different body, and a
+returning performer gets a new one.
 
 **Zero velocity means coasting.** A coasting performer is a prediction, not a
-measurement. Its position is the last known one, held still; its confidence
-drops to a flat 0.30. If your downstream smooths or extrapolates, this is the
-state where you should stop doing that.
+measurement. It reaches the wire only while it sits within 0.7 m of a tracked
+performer, riding their blob (next section); a performer lost on their own
+leaves the bundle at once and their id is held for the three seconds. While coasting its position is carried, not
+measured, and its confidence drops to a flat 0.30. If your downstream smooths
+or extrapolates, this is the state where you should stop doing that.
 
 {: .warning }
 `clustered` is the field most likely to be misread. It does not mean "two
@@ -208,7 +214,7 @@ It is a composite of three things, not a statistical probability:
 | Term | Weight | What it reads |
 |---|---|---|
 | Base | 0.35 | Published at all, so never below this while live |
-| Size and shape | 0.35 | Point count toward 600, halved toward 0.6 when the vertical span is outside 1.2-2.2 m |
+| Size and shape | 0.35 | Point count toward 600, multiplied by 0.6 when the vertical span is outside 1.2-2.2 m |
 | Age | 0.30 | Reaching full after one second of life |
 
 Then it is multiplied by 0.75 while `clustered` is 1, replaced outright by
@@ -234,9 +240,11 @@ probe cannot see from outside:
 - confidence is within 0 to 1
 - the frame timestamp strictly increases
 
-A violation is counted and reported in the console rather than sent. If you
-find one of these broken on the wire, report it as a bug rather than
-defending against it.
+A non-finite performer or hand, and a hand with no performer or a bad side,
+is dropped from the bundle (a non-finite performer is also logged as an
+emitter error); the bundle still goes out, and the other checks are counted
+and shown on the console's conformance line. If you find one of these broken
+on the wire, report it as a bug rather than defending against it.
 
 ## What a placement change does to you
 
@@ -277,10 +285,13 @@ state that depends on observing each one.
 **A fixed performer count.** By default there is no cap, because an operator
 on a real stage knows how many bodies are out there and a wrong cap is worse
 than none. An operator can set one, in which case the least confident
-performers are dropped and the console says it is capping.
+performers are dropped and the emitter's status (`capped` under `track` in
+`/api/live`) reports how many.
 
 **That a performer exists.** Nothing is published until the background has
-settled, which takes a few seconds of a stage with nobody on it. An empty
+settled: the engine must have learned the empty stage (about half a minute of
+nobody on it on its own, or two seconds after **Stage is empty now**), and the
+background count must then hold steady for five seconds. An empty
 bundle, with `/track/frame` and no performers, is a normal and correct
 message.
 
@@ -296,15 +307,16 @@ A short checklist that covers most of what goes wrong:
 4. Treat zero velocity on all three axes as "this is a prediction".
 5. Treat `clustered` 1 as "the id may be wrong" and degrade accordingly.
 6. Expect ids to vanish. Expect a vanished id back within three seconds to be
-   the same person, and after three seconds not to be.
+   the same person, and one gone for longer never to come back; the returning
+   performer arrives under a new id.
 7. Check the depth-axis sign once, on day one, with one performer walking
    upstage.
 
 ## Where this comes from
 
 The emitter is `WebConsole/track_emit.py`, which also exposes a rolling trace
-of the last sixty seconds of emitted frames over the console's HTTP API for
-offline analysis. The fields that let you score a run afterwards, and what
+of the last 1800 frames that consumed a new cloud (sixty seconds at 30 Hz) at
+`/api/track/trace` for offline analysis. The fields that let you score a run afterwards, and what
 counts as evidence for a claim about this output, are on
 [Evidence and claims](../operations/evidence.html). The transport reasoning,
 including why none of this is TCP, is on

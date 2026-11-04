@@ -42,8 +42,9 @@ flowchart TD
 
 Both are answered in advance or not at all.
 
-**Addressing.** If the rig has no router, nothing gets an address and every
-phone needs a static one. Discover that on the day and it costs an hour.
+**Addressing.** If the rig has no router and nothing else handing out
+addresses, nothing gets an address and every phone needs a static one.
+Discover that on the day and it costs an hour.
 [Rig get-in](get-in.html) has the decision tree.
 
 **Phone preparation.** Several steps need internet and a hand on the phone,

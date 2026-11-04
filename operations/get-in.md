@@ -55,7 +55,8 @@ one phone). An iPhone on a USB-C cable presents a real network link, so the
 stream crosses the cable with nothing special done to it.
 
 The raw numbers understate the gap, because of how the depth stream is sent.
-One frame from one phone is about a hundred packets, and the receiver discards
+One frame from one phone is a hundred to about three hundred packets, depending
+on the grid and whether colour is sent, and the receiver discards
 whole any frame that is missing one of them; nothing is resent. Eight phones
 with colour send around 49,000 packets per second at the simulator's grid, and
 about 76,000 at the grid real phones send.
@@ -119,7 +120,8 @@ Per phone:
 1. Power it from mains, not battery.
 2. Confirm it appears in the console's device list by itself.
 3. Confirm its device id is unique. Two phones sharing an id overwrite each
-   other's frames, and the symptom looks like a dropout rather than a clash.
+   other's frames: the cloud flickers between two places while the stats look
+   healthy. Rig health names the id once the clash has lasted three seconds.
 4. Confirm it reports charging and a nominal thermal state.
 
 ### The firewall trap
@@ -131,7 +133,8 @@ confusing state: **phones show as online from their point data, but with no
 battery, no temperature and no frame rate**, and control messages cannot
 reach a phone whose address was never typed in.
 
-The Windows setup script adds the rule. The doctor check confirms it. Run
+The Windows firewall script, `windows\firewall.bat` run once as Administrator,
+adds the rule. The doctor check confirms it on Windows. Run
 both before deciding the network is fine.
 
 ## 3. Stands and aiming
@@ -238,7 +241,7 @@ gravity-levelled view, so pitch and roll are right and only four numbers are
 unknown between two phones: a heading and a position. The floor gives one of
 them, the height difference between the two phones' floors. For the other
 three, the console looks at both clouds from above, rasterises what stands
-between knee and head height, and cross-correlates the two pictures (slides
+from 20 cm to 2.2 m above the floor, and cross-correlates the two pictures (slides
 one over the other and scores the match) at every heading in turn. The best
 match wins, then gets refined.
 
@@ -295,7 +298,8 @@ of seconds), so the console stays responsive and reports progress while it
 works. One solve at a time.
 
 {: .note }
-Measured on simulated rigs, **not yet used at a real get-in**. The approach
+Measured on simulated rigs and applied once to the two-phone living-room rig
+(TDStage AR on iPhone 18 Pro, 2026-10-28), **not yet used at a real get-in**. The approach
 follows the principles in Darien Brito's
 [TDXDepthCamMerger](https://github.com/DarienBrito/TDXDepthCamMerger): grade
 every answer with a reason and a fix rather than a bare pass, report overlap
@@ -353,15 +357,15 @@ heading and a position are in question. So the solver runs the rough match
 eight times, flattens the answers to heading and position and lets them
 **vote** (fewer than three agreeing is a failure rather than an answer), and
 the fine alignment starts from the best three. The height comes from the floor
-sweep rather than from the match at all.
+itself, the cells both phones see, rather than from the match at all.
 
 The improvement is an algorithm told something true about this rig that it
 could not assume in general. That is also why his own consensus warning fired
-on every run of the real pair: it was correctly reporting the ambiguity that
+on the real pair: it was correctly reporting the ambiguity that
 gravity resolves for us.
 
 On a real pair of phones it repeated to **0.02 degrees of heading and 19 mm of
-height**, with a fit of 14.5 mm against 16.6 mm for the plan-view solve. The
+height**, with a median gap of 14.3 to 14.9 mm against 16.6 mm for the plan-view solve. The
 position repeated to 65 mm in one axis, and that number is honest rather than
 noise: it is the direction the shared surfaces do not pin down.
 
@@ -372,9 +376,10 @@ on a real stage would itself be worth knowing.
 
 ### Correcting a phone that is not quite level
 
-A phone on a stand is levelled by its own gravity sensor, which is right about
-down and says nothing about where the stand has settled, how the clamp has
-crept, or a floor that is not flat. For that there is a **tilt** correction per
+A phone on a stand levels its own cloud from gravity at any mounting angle, so
+a settled stand, a crept clamp or a floor that is not flat is already
+corrected. What is left is the residual: a phone whose own levelling is off.
+For that there is a **tilt** correction per
 phone: up to 30 degrees of pitch and roll, applied to that phone's points on
 every merge path.
 

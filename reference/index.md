@@ -35,19 +35,21 @@ say what shape the data takes.
 | Occupied space, people as footprints, and the phones' poses, into an engine that speaks web protocols | A websocket over TCP | A connected binary stream. [The field stream](field.html) documents it message by message. |
 | Roster, settings, health, control, anything a person would press | HTTP | Request and response, from a browser or a script |
 | A picture of the cloud, for a video-native system | Video over IP | An image of the data rather than the data itself. |
-| The point values themselves | **Not an integration surface** | They live inside TouchDesigner. Wire from the project's own outputs. |
+| The point values themselves | Opt-in, on the websocket or over HTTP | The console's merged points, not TouchDesigner's own cloud. On the websocket as a fourth message type, `TDMP`, when a client connects with `?points=1`: one point in four, as float32 `x y z`. Over HTTP as `/api/cloud`, a binary long poll built for the console's own browser view, with the points kept per phone. TouchDesigner's cloud itself is not exposed. |
 
 Read the last two rows twice. A video stream of the cloud is an image and is
 only ever an image. A video codec throws away detail the eye will not miss,
-and a depth value is not a pixel. There is no supported way to subscribe to
-the point values from outside. The reasons are in
-[Ports and topology](ports.html) under what must never carry depth.
+and a depth value is not a pixel. The reasons are in
+[Ports and topology](ports.html) under what must never carry depth. The point
+values that can be had from outside are the console's merged points, on the
+two opt-in channels in the table; TouchDesigner's own cloud is not exposed.
 
 ## Two rules that will save you a day
 
-**Everything carrying stage data is UDP.** It is not configurable, there is
-no TCP mode, and a name containing "tcp" is not evidence of one. Check the
-socket, not the label.
+**Everything carrying depth between the phones, TouchDesigner and the console
+is UDP.** It is not configurable, there is no TCP mode, and a name containing
+"tcp" is not evidence of one. Check the socket, not the label. The websocket
+and the HTTP API are the two TCP surfaces, and no depth grid crosses either.
 
 **Nothing in this system guarantees delivery of a frame.** That is
 deliberate. Write your integration to expect gaps rather than to flag them as

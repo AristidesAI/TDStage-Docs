@@ -127,14 +127,14 @@ Coming back the other way, the timing depends on **how** the bridge stopped:
 | How it stopped | What the heartbeat does | When TouchDesigner takes the socket |
 |---|---|---|
 | Clean stop, for example Ctrl-C | `ShmWriter.close` zeroes the heartbeat, so readers see it gone immediately | Within about half a second, at the next check |
-| Crash or kill | The last heartbeat stays in the file and ages out | The freshness window is 2 s, so 2 to 2.5 s later |
+| Crash or kill | The last heartbeat stays in the file and ages out | The heartbeat is written every half second and the freshness window is 2 s, so 1.5 to 2.5 s later |
 
 So "TouchDesigner binds within a second" is the clean case only. After a crash
-there is a gap of two to two and a half seconds during which neither process
-holds the port and no frames land.
+there is a gap of one and a half to two and a half seconds during which neither
+process holds the port and no frames land.
 
-In practice the launchers close that gap from the other side: each watchdog
-restarts the process it supervises two seconds after it exits, so a crashed
+In practice the launchers close that gap from the other side: the bridge's
+watchdog restarts it two seconds after it exits, so a crashed
 bridge is usually back at about the same moment TouchDesigner would have taken
 over. Which of the two wins the race is not deterministic, and it does not
 need to be: whichever binds, the other reads or stands down. After a bridge
@@ -147,19 +147,23 @@ new source. The rig does not need a restart.
 console. It came out of the show path on 2026-10-27 and is now legacy. It
 remains only as an option for the CPU merge path with no bridge.
 
-Measured, simulation: the relay is bound by its three syscalls per datagram and
-tops out near 30,000 packets per second on an M-series Mac (no loss at 25,000,
-24 per cent loss at 40,000, 43 per cent at 50,000).
+Measured, simulation, 2026-10-27: the relay is bound by its three syscalls per
+datagram and tops out near 30,000 packets per second on an M-series Mac (no
+loss at 25,000, 24 per cent loss at 40,000, 43 per cent at 50,000).
 
-The bridge alone took 114,500 packets per second with no loss at twelve colour
-streams of 320×240, at 55 per cent of one core. An earlier figure of 61,000 was
-the highest load tried at the time, not a ceiling.
+The bridge alone, measured on loopback on 2026-10-27, took 114,500 packets per
+second with no loss at twelve colour streams of 320×240, at 55 per cent of one
+core. An earlier figure of 61,000 was the highest load tried at the time, not a
+ceiling.
 
 Eight phones sending depth, confidence and colour would be about 49,000 packets
-per second **at the simulator's 256×192 grid**, and about 76,000 at the 320×240
-a real iPhone 17 Pro sends. Both are arithmetic from the frame size, not
-measurements, and the second one is above what the bridge was measured to
-carry.
+per second **at the simulator's 256×192 grid**, and about 76,300 at the 320×240
+a real iPhone 17 Pro sends. Both are arithmetic from the frame size; the second
+was also run on loopback (eight colour sims at 320×240, 76,300 packets per
+second, none lost), so it is inside what the bridge was measured to carry. At
+that grid the binding limit is the gigabit link, not the bridge: eight colour
+phones are 937 Mbit/s with framing. Real phones through the show switch have
+not been measured.
 
 Do not put the relay in front of the bridge in a show configuration.
 
@@ -176,7 +180,8 @@ the code and the launchers over both.
 ## Start the hub
 
 The launchers start the bridge and the web console together, each under a
-watchdog that restarts it two seconds after it exits.
+watchdog that restarts it two seconds after it exits (three seconds for the
+console on Windows, `run.bat`).
 
 | Machine | Command |
 |---|---|
@@ -194,9 +199,9 @@ Four parameters decide whether anything arrives at all.
 | Parameter | What to set | Why |
 |---|---|---|
 | `Udpactive` | On | The ingest is off while this is off. Nothing arrives and nothing says why. The saved working copy ships with it **off**, so this is the first switch to check. |
-| `Udpport` | The name the bridge publishes under, or the port the phones send to when TouchDesigner binds the socket itself | A mismatch here looks exactly like a dead network. |
+| `Udpport` | The name the bridge publishes under, or the port the phones send to when TouchDesigner binds the socket itself. 9004 in the saved working copy, 9003 by default | A mismatch here looks exactly like a dead network. |
 | `Stalesecs` | 0.28 in the saved working copy, 0.5 by default | A device silent for longer than this drops out of the merge and reads STALE in the `devices` table. |
-| `Mergegpu` | On for the show path | The GPU merge path builds the cloud on the GPU. It needs the bridge. See [Parameters](parameters.html) for what it changes. |
+| `Mergegpu` | On for the show path, and on in the saved working copy | The GPU merge path builds the cloud on the GPU. It needs the bridge. See [Parameters](parameters.html) for what it changes. |
 
 The full page-by-page list is in [Parameters](parameters.html).
 
@@ -215,7 +220,7 @@ device, with these columns:
 | `name`, `model` | From the device's TDPH hello |
 | `state` | `LIVE` if a frame landed within `Stalesecs`, else `STALE` |
 | `fps` | Frames landed in the last second, per device. Zero while STALE. |
-| `points` | Points in the last frame, or valid grid cells on the GPU path |
+| `points` | Points in the last frame, or valid grid cells on the GPU path. Zero while STALE. |
 | `age_ms` | Milliseconds since the last frame or hello |
 | `frame` | The device's last frame id |
 | `conn` | `udp:<port>` the frame came in on |
@@ -238,7 +243,7 @@ the ingest source on every change:
 | `TDP4 via tdp4_bridge (:<port>, own process)` | Reading the bridge's file. This is the show path. |
 | `TDP4/UDP receiver listening :<port>` | TouchDesigner bound the socket itself. The bridge is not running. |
 | `TDP4 receiver cannot bind :<port>` | Something else holds the port. Often a bridge on the same port that TouchDesigner has not yet noticed, or a second TouchDesigner. |
-| `TDP4 device <id> online` | First frame from that device |
+| `TDP4 device <id> online (GPU path)`, or `(<n> pts)` on the CPU path | First frame from that device |
 
 ### 3. The preview
 

@@ -20,8 +20,9 @@ it is read, which is often what you want to know.
 [How the pipeline is built](pipeline.html) has the stage order, the two merge
 paths side by side, and where each parameter bites.
 
-One caveat on the generated list: `tox_params_live.md` was generated at v63 and
-the working copy has moved on since (v87 at the time of writing). The list
+One caveat on the generated list: `tox_params_live.md` was generated at v63,
+hand-edited through v85, and the working copy has moved on since (v87 at the
+time of writing). The list
 prints a multi-component parameter as its X component alone. The operator or
 shader that **reads** a parameter is the real contract, and that is what the
 tables below were checked against.
@@ -54,7 +55,7 @@ Ingest, and the legacy whole-cloud controls.
 | `Stalesecs` | Stale After (s) | Float | 0.5 | Get-in | both | A device silent for longer drops out of the merge and reads STALE. Saved working copy: 0.28. |
 | `Maxpoints` | Max Output Points | Int | 400000 | Get-in | CPU | Output budget. The emit strides evenly over the merged cloud to stay under it. |
 | `Colormode` | Colour Mode | Menu `rgb` / `tint` | `rgb` | Show | both | `rgb` uses the phone's own colour plane. `tint` gives each device a flat colour, which is how you tell whose cloud is whose while aiming. |
-| `Cropon` | Stage Crop | Toggle | False | Get-in | CPU | Enables the axis-aligned crop on the CPU path. The GPU path always crops. |
+| `Cropon` | Stage Crop | Toggle | False | Get-in | CPU | Enables the axis-aligned crop on the CPU path, and only while `Segmode` is `off`; the geometric and learned modes cut to the stage box without it. The GPU path always crops. |
 | `Cropmin` | Crop Min | XYZ | -8, -1, -4 | Get-in | both | Minimum corner of the stage box, in metres. The defaults differ per component: X -8, Y -1, Z -4. Saved working copy: -6, -3, -5. |
 | `Cropmax` | Crop Max | XYZ | 8, 9, 4 | Get-in | both | Maximum corner. Per component: X 8, Y 9, Z 4. Saved working copy: 6, 3, 5. |
 | `Voxelsize` | Voxel Dedup (m, 0=off) | Float | 0.0 | Build | CPU | Drops duplicate points where views overlap, on the legacy unsegmented path only. Zero is off. |
@@ -117,10 +118,10 @@ Learned-background segmentation, and the shared cleanup thresholds.
 | `Learnframes` | Learn Frames | Int | 300 | Get-in | both | Frames to average into the learned background. Saved working copy: 450. |
 | `Fusevox` | Fine Voxel (m) | Float | 0.025 | Get-in | both | Fusion voxel size. Read by the CPU fusion and by the GPU fusion shader. The GPU hysteresis cell is four times this value. |
 | `Floormargin` | Floor Margin (m) | Float | 0.03 | Get-in | CPU | Tolerance on the learned floor height map. Saved working copy: 0.033. |
-| `Densitymin` | Min Pts / 10cm Cell | Int | 2 | Get-in | both | A 10 cm cell with fewer points than this is noise. Read by the CPU cleanup and by the GPU cleanup shader. **Was 4 until v84**, where it was measured: against exact limb truth from six simulated phones, 4 kept 0.985 of the limb points the phones delivered and 0.967 of hand points; 2 keeps 0.995 and 0.984. What it was discarding was limb tips clipping the corner of a 10 cm cell. |
+| `Densitymin` | Min Pts / 10cm Cell | Int | 2 | Get-in | both | A 10 cm cell with fewer points than this is noise. Read by the CPU cleanup and by the GPU cleanup shader. **Was 4 until v84**, where it was measured: against exact limb truth from six simulated phones, 4 kept 0.985 of the limb points the phones delivered and 0.967 of hand points; 2 keeps 0.995 and 0.984. What it was discarding was limb tips clipping the corner of a 10 cm cell. Measured 2026-10-28 with `Tools/td_limb_sweep.py`: two simulated walkers, 180 consecutive frames, the show rig's six phone positions. |
 | `Minclusterpts` | Min Person Points | Int | 150 | Get-in | both | A cluster with fewer points than this is not a person. Read by both cleanup paths. |
 | `Autoalign` | Measure Alignment | Pulse | - | Get-in | both | Collects 30 frames, then solves a four-degree-of-freedom alignment per device against a reference, on a worker thread. It only measures. **Worked on the CPU path only until v82**: both collection points sat after the GPU path's early return, so on the show default (`Mergegpu` on) the snapshot never started and the pulse never reported anything. |
-| `Alignref` | Reference Device | Int | 1 | Get-in | CPU | The device the alignment solve measures the others against. |
+| `Alignref` | Reference Device | Int | 1 | Get-in | both | The device the alignment solve measures the others against, on either path. `Regcopyref` copies from it too. |
 | `Applyalign` | Apply To Registration | Pulse | - | Get-in | both | Writes the measured alignment into the `registration` table, and only for a device the measurement graded OK. Check `align_report` first: since v82 it carries a status (OK / WARN / FAIL), the reason, a fix, the overlap with its target and what it was solved against, beside the residual and inlier count. A correction beyond a refine's reach (more than 10 degrees or half a metre) FAILs rather than being polished into a confident wrong answer, and points at the console's global alignment or the walk calibration instead. |
 | `Halign` | Auto-Align (ICP vs static bg) | Toggle | False | - | - | **Inert.** The parameter exists on the page and nothing in the repository reads it. It is also absent from the generated parameter list. Treat it as dead until something claims it. |
 
@@ -229,12 +230,12 @@ calibration markers and the client-facing outputs; the hub carries the cloud.
 
 | Parameter | Label | Type | Default | When | What it does |
 |---|---|---|---|---|---|
-| `Consoleactive` | Console Link Active | Toggle | True | Get-in | Enables the link. |
+| `Consoleactive` | Console Link Active | Toggle | True | Get-in | Enables the link. Saved working copy: off, since v87 was saved with both links paused. Turn it on after loading. |
 | `Consoleport` | Console Link Port (rx) | Int | 9006 | Get-in | The port the hub receives on, from the console. |
 | `Consolehost` | Console Host (blank = learn from ping) | Str | blank | Get-in | Leave blank and the hub learns the console's address from its ping. |
-| `Consolereply` | Console Listen Port (tx) | Int | 9001 | Get-in | The port the hub sends to. |
+| `Consolereply` | Console Listen Port (tx) | Int | 9001 | Get-in | The port the hub sends to, unless the console's ping carries a reply port, which wins. |
 | `Healthhz` | Health Rate (Hz) | Float | 1.0 | Build | How often the hub reports its health to the console. |
-| `Oscinport` | Phone Telemetry Port (relay in) | Int | 9000 | Get-in | Phone OSC telemetry arrives here and is relayed to the console. The hub no longer interprets it. |
+| `Oscinport` | Phone Telemetry Port (relay in) | Int | 9000 | Get-in | Phone OSC telemetry arrives here and is relayed to the console. The hub no longer interprets it, with one exception: the phone's IMU pose and moved-since-lock angle, which it keeps on its own `imu` table. |
 | `Consolestatus` | Link Status | Str | - | - | Read-only. Address, time since the last ping, and transmit, receive, relay, ignored and error counts. |
 
 ## RGB
@@ -276,6 +277,7 @@ place.
 | Parameter | Label | Type | Default | When | What it does |
 |---|---|---|---|---|---|
 | `Posesource` | Pose Source | Menu `console` / `manual` | `console` | Get-in | `console` takes poses from the console roster. `manual` uses the knobs below. Saved working copy: `console` since v80; it shipped as `manual` before that, which silently ignored every pose the console pushed. |
+| `Alignmethod` | Align Method | Menu `icp` / `open3d` | `icp` | Measuring alignment | With `open3d`, Measure Alignment hands the placed clouds to TDXDepthCamMerger's Open3D refine (`TD/newtox/o3d_align.py`) in a separate Python; the result is a measurement in `align_report`, and TouchDesigner refuses to apply it, since poses are applied from the console (v85). `icp` is the built-in measurement. |
 | `Regdevice` | Edit Device Id | Int | 1 | Get-in | Which device the knobs below edit. Saved working copy: 1. |
 | `Regyaw` | Yaw (deg) | Float | 0.0 | Get-in | That device's yaw. Note that the registration yaw is not the same number as the roster's plan heading; see the console documentation before typing a figure in by hand. |
 | `Regtx`, `Regty`, `Regtz` | Move X/Y/Z (m) | Float | 0.0 | Get-in | That device's translation. |
@@ -289,15 +291,16 @@ add a phone.
 
 ## What the saved file ships with
 
-These are the values stored in `TDStageConductor.tox` as of 2026-10-27, where
-they differ from the parameter default. A later save may differ; read the file
-rather than trusting this table.
+These are the values stored in `TDStageConductor.tox` as of v87 (2026-11-03),
+where they differ from the parameter default, plus a few that once did. A later
+save may differ; read the file rather than trusting this table.
 
 | Parameter | Saved value |
 |---|---|
 | `Udpactive` | off |
 | `Udpport` | 9004 |
 | `Mergegpu` | on |
+| `Consoleactive` | off |
 | `Segmode` | geometric |
 | `Stalesecs` | 0.28 |
 | `Floorcut` | 0.06 |
@@ -319,18 +322,22 @@ rather than trusting this table.
 | `Trimy` | 0 |
 | `Handsrate` | 30 |
 | `Regdevice` | 1 |
-| `Regyaw` | 0 |
-| `Regtx` | 0 |
-| `Regty` | 0 |
-| `Regtz` | 0 |
+| `Regyaw` | -180 |
+| `Regtx` | 3.05 |
+| `Regty` | 1.015 |
+| `Regtz` | 3.52 |
 
 `Cropmin` and `Cropmax` together are the live stage box: about six metres
 either side in X and five either side in Z, three metres down and three up.
 The GPU crop reads the X and Z figures directly; the CPU crop and the cleanup
 grid's origin read the Y figures.
 
-The `Align` knobs are the pose of whichever device `Regdevice` selects. They
-are all zero as saved, and so is every row of the `registration` table.
+The `Align` knobs are the pose of whichever device `Regdevice` selects. Every
+row of the `registration` table is zero as saved (rows 1, 2, 3 and 50), but the
+knobs themselves are not: v87 saved them at yaw -180, tx 3.05, ty 1.015,
+tz 3.52 for device 1, a bench residue. They do not reach the table on load,
+because `reg_manual` puts the selected device's stored row onto the knobs on
+its first tick and only an edit made after that writes back.
 
 That state is recent, and the reason it changed matters because the same thing
 can happen again on any bench. Up to v79 the saved component carried a real
@@ -352,7 +359,9 @@ v80 cleared the table, set `Regdevice` back to 1, zeroed the `Align` knobs and
 put `Posesource` back on `console`. **v81 then found two more**: `Trimy` was
 still 0.25, lifting every stage-frame point a quarter of a metre, and
 `Floorcut` was 0 so that lifted floor was never cut either. Two rounds to clear
-one bench session. The lesson generalises past this one file:
+one bench session. And it happened again: v85 and v86 were saved with the
+2026-10-28 Sydney bench poses in registration rows 1 to 3, cleared in v87. The
+lesson generalises past this one file:
 
 {: .warning }
 Anything you nudge by hand on a bench is saved into the component. Zero the

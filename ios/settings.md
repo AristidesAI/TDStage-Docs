@@ -76,62 +76,74 @@ UserDefaults.
 | `stage.oscPort` | `9000` | profile | Telemetry destination port |
 | `stage.ctlPort` | `9010` | profile | The port the phone listens on for commands |
 | `stage.preferWired` | `true` | `set` number, profile | Require wired Ethernet for outgoing connections whenever a wired interface is up. The requirement is provisional: see below |
-| `stage.hostCable` | `""` | no | The last complete cable address the phone learned. Powers the LIVE page's **Cable** button |
-| `stage.hostWifi` | `""` | no | The last complete network address. Powers the **Wi-Fi** button |
-| `stage.markerExtrinsic` | empty | no | The last marker calibration solve, as 16 floats. Written by a calibration and cleared by `/ctl/calibclear` |
+| `stage.hostCable` | `""` | no | The last complete cable address the phone learned. Powers the **Cable** choice in the LIVE page's Link picker |
+| `stage.hostWifi` | `""` | no | The last complete network address. Powers the **Wi-Fi** choice |
+| `stage.markerExtrinsic` | empty | verb | The last marker calibration solve, as 16 floats. Written by a calibration (`/ctl/calibrate`) and cleared by `/ctl/calibclear` |
 
 {: .warning }
 `stage.tcpHost` and `stage.oscHost` are deliberately **not** in the profile
 schema. Which link a phone uses is the operator's choice, and nothing may
 override it. The phone re-applies a cached profile at boot and on a full
-self-heal: if a host lived in that document, pressing **Cable** and then taking
+self-heal: if a host lived in that document, choosing **Cable** and then taking
 a heal a few seconds later would walk the phone back onto Wi-Fi on its own. An
 explicit `/ctl/set stage.tcpHost` still works, because that is a person at a
 console deciding.
 
 In practice an operator does not send that by hand. Pressing **Send telemetry
-here** on the console's device row sends the address over the control channel,
-which is the supported way to point a phone at a machine. The phone's own
-on-screen advice names the same button.
+here** on the console sends every phone `/ctl/set stage.oscHost` with the
+console's address (and `stage.oscPort` in a profile). It does not write
+`stage.tcpHost`, but the phone reads the console's address off that packet's
+source and files it under `stage.hostCable`, `stage.hostEthernet` or
+`stage.hostWifi`, so choosing that link in the Link picker then points the
+depth stream at it. The phone's own on-screen advice names the same button.
 
 `stage.hostCable` and `stage.hostWifi` are the only two keys with no registered
 default. They read as empty until the phone learns an address.
 
 ### `stage.preferWired` is a preference with a five-second escape
 
-While this is on and a wired interface is up, the streamer builds each
-outgoing UDP connection with `requiredInterfaceType = .wiredEthernet`.
-Cellular is prohibited on every connection regardless.
+While this is on, the link is automatic (`stage.link` = `auto`) and a wired
+interface is up, the streamer builds each outgoing UDP connection with
+`requiredInterfaceType = .wiredEthernet`. Cellular is prohibited on every
+connection regardless.
 
 The streamer **drops that requirement after five seconds if the connection has
 not come up, even while the wired link stays up.** Without that escape, an
 adapter that is up but routes nowhere (link-local only, the wrong VLAN, a
 receiver on the Wi-Fi subnet) would park the connection in `waiting` for the
-whole session, and nobody could rescue the phone remotely either, because its
-telemetry leaves under the same requirement: `/ctl/set stage.preferWired 0`
-cannot reach the phone that needs it. So the streamer rebuilds the connection
-once with no requirement, notes `wifi (wired adapter not routing)`, and re-arms
-the requirement on the next wired path change.
+whole session. The telemetry does not wait on the link at all: a pinned
+telemetry connection that goes `waiting` or loses its path is rebuilt on any
+route at once, so the console keeps seeing the phone and `/ctl/set
+stage.preferWired 0` can still reach it. The streamer rebuilds the depth
+connection once with no requirement, notes `any route (wired adapter not
+routing)`, and re-arms the requirement on the next link change: a wired
+adapter or its address coming or going, a new destination host, or the
+operator choosing a link or writing this key. A connection that was ready and
+then loses its path gets the same five seconds before it is rebuilt.
 
 The fallback does not change the key itself. A phone that has fallen back still
 reports `preferWired 1`, and the fallback shows up as `link = "wifi"` with
-`wiredUp = 1` on `/device/link` and as "Wi-Fi (Ethernet waiting)" on the LIVE
-page.
+`wiredUp = 1` and the note as the seventh argument on `/device/link`, and on
+the LIVE page as "Wi-Fi" followed by the note, in orange.
+"Wi-Fi (Ethernet waiting)" is what the page shows during the five seconds
+before the escape.
 
 {: .warning }
-**Toggling this key does not re-arm the requirement.** Writing it relinks both
-the depth and the telemetry connections, but only a wired path change clears
-the fallback latch, so a phone that has already fallen back rebuilds without
-the requirement again. Bounce the wired link, or restart the app. No remote
-verb clears the latch on its own.
+**Writing this key re-arms the requirement.** It relinks both the depth and
+the telemetry connections, and a relink clears the fallback latch and its note,
+so the chosen link gets a fresh five seconds. A phone whose adapter still does
+not route therefore stalls for another five seconds every time the key is
+written, before it escapes again.
 
 Full description, including what to check when it happens:
 [Prefer Ethernet](live.html#prefer-ethernet-poe--cable).
 
 {: .note }
-Link selection is being revised in the source to add an explicit Link picker
-(automatic, Ethernet, cable, Wi-Fi) alongside this preference. The five-second
-escape survives that change. The authority is `TDStage/Net/WiredLink.swift`.
+Link selection has an explicit Link picker on the LIVE page beside this
+preference (`stage.link`: automatic, Ethernet, cable, Wi-Fi), also reachable by
+`/ctl/set stage.link <mode>` and absent from the profile schema; this
+preference is consulted only under automatic. The five-second escape applies
+to every pinned link. The authority is `TDStage/Net/WiredLink.swift`.
 
 ---
 
@@ -154,8 +166,8 @@ because a take is one file with one geometry in its header.
 
 So its default of `256x192` is **not** what the phone sends, and reading it as
 a statement about the wire is the mistake this key invites. The phone takes the
-smallest float depth format its camera offers, which is **320×240 on an iPhone
-17 Pro**. To know what a phone is really sending, read the grid on the LIVE
+first video format that offers depth and the smallest float depth grid inside
+it, which is **320×240 on an iPhone 17 Pro**. To know what a phone is really sending, read the grid on the LIVE
 page's stream line or the frame header rather than this key. Bandwidth and disk
 figures that assume 256×192 understate a real phone by about half again:
 [Wire and disk cost](record.html#disk-cost).
@@ -184,7 +196,7 @@ The first four apply live, with no capture restart.
 | Key | Default | Remote | What it does |
 |---|---|---|---|
 | `stage.mountedge` | `0` | `set` number (0 to 2), profile | Declared sky side: 0 automatic, 1 left edge up, 2 right edge up. Consulted only when gravity is degenerate, which happens when the camera stares straight down or up. Also rides the hello and the telemetry |
-| `stage.showActive` | `false` | no | Auto-resume streaming on launch. START sets it, STOP clears it. A profile's own `autoStart` field is what a console pushes instead |
+| `stage.showActive` | `false` | verb | Auto-resume streaming on launch. START and `/ctl/start` set it, STOP and `/ctl/stop` clear it. A profile's own `autoStart` field is what a console pushes instead |
 | `stage.thermalLadder` | `true` | `set` number, profile | Let the frame-rate ceiling drop when the phone is hot. Off holds the configured rate |
 | `stage.thermalSeriousFPS` | `30` | `set` number (5 to 60) | The ladder's `serious` rung, in absolute fps |
 
@@ -205,10 +217,10 @@ edit the app's stored defaults, and no screen does that
 | Key | Default | What it does |
 |---|---|---|
 | `stage.recovery.enabled` | `true` | Master switch for the in-process watchdog |
-| `stage.recovery.stallSeconds` | `4.0` | Streaming but no frame for this long, then self-heal |
-| `stage.recovery.linkSeconds` | `12.0` | Streaming but transport down this long, then re-dial |
+| `stage.recovery.stallSeconds` | `4.0` | Streaming but no frame for this long, then self-heal. Never read as less than 1 s |
+| `stage.recovery.linkSeconds` | `12.0` | Streaming but transport down this long, then re-dial. Never read as less than 3 s |
 | `stage.recovery.allowExit` | `false` | Allow the last-resort tier, which quits so a supervised phone relaunches. Only meaningful under Single App Mode |
-| `stage.recovery.crashLoopCount` | `3` | This many unclean boots, inside the window below, means safe mode |
+| `stage.recovery.crashLoopCount` | `3` | This many unclean boots, inside the window below, means safe mode. A value below 2 counts as 2 |
 | `stage.recovery.crashLoopWindow` | `240.0` | The window, in seconds |
 | `stage.recovery.safeMode` | `true` | Honour the crash-loop floor at all |
 | `stage.recovery.profileURL` | `""` | An optional URL to refresh the profile from at boot |

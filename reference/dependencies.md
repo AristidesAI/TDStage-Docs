@@ -103,13 +103,13 @@ variants in one environment break `cv2`.
 
 These are imported across `WebConsole/*.py` and need nothing installed:
 `argparse`, `base64`, `copy`, `gc`, `hashlib`, `http.server`, `importlib`,
-`io`, `ipaddress`, `json`, `logging`, `math`, `mmap`, `multiprocessing`, `os`,
+`io`, `ipaddress`, `json`, `logging`, `math`, `multiprocessing`, `os`,
 `re`, `shutil`, `signal`, `socket`, `statistics`, `struct`, `subprocess`,
 `sys`, `tempfile`, `threading`, `time`, `traceback`, `urllib`, `uuid`, `zlib`.
 
-The console's own cross-process link to the YOLO worker (`ipc_local.py`) uses
-`multiprocessing.connection`: a Unix socket on POSIX, a named pipe on Windows,
-and no package behind either.
+The console's own cross-process link to the YOLO worker (`ipc_local.py`) is a
+Unix-domain socket (`socket.AF_UNIX`) on POSIX and a `multiprocessing.connection`
+named pipe on Windows, with no package behind either.
 
 ### Bundled model files
 
@@ -134,11 +134,15 @@ WebConsole\windows\doctor.bat
 ```
 
 The installer requires Python 3.12 or 3.11 reachable through the `py`
-launcher, creates `WebConsole\.venv`, installs a CUDA 12.6 PyTorch build when
-`nvidia-smi` is present and a CPU build otherwise, then installs
-`requirements.txt`, then attempts `cyndilib` without treating failure as fatal.
-It is safe to re-run. Git for Windows is also part of the install, because the
-backup script is a bash script and runs under Git Bash.
+launcher, creates `WebConsole\.venv`, installs a CUDA 13.0 (`cu130`) PyTorch
+build when `nvidia-smi` is present and a CPU build otherwise, then installs
+`requirements.txt`, then attempts `mediapipe` and `cyndilib` without treating
+failure as fatal. With an NVIDIA card it also requires driver 580 or newer and
+stops with a failure on an older one, because the `cu130` wheel then installs
+but finds no CUDA and YOLO would silently run on the CPU. It is safe to re-run.
+Git for Windows is a separate prerequisite named in
+`Notes/Windows-Show-Machine-Setup.md`, not something `install.bat` installs,
+because the backup script is a bash script and runs under Git Bash.
 
 macOS, by hand, because there is no macOS installer:
 
@@ -198,8 +202,8 @@ without standing in front of the show machine.
 Probed on 2026-10-27, `WebConsole/.venv` is Python 3.14.7 and was created with
 `--system-site-packages`. Only `pip`, the pyobjc frameworks and `cyndilib` were
 installed into it. Everything else it can import, including `numpy` 2.4.6,
-`pillow`, `lz4` and `mcap`, comes from the Homebrew system interpreter that
-leaks through that flag. It cannot import `psutil`, `ultralytics` or `torch` at all. So
+`pillow`, `lz4` and `mcap`, comes from the Homebrew interpreter's own
+site-packages and the user site that leak through that flag. It cannot import `psutil`, `ultralytics` or `torch` at all. So
 `_worker_python()` finds no `ultralytics` here, and unless
 `TDSTAGE_YOLO_PYTHON` is set this Mac runs **without YOLO**, on Apple Vision
 masks alone, and says so once at boot and in Rig health.
@@ -230,9 +234,13 @@ nothing tests.
 `.github/workflows/windows-console.yml` runs the real `install.bat` on a
 Windows runner on every push that touches the console, the TD ingest modules or
 the tools, then `firewall.bat`, then `doctor.py`, then the YOLO worker over the
-Windows named pipe with the bundled weights, then every pure-Python self-test.
-The runner has no GPU, so CUDA is never exercised, and neither are phones or
-TouchDesigner.
+Windows named pipe with the bundled weights, then every pure-Python self-test,
+a console smoke test, the fan-out throughput check, `show.bat` end to end and
+`Tools/requirements_check.py`. The runner has no GPU, so CUDA is never
+exercised, and neither are phones or TouchDesigner. The workflow is configured
+but has not run since 2026-10-27 02:52Z: the account's Actions billing has
+refused every job since then (see `CHANGELOG.md`), so until that clears the
+list is run by hand on a Mac.
 
 One tool, `Tools/requirements_check.py`, needs a decoder module supplied by the
 integration partner that is deliberately not vendored into this repository.
@@ -264,9 +272,9 @@ daemon and no tunnelling software anywhere in the path.
 here. It only ever forwarded TCP, which is why the old wired path had to use
 the legacy TCP depth protocol. The current protocol is UDP, the cable
 carries UDP, and so the forwarder has nothing left to do. The remaining
-mentions of `iproxy` in the source are comments explaining why it was removed
-and one diagnostic that used to run an `iproxy` migration on a wrong premise.
-Nothing invokes it.
+mentions of `iproxy` in the source are comments explaining why it was removed,
+one console note saying no `iproxy` is needed, and a comment on the diagnostic
+that used to run an `iproxy` migration on a wrong premise. Nothing invokes it.
 
 Also not needed: a VPN, a bridge, a virtual adapter, or any Xcode or developer
 tooling on the receiving machine. The receiving machine needs an IP stack.
@@ -321,7 +329,7 @@ Everything the app uses is an Apple framework linked from the SDK: `ARKit`,
 `AVFoundation`, `Compression`, `CoreGraphics`, `CoreImage`, `CoreMedia`,
 `CoreMotion`, `CoreVideo`, `Foundation`, `ImageIO`, `Metal`, `Network`,
 `Observation`, `os`, `simd`, `SwiftUI`, `UIKit`, `UniformTypeIdentifiers` and
-`Vision`. The test targets add `XCTest`, `Darwin` and `Synchronization`. No
+`Vision`. The test targets add `XCTest` and `Darwin`. No
 dependency manager is involved, so there is no lock file, no resolution step and
 nothing to vendor.
 
@@ -366,7 +374,7 @@ key, read by `Support/testflight.sh`: a key id, an issuer id and a path to the
 
 | Item | Value | Verified how |
 |---|---|---|
-| TouchDesigner build | 2025.33230 is the build in use. The tox requires the build it was saved with, 2025.32820 or newer. | Read from the installed application bundle on 2026-10-27 |
+| TouchDesigner build | 2025.33230 is the build in use, and the build the working tox was last saved with (2026-11-03). The tox requires the build it was saved with or newer. | Read from the installed application bundle, and from the `.build` record `toeexpand` writes out of `TD/TDStageConductor.tox` at HEAD |
 | Bundled Python | 3.11.15, a Derivative build | Probed from the bundled interpreter |
 | Bundled `numpy` | 2.1.2 | Probed from the bundle |
 | Bundled `cv2` | 4.11.0 | Probed from the bundle |

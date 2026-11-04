@@ -54,9 +54,10 @@ frame with a missing packet, and let the next frame fix it.** The phone
 splits each frame into numbered packets and the receiver reassembles them by
 frame id. If any packet is missing, the receiver discards the whole frame.
 
-A frame is around 150 KB and a safe datagram is 1472 bytes, so a frame is
-about a hundred packets. The app has to split frames itself (application-layer
-fragmentation), which is what video-over-IP protocols do too.
+A depth-and-confidence frame is around 150 KB at the simulator's 256×192 grid
+and around 230 KB at the 320×240 a real phone sends, and a safe datagram is
+1472 bytes, so a frame is 100 to 160 packets. The app has to split frames itself
+(application-layer fragmentation), which is what video-over-IP protocols do too.
 
 **There is therefore no TCP mode and no TCP fallback.** Any TCP you find in
 this system is a leftover; remove it. The phone-side TCP streamer was deleted in
@@ -83,8 +84,8 @@ paying bandwidth to transmit information that was already there.
 
 {: .warning }
 **The grid is the phone's choice, not a constant, and it decides every number
-below.** The app takes the smallest float depth format the camera offers, which
-is **320×240 on an iPhone 17 Pro**, 1.56 times the cells of the 256×192 that
+below.** The app takes the first video format that offers depth and the smallest
+float depth grid behind it, which is **320×240 on an iPhone 17 Pro**, 1.56 times the cells of the 256×192 that
 the simulator uses and that most figures in this project were first computed
 at. A `stage.depthgrid` setting exists and is inert. So read the right
 column for a real rig, and the left one only when you are reasoning about
@@ -137,8 +138,12 @@ one, and on 2026-10-30 it was taken.
 
 ### The decision: a faster link, not less colour
 
-**The show runs 2.5 gigabit** (a switch with a 2.5G uplink and a 2.5G card in
+**The show is to run 2.5 gigabit** (a switch with a 2.5G uplink and a 2.5G card in
 the show machine) and **every phone sends colour** ([#42](https://github.com/AristidesAI/TDStage/issues/42)).
+The hardware is not in yet: the switch named for Stroud on 2026-11-03 (a GS316EPP)
+has gigabit ports and no 2.5G port, so six colour phones fit on it at about 70 per
+cent and eight do not. Until the 2.5G link exists, rehearsals on a gigabit switch
+run colour on three phones.
 
 Eight colour phones on a 2.5 Gbit/s link is 937 of 2,500 Mbit/s: **37 per
 cent**, which is headroom rather than a tightrope. Every alternative bought the
@@ -200,12 +205,13 @@ colour is smaller than the wire's.
 Two things make reduced-rate colour work rather than merely cost less, and both
 exist because sending colour intermittently used to break something:
 
-- **A frame without colour keeps the colours it had.** Each point borrows the
-  phone's last real image, up to a second old and on the same grid. Without
-  that, every point of a colourless frame was **black**, so the coloured cloud,
-  the video output and the appearance colours the tracker uses would have
+- **In the console, a frame without colour keeps the colours it had.** Each point
+  borrows the phone's last real image, up to a second old and on the same grid.
+  Without that, every point of a colourless frame was **black**, so the coloured
+  cloud, the video output and the appearance colours the tracker uses would have
   blinked black on every such frame, which is what sending colour less often
-  was supposed to protect.
+  was supposed to protect. TouchDesigner does not hold colour: its atlas marks a
+  colourless frame as having none.
 - **A phone that is moving gets slightly stale colours** for up to that second,
   because the held image is pinned to the grid rather than to the scene. On a
   phone on a stand this is invisible; know it before anybody hand-holds one.
@@ -224,9 +230,10 @@ the software's own ceiling, and it skips a real network card's receive path and
 the switch, so the end-to-end path at this load has still not been measured.
 
 The work does not disappear, it moves. The receiver regenerates the points
-from the grid on the GPU, where unprojecting around 614,000 cells is
-sub-millisecond work. The phone's CPU is spared and the network carries less
-than half the traffic.
+from the grid on the GPU: the 2026-07-18 architecture note put unprojecting the
+393,000 cells of eight 256×192 grids at under a millisecond, and the GPU merge
+path holds TouchDesigner at 60 fps with eight simulated phones. The phone's CPU
+is spared and the network carries less than half the traffic.
 
 Two consequences:
 
@@ -401,13 +408,14 @@ synthetic streams, not from phones.
 
 | Figure | Value | Label |
 |---|---|---|
-| GPU merge path, frame rate held | 60 fps at 8, 12 and 16 streams, on a development Mac with the person model idle and no content rendering | Measured, simulation |
-| Transport loss up to 16 streams | 0 incomplete frames, at 573 Mbit/s | Measured, simulation |
-| Bridge to TouchDesigner delay | 9.5 ms median, 15.3 ms at the 95th percentile | Measured, simulation |
+| GPU merge path, frame rate held | 60 fps at 8, 12 and 16 streams, on a development Mac with the person model idle and no content rendering | Measured 2026-10-26, simulation at 256×192, depth and confidence |
+| Transport loss up to 16 streams | 0 incomplete frames, at 573 Mbit/s | Measured 2026-10-26, simulation at 256×192, depth and confidence |
+| Bridge to TouchDesigner delay | 9.5 ms median, 15.3 ms at the 95th percentile | Measured 2026-10-26, simulation at 256×192, depth and confidence |
 | Bridge receive capacity | 114,500 packets per second with no drops, 55 % of one core (twelve phones of 320×240 with colour). An earlier 61,000 was the highest load then tried, not a limit | Measured 2026-10-27, loopback |
 | Eight phones with colour, offered load | 49,000 packets per second at 256×192; about 76,000 at the 320×240 real phones send | Arithmetic from the frame size |
 
-Real-phone evidence is **one phone**. Nothing in this table was produced by
-eight real phones, and simulated phones do not get hot, fight for a switch or
-stand in front of each other. See
+Real-phone evidence is **two phones in one room**, measured together since
+2026-10-28. Nothing in this table was produced by eight real phones, and
+simulated phones do not get hot, fight for a switch or stand in front of each
+other. See
 [Evidence and claims](../operations/evidence.html).

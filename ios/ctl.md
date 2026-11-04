@@ -31,10 +31,10 @@ The model is LAN trust. There is no authentication on this port.
 
 ```mermaid
 flowchart TD
-  A["OSC datagram on :9010"] --> B{"One OSC 1.0 message,<br/>known address, supported type tags?"}
+  A["OSC datagram on :9010"] --> C["Remember the source address<br/>(cable, Ethernet and Wi-Fi slots kept apart)"]
+  C --> B{"One OSC 1.0 message,<br/>known address, supported type tags?"}
   B -- no --> X["Dropped silently"]
-  B -- yes --> C["Remember the source address<br/>(cable and network slots kept apart)"]
-  C --> D{"Which command?"}
+  B -- yes --> D{"Which command?"}
   D -- "/ctl/set key value" --> E{"Key in the whitelist?"}
   E -- no --> X
   E -- yes --> F["Clamp the value,<br/>write the UserDefaults key"]
@@ -71,13 +71,15 @@ because every other remedy is delivered over this socket. So:
 
 ### The phone learns where you are from your packets
 
-The phone remembers the source address of every accepted command. This is the
-only way it can discover a computer's address on a USB cable, because both ends
-pick a random link-local address and iOS blocks the discovery broadcast.
+The phone remembers the IPv4 source address of every non-empty datagram that
+reaches this port, before it parses the message, so even a malformed command teaches it where
+the console is. This is the only way it can discover a computer's address on a
+USB cable, because both ends pick a random link-local address and iOS blocks the
+discovery broadcast.
 
-The phone keeps cable addresses and network addresses in separate slots, so one
-never overwrites the other, and it trusts a cable address only while a cable is
-attached.
+The phone keeps cable, Ethernet and Wi-Fi addresses in three separate slots, so
+one never overwrites another, and it trusts a cable address only while a cable
+is attached.
 
 ---
 
@@ -143,7 +145,7 @@ restart, except where stated.
 | `/tdlidar/ctl/markers` | `0|1`, default 0 | On-phone marker detection |
 | `/tdlidar/ctl/skeleton` | `0|1`, default 0 | On-phone person and pose detection |
 | `/tdlidar/ctl/depthfilter` | `0|1`, default 0 | Apple depth smoothing. **Restarts the capture session.** Must stay 0 for a show |
-| `/tdlidar/ctl/depthgrid` | `"256x192"` or a width | Requested grid size. A string wins over a number. Validated, and refused while a take is recording. Currently has no effect on the captured grid |
+| `/tdlidar/ctl/depthgrid` | `"256x192"`, `"max"`, `"min"` or a width | Requested grid size. A string wins over a number. Validated, and refused while a take is recording. Currently has no effect on the captured grid |
 
 ## Calibration
 
@@ -174,9 +176,9 @@ been confirmed on a phone against a printed marker (**built, not verified**).
 |---|---|---|
 | `/tdlidar/ctl/profile` | `<json or flat yaml or an http(s) url>` | Apply a whole profile document and store it as the new last known good. A URL is fetched, with a 5 s timeout. **Dropped** while a take is recording, with no ack. Replies on `/device/profile/ack` otherwise |
 | `/tdlidar/ctl/profile/save` | none | Snapshot the live configuration as the new last known good |
-| `/tdlidar/ctl/recover` | `tier`, default 1 | Force a self-heal now: 1 restart capture, 2 reconnect transport, 3 full reconfigure, 4 relaunch. Tier 4 needs the opt-in recovery key, and is only meaningful on a supervised phone |
+| `/tdlidar/ctl/recover` | `tier`, default 1 | Force a self-heal now: 1 restart capture, 2 reconnect transport, 3 full reconfigure, 4 relaunch. Tier 4 needs the opt-in recovery key `stage.recovery.allowExit`, and is only meaningful on a supervised phone; without the key a tier 4 request runs tier 3 instead |
 | `/tdlidar/ctl/health` | none | One-shot health and recovery report. Replies on `/device/health`, `/device/health/cause` and `/device/profile/name` |
-| `/tdlidar/ctl/reset` | none | Clear the crash history, which leaves safe mode |
+| `/tdlidar/ctl/reset` | none | Clear the crash history, which leaves safe mode. Replies with the same report as `/ctl/health` |
 
 The phone never silently drops a profile it cannot parse. It replies with
 `accepted = 0`, because an operator who believes a phone is reconfigured when
@@ -227,7 +229,7 @@ profile: anything a profile can set, it can also silently re-set minutes later.
 | `/tdlidar/ctl/rec/play` | `name` `[loop]` `[speed]` | Stop the camera and replay that take. **The name is required** |
 | `/tdlidar/ctl/rec/playat` | `delay` or `"unixSeconds"` `name` | Armed play |
 | `/tdlidar/ctl/rec/pause` | `0|1`, default 1 | Pause or resume a running replay. A bare pulse pauses |
-| `/tdlidar/ctl/rec/stopplay` | none | End the replay |
+| `/tdlidar/ctl/rec/stopplay` | none | End the replay. The camera comes back only if `stage.rec.resumeLiveAfterPlay` is on (default off) |
 | `/tdlidar/ctl/rec/step` | `[n]`, default +1 | Step a replay n frames, clamped to 10 000 either way. 0 is refused |
 | `/tdlidar/ctl/rec/seek` | `frame` | Jump a replay to a frame. Required, and must be 0 or more |
 | `/tdlidar/ctl/rec/trim` | `"in"`, `"out"`, `"clear"`, or `in` `out` | Set the in or out point to the frame now playing, clear the trim, or set both explicitly. An out below 0 means to the end |
@@ -244,7 +246,8 @@ The phone accepts two forms, and both stay within what an OSC float can carry.
   milliseconds that separate two phones' notions of now.
 - **A string that parses as a number above 1e9 is an absolute unix time in
   seconds**, fractions allowed, for a console that would rather trust the
-  phones' clocks.
+  phones' clocks. The wait it works out to is clamped the same way: a time more
+  than 60 s ahead fires 60 s after receipt, and one already past fires at once.
 
 {: .note }
 A float cannot represent a wall-clock deadline in unix microseconds. A 32-bit
@@ -343,13 +346,15 @@ Three causes, and the second argument, `wiredUp`, separates them.
 | `link` | `wiredUp` | Cause |
 |---|---|---|
 | `wifi` | 0 | The adapter or the switch port is gone. A cable fault |
-| `wifi` | 1, `preferWired` 0 | Nobody asked for the wire. Set `stage.preferWired 1` |
-| `wifi` | 1, `preferWired` 1 | **The wired requirement was dropped after its five-second grace.** The adapter's link is up and its routing is not |
+| `wifi` | 1, `preferWired` 0 | Nobody asked for the wire. Set `stage.preferWired 1`. This row applies only while `mode` is `auto`; `ethernet` and `cable` pin the link without consulting the preference |
+| `wifi` | 1, `preferWired` 1 | **The wired requirement was dropped after its five-second grace.** The adapter's link is up and its routing is not. The seventh argument, `note`, is non-empty then and names the link that did not route |
 
 People read the third one wrong. The phone required wired Ethernet, the
 connection did not come up within five seconds, and the streamer rebuilt it
 once without the requirement so the phone would not sit silent for the whole
-session. The LIVE page reads "Wi-Fi (Ethernet waiting)" in amber. The fault is
+session. While the five seconds run, the LIVE page reads "Wi-Fi (Ethernet
+waiting)" in orange; once the requirement is dropped it reads "Wi-Fi" followed
+by the note, still in orange. The fault is
 in the routing rather than the cable: check which subnet the adapter has an
 address on and whether the receiver is reachable there. The requirement
 re-arms on the next wired path change, so bouncing the link makes the phone
@@ -401,7 +406,7 @@ stream instead, so that there is one authority for it.
 | `/tdlidar/<id>/device/rec/stats` | `frames` `seconds` `megabytes` `dropped` `freeGB` |
 | `/tdlidar/<id>/device/rec/arm` | `seconds` `label`. `0 ""` means nothing is armed |
 | `/tdlidar/<id>/device/rec/note` | The recorder's last word to the operator: a refusal, an auto-stop, an import result. Empty means none |
-| `/tdlidar/<id>/device/rec/play` | `index` `total` `seconds` `duration` `loops` `paused` `in` `out`. Zeros when nothing is playing |
+| `/tdlidar/<id>/device/rec/play` | `index` `total` `seconds` `duration` `loops` `paused` `in` `out`. The first six are zeros when nothing is playing; `in` and `out` are the trim, which outlives a replay, with `out` -1 meaning to the end |
 
 ## Replies and one-shots
 

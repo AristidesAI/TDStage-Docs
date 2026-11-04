@@ -25,14 +25,16 @@ out where it matters.
 
 ## Starting the array
 
-![The Dashboard's Array control panel, with six controls numbered](../assets/screens/console-dashboard.webp)
+![The Dashboard, with six controls numbered across its top bar and Array control panel](../assets/screens/console-dashboard.webp)
 
 **Start show and Start all are not the same button**, and that is the thing
 worth learning first.
 
 **Start show** (1) is a staggered start. It sends start to each enabled phone
-200 ms apart, then checks all of them together six seconds later, re-sends to
-the ones not yet streaming, and names anything still down. It also arms
+200 ms apart, with a blackout alongside each start so the screens go dark
+(since 2026-10-28; Wake brings them back), then checks all of them together six
+seconds later, re-sends to the ones not yet streaming, and names anything
+still down. It also arms
 auto-recover and latches "the show is running", which is what lets the console
 restart a phone that drops. Standby and Stop disarm it again.
 
@@ -44,17 +46,18 @@ retry and no show-running latch, so a phone that drops later is nobody's
 problem. It is faster and it tells you less. Use it when you already know the
 rig is healthy and only want pictures.
 
-Both read "is it streaming" from telemetry, so if telemetry is not reaching
-this console, the start report names every phone as failed while it streams
-perfectly. Fix
+Start show reads "is it streaming" from telemetry (Start all checks nothing),
+so if telemetry is not reaching this console, the start report names every
+phone as failed while it streams perfectly. Fix
 the telemetry port first and the start reports become trustworthy.
 
 **Blackout all** (6) does not stop anything. It turns the enabled phones'
 screens off while they keep streaming, which is what a phone on a stand should look like
 during a performance: dark, and working. A lit screen is visible from the
 audience, so blackout is worth doing for that reason alone. The console asks
-for confirmation first. It is **not** a cooling measure: a ninety-minute run on two phones found no measurable thermal
-difference from blacking out a plugged-in phone.
+for confirmation first. It is **not** a cooling measure: a ninety-minute run on two plugged-in iPhone 18 Pros
+running TDStage AR (2026-10-28) found no measurable thermal difference from
+blacking them out.
 
 Heat does cost frame rate, through the thermal ladder: a phone at **serious**
 is capped at `stage.thermalSeriousFPS`, and at **critical** it halves its
@@ -82,7 +85,7 @@ path rather than directly, so silence means *either* off the network *or*
 telemetry not reaching this console. It is still the cheapest first question,
 as long as you read the answer that way.
 
-**Finish all** (4) ends calibration on every phone at once, which is the step
+**Finish all** (4) ends calibration on every enabled phone at once, which is the step
 people forget after walking the markers.
 
 **Telemetry port** (2) is where **this console listens** for health. It is not
@@ -118,8 +121,10 @@ To fix a drifted rig: pick the phone you trust as the reference (4), then
 It sends only the settings that differ, and only to phones that have
 that control, so a phone running the other app is not sent something it does
 not understand. Device ids and the stream and telemetry hosts are never
-copied, for the obvious reason. Link and UDP port **are**, as part of the
-stored profile.
+copied, for the obvious reason. Link and UDP port **are** (the port travels as
+a profile key, merged into the phone's stored console profile when the console
+holds one and otherwise as a one-key profile document; the link as a plain
+setting).
 
 {: .warning }
 Two things to know before pressing it. If the reference phone is the one that
@@ -226,7 +231,8 @@ for time to acquire, identity losses and position error. See
 **Start simulator** (2) runs synthetic phones for two minutes, so the whole
 chain can be exercised with no hardware present. Useful for proving a receiver
 before a rig exists. Two things catch people out: it stops after 120 seconds
-unless you start it again, and it only reaches TouchDesigner when the bridge
+unless you start it again (the Dashboard's simulator panel has a seconds field
+and a loop box; this button has neither), and it only reaches TouchDesigner when the bridge
 or the fan-out is running. Without one it feeds this console alone, and says
 so in the log.
 

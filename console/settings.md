@@ -87,7 +87,7 @@ change. See
 |---|---|
 | **Key** | `group.key`. Hover a label in the Tuning panel to see it |
 | **Default** | What the code ships with |
-| **Range** | The schema's min and max. Values outside are clamped, not rejected |
+| **Range** | The schema's min and max. Values outside are clamped, not rejected. One hook can still refuse an in range value: `segment.py` refuses a stage box or `vox` whose cell table would pass 64 million cells, the store keeps the value that runs, and the key is reported in `errors` rather than `applied` |
 | **What moves** | The observable consequence |
 
 The **Live** class says what happens when you change it:
@@ -98,8 +98,12 @@ The **Live** class says what happens when you change it:
 | `reset` | The owning module throws its learned state away and relearns from scratch | ⚠ |
 | `restart` | An object has to be rebuilt before it takes effect, and the console reports the key in `needsRestart` | ⚠ |
 
-Keys marked **expert** are hidden until you turn on **Expert settings**. They
-are hidden because they can wedge a show.
+Most keys are **expert** and are hidden until you turn on **Expert settings**.
+They are hidden because they can wedge a show. The keys shown without it are
+`segmentation.emaWindow`, `bgThresh` and `freezeBg`; `vision.quality` and
+`dilate`; `tracking.clusterDistance`, `minTrackPts`, `spanMin`, `spanMax` and
+`settleWindow`; `hands.enabled`; `output.zFlip` and `emitProps`; and
+`latency.segTick` and `consensusFree`.
 
 One key is **locked**: the server refuses to move it. The panel shows it greyed
 with the reason rather than hiding it, because it records a contract decision.
@@ -264,15 +268,18 @@ The rest are signal conditioning on the wrist samples themselves.
 | `outlierM` | 0.25 m | 0.01 to 2.0 | safe | A single frame jump larger than this is rejected and the last position kept |
 | `birthHits`, `holdS`, `matchM` | in change, not documented yet | | safe | Publication and identity thresholds. See the note above |
 
-## output (10 keys)
+## output (12 keys)
 
-The two client feeds: `/track` on the wire, and the NDI image.
+The two client feeds, `/track` on the wire and the NDI image, plus the two
+camera image keys that `rgb_stream.py` reads from this group. Twelve keys.
 
 | Key | Default | Range | Live | What moves |
 |---|---|---|---|---|
 | `zFlip` | off | | safe | Negate z and vz on the wire. One click if the depth axis sign turns out reversed against the client's sim |
 | `emitRate` | 30.0 Hz | 1 to 60 | safe | `/track` bundle rate. The contract's native rate is 30 Hz |
 | `emitProps` | off | | safe | **LOCKED, off.** The client has not defined props, prop yaw is undefined, and their bus shares one smoothing filter across all props. Design only |
+| `jpegQuality` | 75 | 10 to 95 | safe | JPEG quality of the per phone camera images and the MJPEG stream (`/api/rgb`). `?q=` on a request overrides it once |
+| `rgbMaxAge` | 2.0 s | 0.2 to 30 | safe | A camera image older than this answers 204, meaning the phone stopped sending. `?maxAge=` on a request overrides it once |
 | `ndiWidth` | 960 px | 320 to 3840 | **restart** | Baked into the sender, so changing it rebuilds it and receivers reconnect |
 | `ndiHeight` | 540 px | 240 to 2160 | **restart** | As the width |
 | `ndiFps` | 30 fps | 15 to 60 | **restart** | Frames per second the sender advertises and renders |
@@ -302,7 +309,7 @@ Rates, polls and freshness windows across the ingest and camera view paths.
 | `splatW` | 320 px | 160 to 640 | safe | Reconstruction canvas width for the Vision fallback when no real camera frame is available |
 | `splatH` | 240 px | 120 to 480 | safe | Height of that canvas |
 | `snapshotMaxAge` | 2.0 s | 0.5 to 5.0 | safe | A device with no frame for this long vanishes from `/api/cloud`. **The browser view only** |
-| `personMode` | `off` | `off`, `motion`, `vision`, `combined` | safe | Which signal filters the Live view cloud. The motion engine keeps learning in every mode |
+| `personMode` | `off` | `off`, `motion`, `vision`, `combined`, `consensus` | safe | Which signal filters the Live view cloud. The motion engine keeps learning in every mode |
 
 {: .note }
 **Consensus used to be lost on every restart and on any edit to the latency
@@ -342,13 +349,16 @@ that.
 
 ### 2. Two camera view tunables are not reachable from the Tuning panel
 
+This was true until the #37 review and is kept here because it shows how a
+hook can be registered for a group and never receive what it reads.
 `rgb_stream.py` has an apply hook that reads `jpegQuality` and `rgbMaxAge` from
-the `output` group. **Neither key exists in the schema's `output` group**, so
-the hook is never handed them and the panel never shows them.
+the `output` group. Neither key existed in the schema's `output` group, so the
+hook was never handed them and the panel never showed them. **Both are in the
+schema now** (`jpegQuality` 75, 10 to 95; `rgbMaxAge` 2.0 s, 0.2 to 30) and
+appear in the panel under `output` once **Expert settings** is on.
 
-They are still adjustable per request, as query parameters on the image routes:
-`?q=` (10 to 95, default 75) and `?maxAge=` (default 2.0 s). The module globals
-keep their defaults otherwise.
+They are also adjustable per request, as query parameters on the image routes:
+`?q=` and `?maxAge=`, which override the setting for that one request.
 
 ### 3. The two "hands" are different things
 
@@ -368,19 +378,23 @@ In the `settings` section of `WebConsole/config.json`. A config file with no
 `settings` section behaves exactly as the shipped defaults.
 
 If that section is malformed, the console logs `saved settings ignored`, runs on
-defaults, and tells you to fix or delete the block and restart. That log line
-fires only if the loader itself raises, not on bad content: the console skips a
-non-dict block and rejects a bad key per key, both silently. Settings are not
-undoable: the undo stack covers poses, markers, the person figures and the
-roster, not these.
+defaults, and its boot note says to set the values you need in Settings, since
+the next save writes a valid block and files the old `config.json` in
+`backups/`, with no restart needed. That log line fires only if the loader
+itself raises. Bad content inside the block is reported key by key instead: a
+group or key this build does not have, or a value it had to clamp, is logged as
+`saved setting not read` and summed up in a boot note, and the console runs the
+default or the previous value for it. Settings are not undoable: the undo stack
+covers poses, markers, the person figures and the roster, not these.
 
 ## What a tick costs
 
 The engine's own work is about **15 ms per tick with eight devices in frame**,
 down from about 29 ms before the 2026-10-27 optimisation. *Measured,
-simulation.* Eight real phones have never been run, and simulated devices do not
-get hot or drop frames, so treat this as a ceiling on the code's cost and not as
-a rig figure.
+simulation: eight simulated phones with colour on the show rig layout, three
+walkers, on the development Mac.* Eight real phones have never been run, and
+simulated devices do not get hot or drop frames, so treat this as a ceiling on
+the code's cost and not as a rig figure.
 
 The bench numbers behind that, on the same scene at 306,000 points a tick: 29.2
 to 14.6 ms, and 37.7 to 14.4 ms with the background frozen. The live figure
@@ -409,6 +423,8 @@ tick. A period shorter than the work takes makes the engine late every tick,
 never faster.
 
 {: .warning }
-`segment.py`'s docstring says the engine runs at a fixed cadence of about 10 Hz.
-The code disagrees: the period is `latency.segTick`, default 0.05 s, which is
-20 Hz. The comment is stale; the schema's default is what runs.
+`segment.py`'s docstring used to say the engine runs at a fixed cadence of about
+10 Hz while the code ran the period `latency.segTick`, default 0.05 s, which is
+20 Hz. The docstring now says 20 Hz and names `latency.segTick`. Either way the
+schema's default is what runs, so read the period from `GET /api/settings`, not
+from a comment.

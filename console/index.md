@@ -28,8 +28,9 @@ sweep, the cable watch, the health sampler, the auto recover supervisor, the
 simulator watch, the bridge reader, the segmentation engine and the camera view
 rebuild. There is no task queue and no event loop, so a thread that wedges stops
 exactly one job and the rest of the console keeps answering. A stall watchdog
-records every thread's stack when one of them blocks for more than 180 ms, which
-is what `GET /api/stalls` returns.
+records every thread's stack when the point store has gone more than 180 ms
+without a fresh frame from any device (at most one dump every 5 s, the last six
+kept), which is what `GET /api/stalls` returns.
 
 **It boots degraded rather than not at all.** Every optional import is wrapped.
 numpy missing, the TDP4 receiver not on the path, Apple Vision absent, NDI not
@@ -42,7 +43,8 @@ that a dead feature looks like a bug until you ask it why, which is what
 
 **The heavy model runs in its own process.** YOLO person segmentation lives in
 `yolo_worker.py`, launched with its own interpreter and talking over a unix
-domain socket rather than imported. The worker's own header gives three reasons.
+domain socket (a named pipe on Windows, which has no `AF_UNIX`) rather than
+imported. The worker's own header gives three reasons.
 The console's virtual environment deliberately has no torch and must not grow
 one, because the two cannot share an interpreter. The ultralytics library does
 the non maximum suppression and mask prototype decoding, so there is no hand
@@ -129,12 +131,14 @@ flowchart LR
 ```
 
 A phone can only send telemetry to one port, and by default that port is 9000,
-which the tox binds. The tox does not parse it: `osc_in_callbacks.py` forwards
-every datagram unchanged to the console over the TouchDesigner link, and sends
-`/tdstage/peer` alongside it so the console learns the phone's real address
-rather than TouchDesigner's. That relay is gated on the tox's `Consoleactive`
-parameter, and it needs to know where the console is, which it learns from the
-console's own 2 second ping.
+which the tox binds. The tox does not parse it, beyond the `/device/pose` and
+`/device/moved` readings it keeps for its own `imu` table: `osc_in_callbacks.py`
+forwards every datagram unchanged to the console over the TouchDesigner link,
+and sends `/tdstage/peer` alongside it (every 2 s per device) so the console
+learns the phone's real address rather than TouchDesigner's. That relay is gated
+on the tox's `Consoleactive` parameter, and it needs to know where the console
+is, which it learns from the console's own 2 second ping (or from its
+`Consolehost` parameter when that is set).
 
 So **while TouchDesigner is down and the phones still target 9000, the console
 shows phones as online from their point data but with no battery, no temperature
@@ -144,10 +148,12 @@ survive a TouchDesigner outage. See
 [Troubleshooting](troubleshooting.html#a-phone-is-not-behaving).
 
 {: .warning }
-A comment in `server.py` at the retarget handler says the console "never
-receives a single telemetry packet" with TouchDesigner running. That comment
-predates the tox relay and the code disagrees with it: `console_link_lib.relay`
-forwards every telemetry datagram to the console's listen port. Trust the relay.
+The relay can be missing without TouchDesigner being down: the tox is not
+running, its `Consoleactive` is off, or it does not yet know where the console
+is because the console's ping has not reached it. In each case every phone shows
+no battery, thermal or stream stats while point data still marks it online. The
+retarget handler's own comment in `server.py` lists exactly these cases;
+`console_link_lib.relay` is the forwarding function.
 
 ## What happens to a frame once it arrives
 
@@ -199,9 +205,11 @@ second supervised worker process fed every tick's whole cloud. That is a
 decision, not a fix, and it is not needed at these numbers.
 
 {: .warning }
-`segment.py`'s own docstring says the engine runs at "a FIXED cadence (~10 Hz)".
-The code disagrees: the period is `ingest.SEG_TICK_S`, whose default is 0.05 s,
-which is 20 Hz. The comment is stale; the schema's default is the live value.
+The period is `ingest.SEG_TICK_S`, seeded from the `TDSTAGE_SEG_TICK`
+environment variable (default 0.05 s, which is 20 Hz) and then overridden live
+by `latency.segTick`, whose schema allows 0.02 to 0.5 s. `segment.py`'s
+docstring agrees with that since commit 6254367 (2026-10-27); before it the
+docstring said "~10 Hz" and was wrong. The schema's default is the live value.
 
 ## What it owns
 
@@ -235,10 +243,13 @@ limit matters because a burst of edits then preserves the state from **before**
 the burst, instead of filling the folder with 50 copies of one minute.
 
 **What the fallback tests.** If `config.json` cannot be used, the
-console keeps it aside as `config.json.corrupt-<timestamp>` and loads the newest
-backup that passes `_config_invalid`: it must be a JSON object, it must have a
-device list, every device must have an integer id, and the marker list must hold
-markers with `id`, `label`, `x`, `y` and `z`. That checks the file's **shape**
+console keeps it aside as `config.json.corrupt-<timestamp>` and loads the first
+backup, in restore order, that passes `_config_invalid` and then applies without
+error: it must be a JSON object, it must have a device list, every device must
+have an integer id and no two devices may share one, and the marker list must
+hold markers with `id`, `label`, `x`, `y` and `z`. Restore order is rosters that
+are not a saved seed first, then saved seeds (`rosterSeed`), then files with no
+devices, each group newest first. That checks the file's **shape**
 and nothing more. A file that parses and has the right shape but holds the wrong
 poses, the wrong roster size or last month's marker plan is accepted in silence.
 Shape checking is itself recent: before 2026-10-27, `{}`, `[]` and
@@ -285,11 +296,14 @@ than packets.
 **`udp_fanout.py` is legacy, and optional.** It still exists and still works,
 and the console can start and stop it, but it is not the show path. It copied
 every datagram with three syscalls and lost packets above about 30,000 per
-second. Eight phones with colour are 49,000 at the simulator's grid. The bridge
-alone received 114,500 per second with no loss at twelve colour streams; the
+second (0 % loss at 25,000, 24 % at 40,000; the development Mac, 2026-10-27).
+Eight phones with colour are 49,000 at the simulator's grid. At the real 320x240
+grid the bridge alone received 114,500 per second with no loss at twelve colour
+streams (`Tools/link_test.py`, loopback on the development Mac, 2026-11-03); the
 61,000 in older notes was the highest load then tried, not a limit. *Measured,
-simulation*. Real phones send a bigger grid, so eight of them with colour would
-offer about 76,000. Keep the relay only for a no bridge CPU path.
+simulation*. Real phones send that bigger grid, so eight of them with colour
+offer about 76,000, also received without loss in the same run. Keep the relay
+only for a no bridge CPU path.
 
 The architecture **diagram** in the system repository's `CLAUDE.md` still shows
 the relay as the show path. That diagram is stale. Its **port table** is still

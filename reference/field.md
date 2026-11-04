@@ -29,7 +29,7 @@ client is connected, sends three binary message types: a **field** (which
 5 cm voxels of the stage volume are occupied, and how certainly), a
 **presence** list (where the people are, as floor footprints, with no
 identity), and about once a second the **sensor poses** (where each phone is).
-Default rate is 15 Hz (`--f1-hz`). Every message starts with the same header
+Default rate is 15 Hz (`--f1-hz`). Each of the three starts with the same header
 shape: a four-letter magic, the contract version `0.4.1`, a flags byte, a
 frame id and a timestamp in seconds on the console's clock. Nothing is
 acknowledged. A slow client gets the newest message of each kind, never a
@@ -56,9 +56,10 @@ off unless asked for:
 
 The console sends nothing while no client is connected, and it also stops
 computing the field, so attaching a client costs the console a few tens of
-milliseconds per tick at show load from that moment. Disconnecting resets the
-smoothing; a client that reconnects sees a field that builds up over a few
-frames rather than one that remembers the last client's view.
+milliseconds per tick at show load from that moment. Once the last client has
+disconnected the smoothing resets; a client that reconnects sees a field that
+builds up over a few frames rather than one that remembers the last client's
+view.
 
 Pings are answered with pongs; a close frame is answered and the socket
 closed. The console's `/healthz` and `/api/state` report the number of
@@ -142,7 +143,7 @@ they are not measured, and a receiver should not read NaN as zero.
 
 | Figure | Value | Configuration |
 |---|---|---|
-| Field size, one person, one phone | about 9.5 KB per frame mean, 13.2 KB at p95; 1,286 voxels at 5 cm | Recorded take T1 replayed as one phone into an isolated console, person mode Vision, 2026-10-28 |
+| Field size, one person, one phone | about 9.5 KB per frame mean, 13.2 KB at p95, at 1,383 voxels at 5 cm; the stray-blob fix later the same day brought the field to 1,286 voxels, bytes not re-recorded | Recorded take T1 replayed as one phone into an isolated console, person mode Vision, 2026-10-28 |
 | Field rate | 14.3 fields per second | Same run, `--f1-hz` at its default |
 | Age at the console, capture to field out | p50 47 ms | Same run; the console's own stamp, not a client's |
 | Multi-phone density and latency | not measured | Needs the three-phone session |

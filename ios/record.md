@@ -42,7 +42,7 @@ flowchart TD
   F -- no --> G["Ignored"]
   F -- yes --> H{"Fewer than 8 writes<br/>already in flight?"}
   H -- no --> I["Dropped and counted:<br/>the stream wins"]
-  H -- yes --> J["Writer queue: shuffle, deflate,<br/>28-byte record header, append"]
+  H -- yes --> J["Writer queue: shuffle, deflate,<br/>32-byte record header, append"]
   J --> K["take.tdp4rec"]
 ```
 
@@ -50,7 +50,7 @@ The tap is a closure the streamer holds under the same lock the send queue
 reads it with, so arming a recording mid-stream is not a race between the
 interface and the packer. The streamer hands it the finished byte array, a
 Swift array, so the hand-off is a copy-on-write reference rather than a memcpy
-of the 148 to 295 kB the frame occupies, and control returns to the send queue
+of the 154 to 461 kB a 320×240 frame occupies, and control returns to the send queue
 immediately. Replayed frames are deliberately not tapped: a take cannot record
 itself.
 
@@ -69,8 +69,9 @@ this way:
 2. A replay is indistinguishable from a live phone to every receiver. Same
    socket, same destination, same fragmentation, same latest-wins policy, same
    hello, same telemetry shape. The differences are two fields in the hello
-   JSON, `source: playback` and `take: <name>`, and one telemetry address,
-   `/device/source`, reading `playback` instead of `live`. Everything else on
+   JSON, `source: playback` and `take: <name>`, and the recorder's telemetry:
+   `/device/source` reads `playback` instead of `live`, `/device/rec/state`
+   reads `playing` and `/device/rec/take` carries the name. Everything else on
    the wire, down to the frame-id sequence, is produced by the same code.
 3. Whatever the phone is sending is exactly what lands in the file. There is no
    separate recording quality to configure.
@@ -100,7 +101,7 @@ Top right is a round record button.
 | It shows | Meaning | Pressing it |
 |---|---|---|
 | A red circle | Ready | Arms or starts a take |
-| A dim red circle | Refused: not enough free space | Nothing |
+| A dim red circle | Refused: not enough free space | Refuses again (after any pre-roll), and the status card shows the free space against the floor |
 | A number | Counting down a pre-roll | Cancels the armed start |
 | A red square | Recording | Stops the take |
 
@@ -116,7 +117,7 @@ The line under the title reads the current state: `Live capture running`,
 
 ## The status card
 
-Five figures, refreshed twice a second.
+Five figures, refreshed twice a second; FREE is re-read every two seconds.
 
 | Stat | Reads |
 |---|---|
@@ -230,13 +231,17 @@ basis to use for a claim about fitting on a cable.
 Either way: eight phones on `depth+conf` is about 47 per cent of a gigabit
 link, and eight on `+conf+rgb` is 94 per cent of one.
 
-**That is why the show does not run on a gigabit link.** Since 2026-10-30 it
-is 2.5 gigabit (a switch with a 2.5G uplink and a 2.5G card in the machine),
-and **every phone sends colour** ([#42](https://github.com/AristidesAI/TDStage/issues/42)). The same 937 Mbit/s is 37 per
-cent of that, which is headroom.
+**That is why the show is not planned on a gigabit link.** The decision of
+2026-10-30 ([#42](https://github.com/AristidesAI/TDStage/issues/42)) is a 2.5 gigabit link (a switch with a 2.5G uplink
+and a 2.5G card in the show machine) with **colour from every phone**. The
+hardware is still on the order list and the receive test through a real card
+is open; rehearsals on the gigabit switch meanwhile run colour on three phones.
+The same 937 Mbit/s is 37 per cent of a 2.5 gigabit link, which is headroom.
 
 The receiving software was never the constraint: the bridge has been measured
-to 114,500 packets per second and eight colour phones offer 76,300.
+to 114,500 packets per second and eight colour phones offer 76,300 (**measured,
+reported 2026-10-28, loopback on the dev Mac, simulated phones at the 320×240
+grid, no network card or switch in the path**).
 
 {: .note }
 **Dropping colour costs more than colour**, which is why the decision went the
@@ -297,7 +302,7 @@ here say what each setting means for the file rather than for the stream.
 | Notes | Empty | Free text stored inside the take's metadata block |
 | Compress frames | On | Byte-shuffle and deflate, per frame, lossless |
 | Record every frame / 1 frame in N | Every frame | A decimation, 1 to 10 |
-| Pre-roll | None | A countdown of up to 30 seconds before the take arms |
+| Pre-roll | None | A countdown of up to 30 seconds before the take starts |
 | Duration cap | None | Stop after up to 120 minutes |
 
 An auto-name is `T<device id>-yyyyMMdd-HHmmss`, or `<prefix>-yyyyMMdd-HHmmss`
@@ -328,8 +333,9 @@ Spatial deltas made things worse, because differencing noise adds entropy.
 The deflate stream is a raw one, so the Mac-side reader decompresses it with
 `zlib.decompress(data, -15)` and no Apple code.
 
-Ratios against the raw wire bytes, **measured, simulation** (synthetic frames
-with the shared-world simulator's noise model):
+Ratios against the raw wire bytes, **measured, simulation, 2026-09-06**
+(synthetic frames with the shared-world simulator's noise model, on an Apple
+silicon Mac):
 
 | Content | Raw LZ4 (the old codec) | Shuffle and deflate |
 |---|---|---|
@@ -342,10 +348,10 @@ Expect 2× on noisy depth-only content and up to 6× on depth+conf+rgb. The floo
 is the sensor: noise in the low mantissa bits is incompressible by any lossless
 codec.
 
-Encode cost is about 1.4 to 2.8 ms per frame and decode about 0.2 to 0.4 ms
-(**measured, Mac, synthetic frames**). Noisy RGB has been seen at about 7 ms per
-frame on a Mac, and a phone is slower. Per-frame encode cost on a real phone at
-30 fps has not been measured (**not yet verified**).
+Encode cost is about 1 to 2.4 ms per frame and decode about 0.1 to 0.5 ms
+(**measured 2026-09-06, Apple silicon Mac, synthetic frames**). Noisy RGB came
+in at 7.4 ms per frame on that Mac, and a phone is slower. Per-frame encode
+cost on a real phone at 30 fps has not been measured (**not yet verified**).
 
 Turning compression off writes the wire bytes as they are: the biggest files
 and no CPU cost. It is the A/B control.
@@ -416,8 +422,10 @@ only 2×, which is what the harshest synthetic noise produced and therefore the
 safer assumption for a real stage.
 
 The headroom figure the app shows assumes the same 2×, deliberately, so that
-"about N minutes left" never over-promises. No take has yet been recorded on a
-real phone and measured against these figures (**not yet verified**).
+"about N minutes left" never over-promises. One real take has been measured
+against these figures: T1, a handheld colour take recorded 2026-09-07 at
+256×192, compressed 2.2×, close to the column to plan with. No 320×240 take
+from a real stage has been measured yet (**not yet verified**).
 
 ---
 
@@ -425,7 +433,9 @@ real phone and measured against these figures (**not yet verified**).
 
 The file is still readable. There is no index to lose: a reader walks the
 records by their own length fields from the start of the file, and drops a
-truncated final record. That is the entire crash story.
+truncated final record. The writer flushes and syncs to disk every two seconds,
+so a crash costs at most the last two seconds of frames. That is the entire
+crash story.
 
 A take closed cleanly carries a footer. A take that was not shows `recovered`
 in the library and in its details, and plays normally. At the next launch the

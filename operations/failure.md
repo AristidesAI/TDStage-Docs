@@ -154,8 +154,8 @@ those builds, after any relaunch during a show, press **Blackout all** again,
 or the audience sees the phone before you do. Which build a phone actually has
 is on the [install page](../ios/install.html).
 
-That qualifier matters. Auto-recover is off when the console boots, and
-**Start all does not arm it**. Only Start show arms it, and Standby and Stop
+That qualifier matters. Auto-recover is off on a fresh console (a restart
+restores whatever state was saved), and **Start all does not arm it**. Only Start show arms it, and Standby and Stop
 disarm it again. A rig started with Start all has no safety net, which is a
 reasonable choice and a bad surprise.
 
@@ -212,18 +212,21 @@ only through whatever other phones can see them.
 
 A self-relaunch path exists in the app but is switched off, because it depends
 on the phone being locked into supervised single-app mode, which is still an
-open decision ([#16](https://github.com/AristidesAI/TDStage/issues/16)).
+open decision ([#44](https://github.com/AristidesAI/TDStage/issues/44)).
 
 Status: **gap.** Plan for a person per cluster of stands, or accept the loss of
 one view.
 
 ### A phone overheats
 
-Automatic: the frame rate steps down as the phone gets hotter, and recovers
-after about forty five seconds of cooling.
+Automatic: the thermal ladder caps the frame rate. At critical the cap is half
+the rate (floor 10); the serious rung is `stage.thermalSeriousFPS`, which has defaulted to
+30 since 2026-10-28, so on a 30 fps rig it cuts nothing until critical. The
+cap lifts after about forty five seconds of cooling.
 
-**A ninety-minute run on two real phones on 2026-10-28 changed what this entry
-should say**, and the finding is not what anyone expected:
+**A ninety-minute run on 2026-10-28, two iPhone 18 Pros running a debug build of
+TDStage AR, plugged in at 100 % and logged from the console, changed what this
+entry should say**, and the finding is not what anyone expected:
 
 - Both phones reached **serious within seven to nine minutes** of launch and
   **never left it**, whether the screen was blacked out, the phone was on the
@@ -235,7 +238,7 @@ should say**, and the finding is not what anyone expected:
 
 So treat **serious as the normal working state of a phone on a stand** and
 not as an alarm. The useful question is what the phone still delivers while it
-sits there, and the answer was 30 fps, indefinitely.
+sits there, and the answer was 30 fps for the 31 minutes it was tried.
 
 {: .warning }
 Blackout made **no measurable thermal difference** over nineteen minutes at
@@ -539,9 +542,10 @@ five more uploads.
 It is not in the list above because it has both a plan and a fallback. It is
 on this page because the failure mode is total: an expired build does not
 degrade or warn at the moment it matters. It refuses to launch, **on every
-phone at once**, since they were all uploaded on the same day. The phones and
-the console do warn in advance, counting from when the build was archived
-rather than uploaded, so that warning is early rather than late.
+phone at once**, since they were all uploaded on the same day. The phones
+report their build's archive date and the console warns at 75 days and errors
+at 85, counting from when the build was archived rather than uploaded, so that
+warning is early rather than late.
 
 Separately, [#21](https://github.com/AristidesAI/TDStage/issues/21) covers the
 source escrow the agreement asks for. The deposit itself is scripted:

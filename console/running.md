@@ -40,25 +40,31 @@ the Live view without them.
    `TD\newtox` beside `WebConsole`.
 
    {: .warning }
-   **The repo ships a `config.json` that belongs to another machine**
-   ([#46](https://github.com/AristidesAI/TDStage/issues/46)). It is the
-   development Mac's live file: its roster with typed phone addresses on a home
-   LAN, its markers, its registration and its output targets. A typed address
-   wins over the one a phone reports from, so on a fresh install the console
-   warns after ten seconds ("roster host is not where this phone reports
-   from") and start, standby, blackout and calibrate never reach those phones
-   until you clear their host fields on the Dashboard. Do that before anything
-   else. And once the show machine has its own roster, never `git pull` on top
-   of it: copy `config.json` aside, update, copy it back. The console accepts
-   any well-formed file, so an overwrite is silent.
+   **The repo no longer ships a `config.json`**
+   ([#46](https://github.com/AristidesAI/TDStage/issues/46), fixed 2026-11-03).
+   The file is untracked and ignored: a fresh clone has none, the console's
+   first start seeds a new six-phone session, and `git pull` never touches the
+   roster. A clone made before 2026-11-03 still has the development Mac's file
+   tracked, with typed phone addresses on a home LAN; on its first pull of a
+   later commit, stop the console, copy `config.json` aside, run
+   `git rm --cached WebConsole/config.json`, pull, and copy the file back if it
+   went. A typed address still wins for `/ctl`, but once it has disagreed with
+   where the phone reports from for ten seconds while the phone is online, the
+   console warns ("roster host is not where this phone reports from") and sends
+   `/ctl` to the reported address instead until you correct or clear the host
+   field on that phone's device page.
 2. **Install Python 3.12 x64** from python.org with "Add to PATH" ticked, or
    `winget install -e --id Python.Python.3.12`.
 3. **Run `WebConsole\windows\install.bat`.** It creates `WebConsole\.venv`,
-   installs torch from the CUDA 12.6 index when `nvidia-smi` is found and from
-   the CPU index otherwise, then `requirements.txt`, then runs `doctor.py`.
+   installs torch from the CUDA 13.0 index (`cu130`) when `nvidia-smi` is found
+   and from the CPU index otherwise, then `requirements.txt`, then the MediaPipe
+   hand-landmark and NDI packages (neither fatal), then an Open3D venv
+   (`.venv-o3d`, not fatal), then runs `doctor.py`. With an NVIDIA driver older
+   than 580 it stops and says so, because the cu130 wheel finds no CUDA on it.
    Safe to re run. Override the torch index with
-   `set TORCH_INDEX_URL=https://download.pytorch.org/whl/cu130` beforehand, or
-   the Python version with `set TDSTAGE_PY=3.11`.
+   `set TORCH_INDEX_URL=https://download.pytorch.org/whl/cu126` (the index it
+   used before 2026-11-03) beforehand, or the Python version with
+   `set TDSTAGE_PY=3.11`.
 4. **Run `WebConsole\windows\firewall.bat` once.** It asks for Administrator and
    adds four inbound rules:
 
@@ -77,12 +83,14 @@ the Live view without them.
    environment's Python. It is the cross-process self-test for the
    platform-specific half of the console (the file locking that stops two
    consoles sharing one configuration, among other things). That code takes a
-   different path on Windows from the one every development machine exercises,
-   so this is the first place it has ever run for real. A failure here is
-   worth stopping for.
+   different path on Windows from the one every development machine exercises.
+   The Windows CI job (`.github/workflows/windows-console.yml`) runs this same
+   self-test, so a failure here points at this machine rather than at the
+   code. A failure here is worth stopping for.
 
-YOLO weights (`yolo26n-seg.pt`, `yolo26n-pose.pt`) ship in `WebConsole/models/`,
-so the install works offline once pip has run.
+YOLO weights (`yolo26n-seg.pt`, `yolo26n-pose.pt`) and the MediaPipe hand model
+(`hand_landmarker.task`) ship in `WebConsole/models/`, so the install works
+offline once pip has run.
 
 Run Python with `PYTHONUTF8=1`. The `.bat` files set it. Without it, logs and
 `config.json` hit the cp1252 codepage.
@@ -96,8 +104,9 @@ WebConsole\windows\show.bat
 ```
 
 It starts the TDP4 bridge in its own window, waits two seconds, then the console
-with a watchdog, and opens the browser. Both restart themselves if they exit.
-Closing a window stops that process.
+with a watchdog, and opens the browser. Both restart themselves if they exit,
+the bridge after two seconds and the console after three. Closing a window
+stops that process.
 
 The bridge command it runs is:
 
@@ -121,8 +130,12 @@ there is no relay in the show path any more.
 `udp_fanout.py` is legacy. It lost packets above about 30,000 per second, and
 eight phones with colour are 49,000 at the simulator's grid, about 76,000 at
 the 320×240 a real iPhone 17 Pro sends; the bridge alone took 114,500 per second
-with no loss at twelve colour streams, 55 per cent of one core. The 61,000 in
-older notes was the highest load then tried, not a ceiling. `windows\fanout.bat`
+with no loss at twelve colour streams, 55 per cent of one core (simulated phones
+at 320×240 over loopback on the development Mac, recorded in the #42 note of
+2026-10-28 and repeated by `Tools/link_test.py` on 2026-11-03, when eight colour
+streams were 76,300 per second). The 61,000 in older notes was the highest load
+then tried, not a ceiling. Real phones through the PoE switch into the show
+machine's NIC have not been measured yet. `windows\fanout.bat`
 and the console's Start fan-out button remain for the no bridge CPU path only.
 The architecture diagram in `CLAUDE.md` still shows the relay as the show path
 and is stale; its port table is correct.
@@ -162,18 +175,19 @@ Use `--listen 9001` whenever TouchDesigner is on the same machine. TD binds UDP
 
 ## Start up, and what binds which port
 
-Boot is a fixed order, and only one step in it can fail in a way that leaves the
-console running but half useful.
+Boot is a fixed order. The step that fails in a way that leaves the console
+running but half useful, and that an operator actually meets, is the telemetry
+bind; the F1 listener also fails softly, with one warning in the Log.
 
 ```mermaid
 flowchart TD
-  A["server.py starts"] --> B["Load config.json, or the newest<br/>backup that passes the shape check"]
-  B --> D["Bind TCP :9001 for the field stream,<br/>unless --f1-port 0"]
-  D --> C["Start the worker threads:<br/>TD link, health, recovery,<br/>bridge reader, motion engine"]
-  C --> E{"Is --tdp4-port<br/>non zero and free?"}
+  A["server.py starts"] --> B["Take the lock on the config file<br/>(exit 3 if another console holds it),<br/>then load config.json, or the first backup<br/>in restore order that passes the shape check and applies"]
+  B --> C["Start the worker threads:<br/>staleness, TD link, cable watch,<br/>health, recovery, sim watch"]
+  C --> D["Bind TCP :9001 for the field stream,<br/>unless --f1-port 0"]
+  D --> E{"Is --tdp4-port<br/>non zero and free?"}
   E -- "0, or TouchDesigner holds it" --> F["No phone facing socket.<br/>Frames arrive from the bridge file"]
   E -- "free" --> G["Bind UDP :9003"]
-  F --> H["Bind UDP :9013 always:<br/>console owned, the simulator's target"]
+  F --> H["Start the bridge reader and<br/>bind UDP :9013 always:<br/>console owned, the simulator's target"]
   G --> H
   H --> I{"Bind the telemetry port<br/>named by --listen"}
   I -- "bound" --> J["listening :9001"]
@@ -216,7 +230,7 @@ to remember and one firewall rule per direction.
 | `--http PORT` | `9080` | TCP port for the browser UI and the whole HTTP API. | Only if something else holds 9080, or you are running a second instance. |
 | `--listen PORT` | not set, falls back to the saved value in `config.json`, else `9000` | UDP port the console binds for phone telemetry (`/tdlidar/<id>/device/*`) and for TouchDesigner's health and pong replies. | Set `9001` whenever TouchDesigner runs on the same machine, because the tox binds 9000. The phones must then be pointed at it, which the Dashboard's telemetry retarget button does. |
 | `--no-autostart` | off | Do not bind the telemetry listener at boot. | For a bring up where you want the port left free. Start it later from the toolbar. |
-| `--tdp4-port PORT` | `9003` | A direct TDP4 UDP listener on the phone facing port. It is bound only while nothing else claims it, and the console gives it up once TouchDesigner's status message (`/tdstage/td/status`) reports that the tox wants that `Udpport`. `0` disables it. | `0` on the show machine, where TouchDesigner must be able to bind 9003 the instant it launches and the console reads the bridge file instead. Another number to run a measurement instance beside TD. |
+| `--tdp4-port PORT` | `9003` | A direct TDP4 UDP listener on the phone facing port. It is bound only while nothing else claims it, and the console gives it up while the TouchDesigner link is up and TD's status message (`/tdstage/td/status`) reports that `Udpport`, or an older tox reports none. `0` disables it. | `0` on the show machine, where TouchDesigner must be able to bind 9003 the instant it launches and the console reads the bridge file instead. Another number to run a measurement instance beside TD. |
 | `--sim-port PORT` | `9013` | A second TDP4 listener the console always owns. The built in simulator is aimed at it. A real phone can be pointed here when TD is not in the loop. | Rarely. Change it only to avoid a clash, and then set the fan out's second target to match. |
 | `--f1-port PORT` | `9001` | The F1 0.4 draft WebSocket (SMSF, SMSP, SMSS). **TCP**, so it coexists with a UDP `--listen 9001`. `0` turns it off. | `0` when no client machine is consuming it. |
 | `--f1-hz RATE` | `15.0` | Rate of the F1 field. | Only if the client asks for a different rate. |
@@ -254,8 +268,9 @@ cannot switch the show console's link off behind your back.
 
 A second console started on a configuration file that another console already
 holds **exits immediately**, with status 3, naming the file that is taken. The
-lock is the operating system's, on a file beside the configuration, so the
-operating system releases it the moment the holder dies. A crash or a watchdog
+lock is the operating system's, on `logs/console-<config name>.lock` beside
+the configuration, so the operating system releases it the moment the holder
+dies. A crash or a watchdog
 restart frees it with nothing to clean up, and the launchers retry every two or
 three seconds, so a restart takes over as soon as the old process is gone.
 
@@ -311,8 +326,10 @@ Then check, in order:
 
 3. **Frames reaching the console.** `GET /api/live` reports both ingest paths.
    `bridge.running` true with a rising `frames` count means the memory mapped
-   path is working. `tdp4.held` true means TouchDesigner holds the phone port
-   and the console has correctly stood aside.
+   path is working. `tdp4.held` true means the console has stood aside from the
+   phone port, because TouchDesigner claims it or another process (the bridge)
+   already holds it. With `--tdp4-port 0` there is no such listener and
+   `tdp4.running` and `tdp4.held` both stay false.
 
 4. **The Rig health panel** on the Dashboard. It re checks every ten seconds and
    names a cause and a fix for each problem it finds, with a button for the ones
@@ -328,24 +345,29 @@ Then check, in order:
 
    Flags: `--listen` (default `9001`), `--http` (default `9080`), `--wait`
    (default `5.0`). It checks the Python version, every import the console and
-   the YOLO worker need, the torch compute device, the bundled model files,
-   whether UDP 9001, 9003 and 9013 and TCP 9080 are free, the Windows Firewall
+   the YOLO worker need, the torch compute device, the optional Open3D Python,
+   the bundled model files, whether UDP 9001, 9003 and 9013 and TCP 9080 are free, the Windows Firewall
    rules with the exact `netsh` lines to add them, this machine's LAN addresses,
    and whether any phone telemetry arrives. Exit code 0 means no FAIL lines,
    1 means at least one.
 
 ## Network, PoE rig
 
-- One gigabit 802.3at PoE+ switch with enough budget for eight 25 W phones. The
-  PC on a switch port, a router or the switch's DHCP on the same LAN.
+- One 802.3at PoE+ switch with enough budget for eight 25 W phones and, since
+  the #42 decision of 2026-10-30, a 2.5G uplink into a 2.5G NIC in the show
+  machine. The PC on a switch port, a router or the switch's DHCP on the same
+  LAN.
 - Give the PC a fixed address, for example 10.0.0.10, and reserve one address
   per phone.
 - Each phone gets a PoE adapter into USB-C. In the app, "Prefer Ethernet (PoE /
   cable)" is on by default, and the Link line must read **Ethernet**. Set the
   destination to the PC's wired address, or push it from the console.
-- Bandwidth: eight phones at depth+conf is about 280 Mbit/s; with colour on
-  every phone about 570 Mbit/s. Both fit one gigabit uplink. Wi-Fi is the
-  fallback only.
+- Bandwidth, at the 320×240 grid an iPhone 17 Pro sends, framing included:
+  eight phones at depth+conf is about 469 Mbit/s; with colour on every phone
+  about 937 Mbit/s, 94 per cent of a gigabit link with no headroom (six colour
+  phones fit a gigabit uplink, eight do not), which is why the uplink is 2.5G.
+  The 280 and 570 Mbit/s in older notes were computed at the simulator's
+  256×192 grid. Wi-Fi is the fallback only.
 - The console logs "stream left Ethernet" when a phone drops to Wi-Fi, and
   `GET /healthz` lists it under `offWired`.
 
@@ -360,8 +382,8 @@ Never forward port 9080 to the public internet. **The console has no login.**
 
 ### The off LAN cap
 
-`WebConsole/README.md` says the console can be operated from the other side of
-the world. True, with one caveat it does not state: **the Live view is capped for
+`WebConsole/README.md` describes operating the console from Sydney over
+Tailscale. True, with one caveat it does not state: **the Live view is capped for
 any client that is not on the LAN, to 5 frames per second and 20,000 points
 shared across all phones.** At eight phones that is 2,500 points each. The
 console logs the cap the first time it applies, and every capped response carries
@@ -409,7 +431,7 @@ is no TCP transport for depth anywhere in this system.
 
 | Path | What |
 |---|---|
-| `WebConsole/config.json` | Roster, poses, marker plan, person figures, listen port, TD link, client output targets, recovery policy, every setting. **Tracked in git**, so a fresh clone carries the development Mac's copy and an update can overwrite the show's ([#46](https://github.com/AristidesAI/TDStage/issues/46)) |
+| `WebConsole/config.json` | Roster, poses, marker plan, person figures, listen port, TD link, client output targets, recovery policy, every setting. **Untracked and ignored since 2026-11-03** ([#46](https://github.com/AristidesAI/TDStage/issues/46)): a fresh clone has none and seeds a new session; a clone from before then must copy the file aside before its first pull of a later commit |
 | `WebConsole/backups/config-*.json` | Rotating copies, at most one a minute, newest 50 kept. The console loads the newest usable one if `config.json` is unusable |
 | `WebConsole/profiles/phone-<id>.json` | Each phone's last known good profile, with a revision number |
 | `WebConsole/logs/console.log` | Rotating, 5 files of 5 MB |
@@ -427,10 +449,13 @@ configuration is not proven.** Two specific gaps:
 
 - **The fallback tests shape, not sense.** The console keeps
   `backups/config-*.json`, and when `config.json` is unusable it sets that file
-  aside as `config.json.corrupt-<timestamp>` and loads the newest backup that
-  passes `_config_invalid`: a JSON object, with a device list, every device
-  carrying an integer id, and a marker list whose entries have `id`, `label`,
-  `x`, `y` and `z`. Nothing checks whether the **values** are the show's. A file
+  aside as `config.json.corrupt-<timestamp>` and loads the first backup, in
+  restore order, that passes `_config_invalid` and applies: a JSON object, with
+  a device list, every device carrying an integer id, no two devices with one
+  id, and a marker list whose entries have `id`, `label`, `x`, `y` and `z`.
+  Restore order is rosters that are not a saved seed first, then saved seeds,
+  then files with no devices, newest first within each group. Nothing checks
+  whether the **values** are the show's. A file
   that parses and has the right shape but holds the wrong poses, the wrong roster
   size or last month's marker plan is accepted in silence.
 
@@ -440,8 +465,9 @@ configuration is not proven.** Two specific gaps:
   `config.json`, and the save after that filed the seed as the newest backup, so
   the real roster aged out of the folder. The console now also says what it did:
   **Rig health's first row reports a session that started from a backup, or from
-  a seed**, and the note stays for the whole session rather than scrolling away
-  in the Log.
+  a seed**, and the note stays until the first save after boot, when it is
+  cleared with a Log line saying so, rather than scrolling away in the Log at
+  once.
 - The backup path has open review findings, and no restore has been exercised
   end to end.
 

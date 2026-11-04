@@ -8,7 +8,7 @@ nav_order: 7
 
 ## Read the generated page first
 
-The console raises about fifty named problems of its own, each with the fix it
+The console raises more than eighty named problems of its own, each with the fix it
 wants you to try, and those are listed in
 **[Operations, Troubleshooting](../operations/troubleshooting.html)**. That page
 is generated from the console's own fix hints, so it cannot drift from the
@@ -39,7 +39,7 @@ dead.
 |---|---|---|
 | **Point data** | phone to the bridge's file, read by TouchDesigner and the console in parallel | Live view, `GET /api/live` frame counts |
 | **Health** | phone telemetry to port 9000 and relayed by TouchDesigner, **or** straight to the console's own listener | the device card's `OSC` pill, battery, thermal, fps, `/healthz` |
-| **Control** | console to the phone's own address on its Ctl port, 9010 | Ping, and the pong with its round trip in the Log |
+| **Control** | console to the phone's own address on its Ctl port, 9010 | Ping, the pong in the Log, and the round trip on the device page's clock line |
 
 ```mermaid
 flowchart TD
@@ -106,11 +106,12 @@ card:
   the other direction
 
 {: .warning }
-A comment in `server.py` at the retarget handler says the console "never
-receives a single telemetry packet" with TouchDesigner running. The code
-disagrees with that comment: `console_link_lib.relay` forwards every telemetry
-datagram. The comment predates the relay. Trust the relay, and treat a missing
-relay as one of the three causes above.
+Until 2026-10-27 a comment in `server.py` at the retarget handler said the
+console "never receives a single telemetry packet" with TouchDesigner running.
+The code disagreed with that comment: `console_link_lib.relay` forwards every
+telemetry datagram. The comment now describes the relay and the three ways it
+goes missing. Trust the relay, and treat a missing relay as one of the three
+causes above.
 
 **Confirm.** Compare the two channels:
 
@@ -134,7 +135,7 @@ curl -s -X POST http://localhost:9080/api/telemetry/retarget \
 
 The reply names the host, the port and how many phones took it. It prefers the
 USB cable address when there is one, because that is the same UDP transport at
-0.55 ms instead of about 8 ms over Wi-Fi. *Measured, real phone (one phone).*
+0.55 ms instead of about 8 ms over Wi-Fi. *Measured on the Mac, real phone (one phone).*
 
 Doing this also removes the dependency: once a phone's telemetry goes straight to
 the console's own listener, its battery, temperature and frame rate survive a
@@ -193,8 +194,8 @@ running with the wrong second target.
 packets above about 30,000 datagrams per second, and eight phones with colour
 are 49,000 at the simulator's grid (about 76,000 at the grid real phones send).
 The bridge alone took 114,500 with no loss
-(measured 2026-10-27; the 61,000 in older notes was the highest load then
-tried, not a limit). The Start fan out button
+(measured 2026-10-27 on loopback with simulated phones on the Mac; the 61,000
+in older notes was the highest load then tried, not a limit). The Start fan out button
 exists for a no bridge CPU path only.
 
 ---
@@ -224,10 +225,15 @@ problem is downstream.
 
 1. **Turn colour on.** The Live view's Phone cameras panel has **Colour ON for
    all phones**, which sets `stage.udpPlanes = depth+conf+rgb` on every enabled
-   phone. Budget for it: each phone goes from about 35 to about 71 Mbit/s. Eight
-   phones with colour is about 570 Mbit/s, which still fits one gigabit uplink.
+   phone. Budget for it: the button's own figure, about 35 to about 71 Mbit/s
+   per phone, is the simulator's 256x192 grid. Real phones send 320x240, where
+   each phone goes from about 59 to about 117 Mbit/s and eight phones with
+   colour are about 937 Mbit/s, 94 % of one gigabit link (computed from the
+   wire format in `Notes/Bandwidth-Options-42.md`, matching the 2026-10-27
+   loopback measurement with simulated phones on the Mac).
 2. **Check the second switch.** On TDStage (not TDStage AR) `stage.colorEnabled`
-   must also be on, or the rgb plane is sent empty. Two switches, both needed.
+   must also be on, or the rgb plane is left off the wire even when the planes
+   include it. Two switches, both needed.
    The Dashboard's Broadcast settings panel has it.
 3. **No hardware?** Start the simulator with the **Colour planes (rgb)** switch
    on. It is the only way to exercise the camera tiles and the vision observer
@@ -319,7 +325,7 @@ curl -s http://localhost:9080/api/diag/age | python3 -m json.tool
 | What you find | Cause | Fix |
 |---|---|---|
 | `/api/stalls` has entries | Some thread blocked for more than 180 ms. The entry carries every thread's stack at that moment | The stack names the code. Report it with the console log |
-| `gc` shows long pauses | CPython's generational collector walking many long lived numpy arrays. Every thread stops during a gen 2 pass | Lower the point budgets: `vision.obsTotalHz`, and the Live view's Max points per phone |
+| `gc` shows long pauses | CPython's generational collector walking many long lived numpy arrays. Every thread stops during a gen 2 pass | Lower the budgets: `vision.obsTotalHz` (segmentation inferences per second, shared across phones), and the Live view's Max points per phone |
 | `/api/diag/age` p50 already high at the phone | The phone or the network, not the console. Thermal throttling, or the stream has fallen off Ethernet onto Wi-Fi | `/healthz` `degraded` and `offWired` name it. Both are on the generated page |
 | Nothing above, and only the browser hitches | The browser, not the server | See below |
 
@@ -379,11 +385,14 @@ that is thinned.
 you restarted the console. Now it is on whatever the saved `personMode` is,
 usually **Off**.
 
-**Why.** The mode you pick in that panel goes to `POST /api/person`, which holds
-it in the ingest module. The persisted setting is `latency.personMode`, whose
-schema options are `off`, `motion`, `vision` and `combined`. **`consensus` is
-not among them**, so it cannot be written to the settings store, and at boot the
-console applies the persisted value instead.
+**Why.** On a console from before 2026-10-27 this was a schema gap (#37). The
+mode you pick in that panel goes to `POST /api/person`, and the persisted
+setting is `latency.personMode`, whose schema options were `off`, `motion`,
+`vision` and `combined`. **`consensus` was not among them**, so it could not be
+written to the settings store, and at boot the console applied the persisted
+value instead. Current consoles list `consensus` among the options,
+`POST /api/person` saves the mode like any other setting, and a Reset of the
+`latency` group keeps it.
 
 **Confirm.**
 
@@ -392,11 +401,14 @@ curl -s http://localhost:9080/api/settings | python3 -c \
   "import json,sys; print(json.load(sys.stdin)['schema']['latency']['personMode']['options'])"
 ```
 
-**Fix.** There is no persistent fix today. If the show needs Consensus, set it
-from the UI after every console start, and check the People only panel before
-the house opens. Add it to the show day checklist. Whether the omission is
-deliberate is unverified; the ingest module accepts the mode, so it looks like
-an oversight.
+`consensus` in that list means this console persists the mode. If it is
+missing, the console predates the fix.
+
+**Fix.** Update the console. On a current build the mode survives a restart; if
+it still moves, the saved settings block was refused at boot, which is the
+logged `saved settings ignored` case on the generated page. On an older build
+set it from the UI after every console start, and check the People only panel
+before the house opens.
 
 ---
 
@@ -409,9 +421,11 @@ takes, and some seconds or minutes later it is back to the old value.
 
 1. **Auto recover re pushed the stored profile.** While it is armed and the show
    is running, a phone whose profile revision differs gets the stored profile re
-   pushed, and a stored profile carries a host. This is exactly how a phone that
-   had just been moved onto the USB cable got dragged straight back, mid show,
-   with a visible stutter each time. **Confirm** with the Auto-recover button's
+   pushed. A stored profile used to carry a host that the phone applied, which
+   is exactly how a phone that had just been moved onto the USB cable got
+   dragged straight back, mid show, with a visible stutter each time. The
+   phone's profile schema now drops hosts and a push leaves the link alone
+   unless asked, but every other stored key still comes back. **Confirm** with the Auto-recover button's
    label in the top bar: `armed` means it is acting. **Fix**: disarm it, or
    re store the profile so it holds the value you want.
 
@@ -420,8 +434,8 @@ takes, and some seconds or minutes later it is back to the old value.
    you change them from the console, but a profile key changed with a plain
    `/ctl/set` is not, so the next profile push puts the stored value back.
    **Confirm** with the profile line in the device
-   page's Recovery panel, which reads `STALE` when the console holds a newer
-   revision than the phone is running. **Fix**: **Store + push profile**.
+   page's Recovery panel, which reads `STALE` when the phone reports a
+   revision other than the one the console holds. **Fix**: **Store + push profile**.
 
 3. **Nothing came back at all; the control is just showing you the truth.**
    Phone settings are write only on the wire. The control shows what the phone
@@ -536,10 +550,11 @@ happened on 2026-10-27.
 python3 server.py --config /tmp/test-console.json --http 9081 --tdp4-port 0
 ```
 
-When the file named by `--config` does not yet exist, the console starts with
-the TD link **off** and says so at boot. Its phone profiles also move to a
-`profiles` folder beside that config, so a test instance cannot re store
-`phone-1.json` over the real one, which it previously did.
+Any instance started with `--config`, or on a web port other than 9080, starts
+with the TD link **off** whatever its file says, and says so at boot;
+`--td-link` turns it on for that run. A `--config` instance's phone profiles
+also move to a `profiles` folder beside that config, so a test instance cannot
+re store `phone-1.json` over the real one, which it previously did.
 
 To recover: on the real console, press **Push poses now** on the Dashboard's
 TouchDesigner link panel.
@@ -596,8 +611,9 @@ on the generated page. What has no warning is the other half: a size that every
 phone agrees on but that does not match **what was actually printed**.
 
 **Confirm.** The note under the Markers page header lists the size each phone
-holds, and warns in amber when they disagree. Then measure the printed square
-with a ruler: the black and white square itself, not the paper.
+holds, and warns in amber when they disagree. Then measure the printed marker
+with a ruler between its crop marks: the whole image, white margin included
+(the black square is 89 % of it), not the paper.
 
 **Fix.** Set one size for the rig on the Markers page and press **Apply to all
 phones**, which writes it to the roster and sends it with each phone's marker
@@ -642,7 +658,8 @@ runs; NDI just reports unavailable.
 numbers with a decimal point and no thousands separators (`1.5`, never
 `1,5`), and `true` or `false` for switches, never `null`. A wrong type is now
 caught as the configuration loads: the console names the device and the key,
-seeds a fresh session, and keeps your file. It used to load such a value as
+loads the newest backup that applies or, with none, seeds a fresh session, and
+keeps your file aside as `config.json.corrupt-<timestamp>`. It used to load such a value as
 good and then end the telemetry listener when the TouchDesigner link came up,
 which presented as a network fault with no connection to the edit that caused
 it. If you are running a console from before 2026-10-27, that is the failure
@@ -655,7 +672,8 @@ expected, and nothing complains.
 a minute, newest 50 kept. If `config.json` cannot be used it sets that file aside
 as `config.json.corrupt-<timestamp>` and loads the newest backup that passes a
 **shape** test: a JSON object, with a device list, every device carrying an
-integer id, and markers that have `id`, `label`, `x`, `y` and `z`.
+integer id, no two devices sharing an id, and markers that have `id`, `label`,
+`x`, `y` and `z`.
 
 **That is shape, not sense.** Nothing checks whether the values are the show's. A
 file that parses and has the right shape but holds the wrong poses, the wrong
@@ -668,9 +686,13 @@ there for the whole session, because the matching Log line scrolls away in the
 first minute of a get in. If that row is absent, the config was loaded normally
 and a wrong looking roster is someone's edit, not a fallback.
 
-**Restore is not a proven path.** The backup code has open review findings and
-no restore has been exercised end to end. Treat `./Tools/backup_state.sh` as a
-snapshot, not as a tested recovery.
+**Restore has been exercised on the Mac, not on a show.** After the 2026-10-27
+review fixes, scratch console probes restored the six phone roster from every
+invalid `config.json` case, and a `./Tools/backup_state.sh` snapshot restored
+by clone, patch and untar matched its source, a dirty tox and untracked files
+included (`Notes/Fallbacks.md`). The Windows path of that script has not been
+run on a Windows machine, and a profile push to a reinstalled phone has not
+been tried on the rig.
 
 **Fix.** After any restore, check the roster size, each phone's pose, the marker
 plan and the listen port by eye against what you expected, before trusting them.

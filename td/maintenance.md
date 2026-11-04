@@ -22,7 +22,7 @@ flowchart TD
   LS["ls TD/*.tox<br/>read the highest number off disk"]
   CL["Clear runtime state<br/>Udpactive off, unstore pcstate,<br/>cook merged, prune sim rows,<br/>clear the log"]
   SV["Save vNN AND re-save<br/>the working copy"]
-  SZ{"File size<br/>about 130 KB?"}
+  SZ{"File size<br/>about 145 KB?"}
   DR["python3 TD/newtox/tox_drift.py"]
   R0{"What does it say?"}
   OK["0 differ, 0 tox-only.<br/>The repository IS the tox's code"]
@@ -79,8 +79,8 @@ ls TD/*.tox
 ```
 
 Do not trust a session note, a changelog line or your memory for the current
-number. Numbers have been skipped and re-used because someone trusted a note
-that said "now v36" while v37, v38 and v39 already existed on disk.
+number. A number has been re-used because someone trusted a note that said
+"now v36" while v37, v38 and v39 already existed on disk.
 
 The Python modules and GLSL shaders under `TD/newtox/` are plain text and
 tracked in git. They need no numbered versioning. The tox does, because a diff
@@ -92,7 +92,8 @@ A Script operator saves its last output into the tox. Component storage saves
 too. So a save taken while streaming bakes a live point cloud and a live device
 list into the file.
 
-The symptom is file size. A clean working copy is around 130 KB. One that
+The symptom is file size. A clean working copy is around 145 KB (146,758 bytes
+at v87; it was 130 KB at v66 and grows slowly as the component does). One that
 baked `pcstate` reached 1 MB; one that baked the merged Script CHOP's cloud
 reached 340 KB.
 
@@ -149,9 +150,12 @@ On current TouchDesigner, `toeexpand` exits 1 even when it worked. The tool
 judges it by its output rather than its exit code, so do not be alarmed by
 that.
 
-Give `--extract` a path **outside** the repository. Expanding a tox writes a
-`.tox.dir` folder and a `.tox.toc` beside it, and left in `TD/` those show up
-as untracked files that look like someone's work in progress.
+Give `--extract` a path **outside** the repository, or its text files show up
+as untracked files that look like someone's work in progress. The tool itself
+expands a copy of the tox in a temporary directory and removes it, so it leaves
+nothing beside the tox. Running `toeexpand` by hand in `TD/` does: it writes a
+`.tox.dir` folder and a `.tox.toc` beside the file, and left there those show
+up as untracked too.
 
 ### A worked example
 
@@ -196,7 +200,7 @@ Do it in three separate steps:
 1. Set `Udpactive` off, call `stop_receiver()` on the **old** module, and check
    no receiver thread remains. Then set the text, opening the source file with
    `encoding='utf-8'`. TouchDesigner's Python defaults to ASCII on this rig and
-   chokes on any file with a dash character in it.
+   chokes on any file with a non-ASCII character in it, an em dash for one.
 2. Next step: confirm the new module is loaded, and that the receiver singleton
    is `None`.
 3. Next step: set `Udpactive` on.
@@ -212,8 +216,8 @@ after every scripted callback-text edit.
 
 Learned numpy state is large, and component storage is the wrong place for it.
 It lives on disk as numpy checkpoints, and a module reloads it lazily when it
-recompiles. The learned background is stored compressed; the floor and level
-state are not.
+recompiles. The learned background and floor grids are stored compressed, in
+one file; the level state is not.
 
 | Platform | Directory |
 |---|---|
@@ -222,7 +226,7 @@ state are not.
 
 | File | What it holds | Written by |
 |---|---|---|
-| `learned_bg.npz` | The learned background grid, the thing `Segmode` = `learned` subtracts | A `Learnbg` pass |
+| `learned_bg.npz` | The learned background and floor grids, the thing `Segmode` = `learned` subtracts | A `Learnbg` pass |
 | `stage_level_state.npz` | The solved stage level and lens unwarp | A level or unwarp solve |
 
 Two consequences follow.
@@ -271,10 +275,11 @@ extracting the untracked archive if there is one. **Verified on macOS against
 a dirty tree.**
 
 {: .warning }
-On the Windows show machine this needs Git Bash, and until the repository
-pins shell scripts to LF line endings a default Git for Windows checkout
-breaks the script on its first line. Run it from a checkout made with
-`core.autocrlf=false`.
+On the Windows show machine this needs Git Bash. The repository pins shell
+scripts to LF line endings in `.gitattributes` (2026-10-27), so a default Git
+for Windows checkout keeps the script runnable. A checkout made before that
+pin has CRLF endings and the script dies on its first `set` line: run
+`git add --renormalize .` once in it.
 
 Run it before anything you might want to undo.
 
@@ -291,7 +296,9 @@ Each rule is here because breaking it caused a specific failure.
   to the old target or nowhere.
 - **Gate periodic work on `absTime.seconds`, not on `frame % N`.** Frames are
   skipped under load, so a modulus gate lands erratically or never. This froze
-  the health line once and the device-table rebuild once.
+  the health line (tox v42), and then the status table with its device
+  auto-registration, the hands poller re-arm and autoframe the same way, until
+  each was time-gated.
 - **A Script operator whose `onCook` reads only Python dictionaries gets no
   cook dependency.** TouchDesigner marks it clean and the output silently goes
   stale. Read a channel from a per-frame-cooking CHOP inside `onCook` to create
