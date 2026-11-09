@@ -199,6 +199,54 @@ did**. A score from a real recording is scored against **marks someone typed
 in**. The first is exact and synthetic. The second is real and approximate.
 Say which one you are showing.
 
+## The hands scenario, which has two outputs
+
+Hands are the one scenario where the console sends two different things and
+they are easy to confuse, so the tool that measures them starts by saying
+which is which:
+
+| Output | What a point is |
+|---|---|
+| `/track/performer/hand` | The client contract. The **wrist** — YOLO keypoints, or Apple body pose — lifted to 3-D through each phone's own depth and fused across phones, tied to a performer id, `side` 0 the performer's left. Only for a confirmed, un-clustered, non-coasting performer |
+| The hand dots at `/api/hands` | Per phone, **no identity and no fusion**: a hand detector's 21 landmarks averaged to about the palm centre, lifted to 3-D. Apple Vision on a Mac, MediaPipe in the YOLO worker on Windows. This is what the Live view rings and TouchDesigner's Hands page draw |
+
+The field stream carries neither: F1 0.4 is field voxels, presence and sensor
+poses.
+
+```bash
+python3 Tools/hands_test.py check --fix                 # can /track carry hands now?
+python3 Tools/hands_test.py rec --out logs/hands-K.jsonl
+python3 Tools/hands_test.py score logs/hands-K.jsonl --stands stands.json
+```
+
+`check` exits 1 when the scenario cannot run, and `--fix` switches on exactly
+what it needs and nothing else: YOLO keypoints when they are the only way to
+get wrists at a usable rate, the `/track` hands group, and the hand dots. **It
+never switches on `/track` itself and never touches a phone** — the session
+script asks for `/track`, so one tool stays responsible for it.
+
+`rec` records both outputs itself, because the console's own `/track` recording
+keeps performers only. One JSON line per `/track` bundle, including the raw OSC
+in base64, and one per new hand-dot reading, each dot carrying `src`: `apple`
+or `mediapipe` for a real hand detector, `yolo` for a body-pose wrist, which
+`hand_track` falls back to on a phone where the hand detector found nothing.
+
+The segments — who did what, when — go in a sidecar as you press Enter through
+`phone_session.py --plan sydney --only K`: a palm held flat on a stand, *n*
+people spread apart with hands up, two people shoulder to shoulder, fast arm
+sweeps.
+
+{: .warning }
+> **Tape the stands' positions, and give them to the scorer.** A stand's flat
+> top above the floor is measured with tape and goes in `stands.json` in
+> **metres**. Its taped stage position is optional, and that is the trap: with
+> no position, the scorer locates the stand *from the hands themselves* — the
+> densest group in plan of the hands near palm height over every hold. That is
+> a guess, and scoring hands against a stand position inferred from those same
+> hands flatters the result. Tape the position whenever the stand sits on a
+> known mark. Taped distances between stands can also be given, and check
+> accuracy without reference to any frame at all.
+
 ## Other checks
 
 | Check | What it proves |
@@ -271,6 +319,7 @@ both on [the TD testing page](../td/testing.html).
 | `rig_coverage.py` | How many phones see each part of the stage, on a grid |
 | `heat_test.py` | One change at a time against a hot phone, restoring the screen, streaming state and planes it found afterwards (capture path and edge cull go back to the app defaults) |
 | `imu_sync.py`, `limb_test.py`, `hand_truth_score.py` | Clock alignment, limb fidelity, hand accuracy |
+| `hands_test.py` | The hands scenario end to end: whether it can run, both hand outputs recorded, then scored against taped stands |
 | `track_score.py` | A recorded tracking output, scored |
 | `sydney_pack.py` | Not a measurement: the delivery folder, from everything the day produced |
 

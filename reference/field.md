@@ -154,6 +154,31 @@ measures density and latency with the client's own decoder, from `~/Downloads`
 where their licence lets it live, so the numbers are what their consumer would
 see. Run it on the show machine.
 
+## Recording the stream: `f1_dump.py`
+
+`f1_probe.py` measures the stream and throws it away, and the console records
+`/track` only, so nothing kept the field bytes themselves. `f1_dump.py` does:
+
+```bash
+python3 Tools/f1_dump.py --port 9001 --out logs/f1-D-cross.f1bin
+python3 Tools/f1_dump.py --read logs/f1-D-cross.f1bin   # counts per kind, span, rate
+```
+
+One length-prefixed record per WebSocket binary message — `f64` host arrival
+time in Unix seconds, `u32` payload length, then the `SMSF`, `SMSP` or `SMSS`
+payload as sent. Nothing is decoded on the way in, which is the point: **the
+client receives the bytes their own consumer would have seen**, per scenario,
+rather than this project's interpretation of them. The file is flushed after
+every message, so Ctrl-C and a crash lose the same nothing.
+
+It is stdlib only, and its WebSocket client is `f1_probe.py`'s, unchanged.
+`--read` reports counts per kind, the time span and the rate, and decodes with
+the client's own `sms_td` from `~/Downloads` when that is there.
+
+`phone_session.py`'s scored scenarios run it per scenario beside the `/track`
+recording, and the files it writes are what the delivery folder collects as
+`f1-*.f1bin` ([the delivery folder](../operations/evidence.html#the-delivery-folder)).
+
 ## What the stream does not promise
 
 - **Delivery.** TCP delivers what it sends, but the console sends a slow client
