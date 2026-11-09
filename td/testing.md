@@ -402,6 +402,61 @@ python3 Tools/wiretest/check.py Tools/wiretest/fixture/ar-streamer.wire.gz
 > Ports are 94xx and 95xx only. The script, the Swift harness and `check.py`
 > each refuse the show ports, so this cannot be run into a live rig by accident.
 
+## How close is too close? `separation_test.py`
+
+The project says, everywhere, that separating performers is a multi-view
+property and that one view has nothing to fuse. This measures it, and puts a
+distance on it.
+
+```bash
+python3 TD/newtox/separation_test.py                   # 1, 2 and 6 devices
+python3 TD/newtox/separation_test.py --devices 6 --fuse
+```
+
+Two standing performers are placed a **known** centre-to-centre distance apart
+in `merge_sim`'s shared world, and the real receiver path runs end to end: the
+shipped `clean_organized` and `compute_cell_weights`, optionally
+`merge_lib.fuse`, then the shipped `_cluster_w` and `_split_multipeak`. Only
+wire fields reach that pipeline. The exact per-performer signed-distance field
+is given to the **scorer only**, so purity is measured against truth rather
+than against a guess at which point belongs to whom.
+
+Two numbers come out: `tracks`, how many performers the pipeline reported (2 is
+correct), and `purity`, the share of surviving points whose track id maps to
+the body they really belong to under the best assignment.
+
+Run 9 November 2026, ring preset, no fusion, no registration error:
+
+| Separation | 1 device | 2 devices | 6 devices |
+|---|---|---|---|
+| 0.10 m | 1.00 tracks, 55.2 % | 1.00, 54.7 % | 1.00, 54.4 % |
+| 0.20 m | 1.00, 53.8 % | 1.00, 53.4 % | 1.00, 53.2 % |
+| 0.25 m | 1.00, 53.8 % | 1.00, 52.7 % | **1.33, 64.2 %** |
+| 0.30 m | 1.00, 52.8 % | 1.00, 52.9 % | **2.00, 86.8 %** |
+| 0.40 m | 1.00, 50.9 % | 1.00, 52.7 % | 2.00, 93.1 % |
+| 0.45 m | 1.00, 50.8 % | 1.00, 52.3 % | 2.00, 95.3 % |
+| 0.50 m | 1.67, 82.6 % | 1.67, 82.4 % | 2.00, 96.9 % |
+| 0.60 m | 2.00, 99.8 % | 2.00, 98.3 % | 2.00, 98.5 % |
+| 1.00 m | 2.00, 100 % | 2.00, 100 % | 2.00, 100 % |
+
+Read the 6-device column against the other two and the whole argument for more
+phones is in one place: **six views split two bodies from 0.30 m, where one or
+two views need 0.50 to 0.60 m.** Below 0.25 m every configuration reports one
+performer, and purity sits near 50 per cent — which is what a coin flip looks
+like when half the points of a merged pair get the one surviving id.
+
+{: .warning }
+> **Simulated.** This is `merge_sim`'s world, the shipping pipeline, and an
+> exact ground truth — which is why a number exists at all. It is not two
+> people in a room. It says what the code does to a known input, and the
+> figures should be quoted that way: *in simulation, with six phones, two
+> standing bodies separate from 0.30 m apart.*
+>
+> It also does not touch the harder claim. Two bodies in sustained physical
+> contact are not separable by any markerless system at any number of views,
+> and that limit is in the physics rather than in this pipeline
+> ([what never to claim](../operations/evidence.html#what-never-to-claim)).
+
 ## Judging the filters on a real take
 
 A simulator knows where its surfaces are, so `td_merge_score.py` can score

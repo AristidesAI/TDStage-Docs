@@ -115,7 +115,7 @@ it tells you which questions a demonstration can and cannot answer.
 | Does the rig hold its frame rate at eight streams? | **No.** Simulation says yes. Simulation does not share a switch or a thermal envelope. |
 | Does a phone throttle under stage lighting over two hours? | **No.** Two heat runs so far, neither two hours under stage light: 25 minutes on phone 2 while charging (2026-10-26: thermal serious throughout, and it found a frame-rate bug since fixed), and about 1.5 hours on two phones (2026-10-28, TDStage AR, plugged in, a furnished room, ambient not measured: serious at 7 to 9 minutes, never critical, phone 1 held 30 fps for 31 minutes). |
 | Does coverage survive a performer walking the playing area? | **No.** This needs the angles, and angles need phones. |
-| Does the system separate performers who cluster? | **No.** Separation is a multi-view property. One view has nothing to fuse. |
+| Does the system separate performers who cluster? | **No.** Separation is a multi-view property. One view has nothing to fuse, and [the measured envelope](../td/testing.html#how-close-is-too-close-separationtestpy) shows it: in simulation one or two views need bodies 0.50 to 0.60 m apart where six manage 0.30 m. |
 
 The last two are the interesting ones, and they are the ones a client will
 ask about. Both are structural, waiting on phones rather than on testing time.
