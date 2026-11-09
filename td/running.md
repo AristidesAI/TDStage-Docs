@@ -141,6 +141,50 @@ need to be: whichever binds, the other reads or stands down. After a bridge
 crash, expect a couple of seconds of missing frames and a log line naming the
 new source. The rig does not need a restart.
 
+#### Measured rather than reasoned: `bridge_outage.py`
+
+Everything above is read from the code. This measures it:
+
+```bash
+python3 Tools/bridge_outage.py                 # orderly, then kill
+python3 Tools/bridge_outage.py --runs 10       # five of each
+python3 Tools/bridge_outage.py --expect-no-again
+```
+
+It recreates what the show launchers do — the bridge on `--port P`
+`--shm-port P+1`, restarted two seconds after it exits — on loopback, with one
+simulated phone sending at 30 fps and a reader doing exactly what
+`udp_pc_exec` does once per frame at 60 Hz. Counted from the moment the bridge
+process has exited, it reports when the reader gave up and bound the port
+itself, when the first genuinely newer frame landed, and **how many old frames
+the reader handed back as new** in between.
+
+Run 9 November 2026, ports 9561 and 9562, one run of each kind:
+
+| Stop | Reader took the socket | First new frame | Old frames returned again |
+|---|---|---|---|
+| Orderly (SIGINT) | 0.32 s | 2.58 s | 16 |
+| Hard (SIGKILL) | 1.96 s | 2.72 s | 20 |
+
+Two things worth taking from that. The handover itself is fast and behaves as
+the table above says — a third of a second on a clean stop, about two on a kill.
+**The frames are gone for longer than the handover takes**: around 2.6 seconds
+either way, because the restarted bridge has to come up and the phone's next
+frames have to arrive.
+
+And the reader returns old frames as new across the gap — sixteen and twenty
+here. In the tox that means a second or so of stale geometry rather than a
+frozen or empty cloud, which is usually the better failure, but it is a real
+effect and not what "new frames only" sounds like. `--expect-no-again` exits 1
+on any of them, for a run that wants to assert the opposite.
+
+{: .note }
+> Loopback, a simulated phone, an 8 x 6 grid. It measures the **software** path
+> — heartbeat, the twice-a-second check, the restart delay, start-up — and not
+> a phone, a network, a full-size grid or Windows. The orderly mode needs
+> SIGINT, so on Windows only `--mode kill` runs. Its ports default to 9561 and
+> 9562; never give it a show port.
+
 ### The fan-out relay is not in the show path
 
 `WebConsole/udp_fanout.py` copied every datagram to TouchDesigner and to the

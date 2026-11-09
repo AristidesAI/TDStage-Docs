@@ -254,6 +254,7 @@ sweeps.
 | `python3 TD/newtox/wire_fixture_test.py` | Two frames a real iPhone put on the wire still parse through TD's receiver, byte for byte. Catches a phone-side packer change that compiles, which the simulator's own bytes cannot. |
 | `python3 WebConsole/doctor.py` | The machine's setup. A USB-only warning means the phone is tethered rather than on the show network, which is fine on a desk and wrong at a venue. Its port checks bind each port without `SO_REUSEADDR`, a true test, so a port the running console or TouchDesigner already holds reads WARN, naming the holder when it can, never FAIL; the exit code is 1 only on a FAIL. `--wait 0` skips the telemetry wait; of the four ports it tests, `--listen` moves the telemetry port and `--http` the web port; the flags and what each check covers are on [running the console](../console/running.html). |
 | `python3 TD/newtox/tox_drift.py` | The saved TouchDesigner project against the repository, so the code in the project is the code in version control. |
+| `python3 Tools/doc_claims_check.py` | That a wording the record has withdrawn has not come back, and a required line has not gone. [Keeping a correction corrected](#keeping-a-correction-corrected). |
 
 ## Running a session, and the pack that comes out of it
 
@@ -411,3 +412,34 @@ side can decide what to do.
 
 Say that plainly and early. The physics sets that limit, so it is not a defect
 in this implementation, and it does not improve with more phones.
+
+## Keeping a correction corrected
+
+On 3 November a client document was fact-checked against the code and the
+records. It came back with 51 errors, and **roughly all 51 leaned the same
+way**: toward sounding more finished than the evidence supported. A second pass
+on 9 November found more of the same in client-readable lines across the
+repository.
+
+That is the useful finding, and it is not about carelessness. Drift in this
+material does not wander in both directions — it flatters. Which means a
+correction is not finished when it is made: somebody writing the next revision,
+in good faith, from memory of how the system was described before, puts the old
+sentence back.
+
+```bash
+python3 Tools/doc_claims_check.py            # the built-in samples, then this checkout
+python3 Tools/doc_claims_check.py --root DIR # another tree, such as an old commit's files
+```
+
+It holds a list of **withdrawn wordings** and a list of **required lines**, and
+fails when a withdrawn wording is back or a required line has gone. Line breaks
+and runs of spaces are collapsed first, so a sentence that got re-wrapped still
+matches. **12 files, 27 withdrawn wordings, 16 required, 0 problems, 9 November
+2026**, and a GitHub workflow runs it on every change to the files it reads.
+
+The records are deliberately **not** read — the changelog, the analysis that
+found the errors, the day plan. They keep the history as it was written,
+including the wording that was withdrawn. A check that forced the record to
+agree with the current wording would be erasing the evidence that the
+correction happened.
