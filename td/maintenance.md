@@ -187,6 +187,36 @@ TD/TDStageConductor.tox: 33 DATs with a repo copy identical, 0 differ,
 
 That is what a clean result looks like.
 
+### Where it stands today
+
+Run against the working copy on 9 November 2026:
+
+```
+TD/TDStageConductor.tox: 28 DATs with a repo copy identical, 5 differ,
+                         0 DATs with text and no repo copy
+  DIFFERS  TDStageConductor/clib         vs TD/newtox/tox_dats/clib.py (38 lines)
+  DIFFERS  TDStageConductor/hands_lib    vs TD/newtox/tox_dats/hands_lib.py (80 lines)
+  DIFFERS  TDStageConductor/hlib         vs TD/hlib.py (61 lines)
+  DIFFERS  TDStageConductor/hlib_grid    vs TD/newtox/hlib_grid.py (10 lines)
+  DIFFERS  TDStageConductor/udp_pc_exec  vs TD/newtox/tox_dats/udp_pc_exec.py (10 lines)
+```
+
+**So the repository is not the tox's code at the moment, and this is the
+direction that matters: every one of the five is a fix that exists in the
+repository and has not been loaded into the tox.** None of them is a live edit
+that would be lost.
+
+| DAT | The fix waiting in the repository |
+|---|---|
+| `clib` | The Windows UDP connection-reset switch, which never actually ran |
+| `hands_lib`, `udp_pc_exec` | The no-proxy hand poll, `parse_hands`, the sources in `Handsstatus`, a YOLO wrist with no pixel skipped, the bridge file named in the log |
+| `hlib`, `hlib_grid` | A fused person id voted rather than averaged ([#51](https://github.com/AristidesAI/TDStage/issues/51)) |
+
+Loading those five and saving the next numbered tox is what clears it. Until
+then, a result of 5 differ is the expected one and does not mean something has
+gone wrong — but the Windows fix in `clib` is only in the tox once that is
+done, which matters for the show machine.
+
 ### Hot-swapping a module DAT in a running tox
 
 Module reload is lazy. After setting `dat.text`, `dat.module` still returns the

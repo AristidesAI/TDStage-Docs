@@ -88,6 +88,27 @@ the Live view without them.
    self-test, so a failure here points at this machine rather than at the
    code. A failure here is worth stopping for.
 
+{: .note }
+> **The Windows-only trap that self-test now covers.** On Windows a datagram
+> sent to a port nobody is listening on comes back as ICMP port-unreachable,
+> and Winsock then raises `WSAECONNRESET` on the **next** call on that socket —
+> so one phone that is off can break the next command to a different phone.
+> Every UDP socket in the show is exposed to it: the console's `/ctl` socket
+> (every phone, the TouchDesigner link, the phones' pongs), the `/track`
+> sender, the fan-out, and the tox's own `clib` socket.
+>
+> The switch that turns the behaviour off was guarded by
+> `hasattr(socket, "SIO_UDP_CONNRESET")`, which CPython never defines, so for
+> as long as it has been there it never ran. It now goes through `WSAIoctl` with
+> ctypes, and `xplat.py`'s self-test checks it on a real socket: a send to a
+> closed loopback port, then the next `recvfrom` and a send to a live peer,
+> neither raising.
+>
+> Two honest caveats, both as of 9 November 2026: it **has not yet run on
+> Windows** — it passes on macOS by construction, and the Windows CI job is
+> what will exercise it — and the tox's copy of `clib` is still the old one
+> ([the current drift](../td/maintenance.html#where-it-stands-today)).
+
 YOLO weights (`yolo26n-seg.pt`, `yolo26n-pose.pt`) and the MediaPipe hand model
 (`hand_landmarker.task`) ship in `WebConsole/models/`, so the install works
 offline once pip has run.
