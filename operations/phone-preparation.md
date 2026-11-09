@@ -211,3 +211,44 @@ yet found, no health arrives even while the phones stream perfectly. Press
 **Send telemetry here** in the console: health then arrives directly and no
 longer depends on TouchDesigner. The causes and the check are on the
 [troubleshooting page](../console/troubleshooting.html#phone-shows-offline-or-shows-no-health-but-is-streaming-fine).
+
+## The morning check, in one command
+
+The four steps above are what you can see from the console. `ar_phone_check.py`
+reads what you cannot: it copies each connected phone's settings plist, its
+recovery log and session, and the list of takes in its Documents folder, over
+the Xcode pairing.
+
+```
+python3 Tools/ar_phone_check.py                 # every connected phone, expects 3
+python3 Tools/ar_phone_check.py --expect 2
+python3 Tools/ar_phone_check.py --console http://localhost:9080
+```
+
+It is **read-only on the phone and silent on the network**: it never installs,
+launches, writes or deletes anything on a phone, and sends nothing. Every fix
+it finds is **printed as a curl line for you to run**, never sent. What it
+catches:
+
+| It reports | Why it bites a stage day |
+|---|---|
+| Phones missing, or paired but not connected | Fewer phones than the plan assumes, found at the Mac rather than at the stand |
+| Duplicate or unconfirmed device ids | START is refused on an unconfirmed id 1 |
+| Depth and telemetry not reaching this Mac | The Mac takes a new `169.254` cable address on a replug and the phone keeps sending to the old one. Telemetry that misses the Mac means the console never learns the phone's address: no `/ctl`, no takes armed |
+| Capture, conditioning or thermal settings that differ | From the app's own registered defaults, read out of `ShowSettings.swift`, **or between the phones** — drift here changes what a cloud looks like |
+| Recorder settings that lose data | IMU sidecar off, `keepLast` trimming |
+| Crashes, SAFE MODE, the last boot | Out of the recovery log |
+| Takes already on the phone | Storage, and takes from another day about to be pulled into a pack |
+
+It exits 1 when anything is marked ERROR and 2 when no phone could be read, so
+it works as a gate in a script. `--from DIR` re-checks files pulled earlier,
+`--out DIR` keeps them, `--no-mac` skips the link checks, and `--selftest`
+runs it against synthetic phone files with no hardware (passing on 9 November
+2026, parsing 79 defaults out of the app).
+
+{: .note }
+> The check between phones is the one a human check misses. A single phone
+> whose `stage.edgecull` or `stage.minconf` drifted from the others still looks
+> perfect on its own view and still streams: it just contributes a differently
+> shaped cloud to the fusion, which shows up as a merge problem and gets
+> debugged in the wrong place.

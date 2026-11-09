@@ -158,6 +158,63 @@ out: **[Stroud — the plan](stroud.html)**.
 Aim with the console's live view rather than by eye. What matters is what the
 phone sees, not where the phone points.
 
+### Where a plan like that comes from
+
+A plan is searched, not drawn. `Tools/room_plan.py` takes a room and a test
+area and looks for the phone positions, heights, pitch and yaw that give the
+most **two-view** coverage of that area — two views, because one view is a
+position a body can hide from. Then it lays out every tape mark the scenarios
+need and writes the plan out:
+
+```
+python3 Tools/room_plan.py --out Notes/Sydney-2026-11-07
+python3 Tools/room_plan.py --out DIR --room 9,7
+```
+
+| It writes | For |
+|---|---|
+| `plan.json` | The positions and the coverage numbers behind them |
+| `marks.json` | `{name: [x, z]}`, which `Tools/track_score.py --marks` scores against |
+| `console_edit.json` | A POST body for the console's `/api/edit`: the roster's seed poses and the floor markers, as one undo step |
+| `floor-plan.svg`, `.png` | The top view, in metres |
+
+The coverage model is `Tools/rig_coverage.py` unchanged: a body at a floor cell
+counts as seen when three of five points up its axis, 0.1 to 1.7 m, are inside
+that phone's view and inside range. A marker counts as seen when all four
+corners are in the camera image with a 3 per cent margin, it is 0.8 to 3.5 m
+from the lens, at least 20 degrees below horizontal, and its short side spans
+70 px of the 1920 x 1440 image.
+
+Three numbers in that model deserve naming, because the plan is only as good as
+they are:
+
+| Number | Where it comes from |
+|---|---|
+| Lens 71.0 x 56.2 degrees landscape | **Measured** on iPhone18,2 |
+| 4.5 m body range | **Planned, not measured** on a person. Scenario C, the range walk, is what measures it |
+| 70 px marker short side | **An assumption** about ARKit image detection. Step 3b of the runbook checks it |
+
+### The two yaw conventions
+
+A plan file carries both frames, and they are not the same. **Type a plan
+heading where a plan heading is wanted and a registration yaw where that is
+wanted, and never copy one into the other.**
+
+| | Position | Yaw |
+|---|---|---|
+| **Stage frame** — TouchDesigner, `/track`, `marks.json` | Origin on the floor at the room centre, Y up, metres | — |
+| **Console plan** — a roster phone's `px` `py` `pz`, a marker's `x` `y` `z` | `px` = X, `py` = -Z, `pz` = height | `yawDeg` is a plan heading: 0 faces +X, 90 faces upstage (-Z), 180 faces -X, 270 faces downstage (+Z) |
+| **Registration** — the tox's `Regyaw`, what goes over `/tdstage/pose` | — | The plan heading **plus 90**, wrapped to -180 to 180 |
+
+The plus 90 is not an arbitrary offset: a levelled stream leaves the phone
+facing +Z, so a phone whose plan heading is 0 — facing +X — is 90 degrees round
+from where its own stream starts.
+
+The console is the only thing that converts (`reg_yaw` and `plan_yaw` in
+`WebConsole/server.py`), and it pushes the result to TouchDesigner. Nothing in
+`room_plan.py` writes the plus-90 form, and a phone placed from a marker gets
+identity rather than either.
+
 ### Why aiming is a coverage decision, not a framing one
 
 The only cure for occlusion is another viewpoint. No amount of processing

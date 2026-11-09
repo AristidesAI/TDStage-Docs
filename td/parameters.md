@@ -279,7 +279,7 @@ place.
 | `Posesource` | Pose Source | Menu `console` / `manual` | `console` | Get-in | `console` takes poses from the console roster. `manual` uses the knobs below. Saved working copy: `console` since v80; it shipped as `manual` before that, which silently ignored every pose the console pushed. |
 | `Alignmethod` | Align Method | Menu `icp` / `open3d` | `icp` | Measuring alignment | With `open3d`, Measure Alignment hands the placed clouds to TDXDepthCamMerger's Open3D refine (`TD/newtox/o3d_align.py`) in a separate Python; the result is a measurement in `align_report`, and TouchDesigner refuses to apply it, since poses are applied from the console (v85). `icp` is the built-in measurement. |
 | `Regdevice` | Edit Device Id | Int | 1 | Get-in | Which device the knobs below edit. Saved working copy: 1. |
-| `Regyaw` | Yaw (deg) | Float | 0.0 | Get-in | That device's yaw. Note that the registration yaw is not the same number as the roster's plan heading; see the console documentation before typing a figure in by hand. |
+| `Regyaw` | Yaw (deg) | Float | 0.0 | Get-in | That device's yaw. The registration yaw is the roster's plan heading plus 90, not the same number; see [the two yaw conventions](../operations/get-in.html#the-two-yaw-conventions) before typing a figure in by hand. |
 | `Regtx`, `Regty`, `Regtz` | Move X/Y/Z (m) | Float | 0.0 | Get-in | That device's translation. |
 | `Regreload` | Reload From Table | Pulse | - | Get-in | Loads the selected device's stored values onto the knobs. |
 | `Regzero` | Zero This Device | Pulse | - | Get-in | Zeroes the selected device. |
