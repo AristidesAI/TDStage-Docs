@@ -272,6 +272,7 @@ both on [the TD testing page](../td/testing.html).
 | `heat_test.py` | One change at a time against a hot phone, restoring the screen, streaming state and planes it found afterwards (capture path and edge cull go back to the app defaults) |
 | `imu_sync.py`, `limb_test.py`, `hand_truth_score.py` | Clock alignment, limb fidelity, hand accuracy |
 | `track_score.py` | A recorded tracking output, scored |
+| `sydney_pack.py` | Not a measurement: the delivery folder, from everything the day produced |
 
 The pack's sections are what the agreement asks for: what was tested and on
 what, a table per scenario, the limits stated plainly, and the recordings.
@@ -280,6 +281,76 @@ what, a table per scenario, the limits stated plainly, and the recordings.
 standard limits reads as a pack nobody looked at hard. The tool writes those
 five (contact, long contact, frontal occlusion, range, light); it knows what
 was measured, not what this measurement failed to cover.
+
+## The delivery folder
+
+The pack is the document. The folder beside it is the proof, and after a test
+day the raw material of it is spread across three phones, the console's log
+folder and a screen recorder. One command gathers it:
+
+```
+python3 Tools/sydney_pack.py --pull
+```
+
+That reads the newest `Notes/Stage-Test-*.json`, pulls the takes off every
+paired phone running TDStage AR, and writes `~/TDStage-Delivery/Sydney-<date>/`.
+Four ways to run it:
+
+| Command | What it does |
+|---|---|
+| `--pull` | Takes pulled off the phones over Xcode device pairing |
+| `--takes-dir ~/Downloads` | Takes AirDropped to the Mac instead, repeatable |
+| `--pull --dry-run` | The plan only: nothing copied, nothing written |
+| `--selftest` | A synthetic day and a fake phone, no hardware |
+
+It collects the takes (`.tdp4rec` with their `.json` and `.imu`), the session
+JSON from `phone_session.py --plan sydney`, the console's `/track` recordings
+(`logs/track-*.jsonl`) and F1 dumps (`logs/f1-*.f1bin`), and the screen videos
+from `~/Movies/TDStage-Sydney-<date>`. Pass each runbook file as well
+(`--runbook`, repeatable): the rig file, and each 6g run's own file. Every take
+is checked with `take_reader.py --verify` and every `.imu` with
+`take_imu.py --info`, so a truncated or empty take is named in the summary
+rather than shipped silently.
+
+| In the folder | What is in it |
+|---|---|
+| `README.md` | What is where, the day's configuration, replay commands, the app build per phone |
+| `SUMMARY.txt` | The check printed at the end. Anything missing is in ALL CAPS |
+| `MANIFEST.sha256` | `shasum -a 256 -c MANIFEST.sha256` |
+| `session/` | The session JSON and its summary, and the runbook's |
+| `scenarios/<id>/` | `phone-<n>/` takes, the `/track` rows, the F1 dump, the video, notes |
+| `scenarios/<id>/earlier/` | An attempt that quit part way and was run again, kept apart from the result |
+| `scenarios/hand-<id>/` | Takes started by hand and named for a card or step, with no session file here |
+| `scenarios/other/` | Files made that day that matched no step, each with its time and why |
+| `mcap/<id>.mcap` | Every phone of that scenario in one file for Foxglove |
+
+**Name a hand-started take for its card, on the phone.** That is the one thing
+the tool cannot work out for you. It files a take by, in order: the session
+that armed it; a name beginning with a step id or card (`6g-rgb`, `XT12`,
+`W11-p2`); the recorded window it started inside; a guessed window, for a step
+that recorded none; otherwise `other/`. A guess is only a guess, and the
+summary names every file a guessed window took by time alone.
+
+Re-running it is safe and cheap. Nothing on a phone is changed — `devicectl`
+lists and copies out, nothing more — and no source file is modified or deleted.
+A pulled file already on the Mac is not pulled twice, copies are APFS clones on
+the same volume, and verification, checksums and MCAP files are cached. The
+pack folder must be new, empty, or one this tool wrote before; any other folder
+holding files is refused, as is one that contains a source folder or sits
+inside one. Files it did not write are left alone and listed, and only
+`--prune` removes the files an earlier run of it left behind.
+
+It exits 0 when nothing is missing, 1 when something is (those ALL CAPS lines),
+and 2 when it refused the folder. The dry run gives the same code for
+everything it can judge before copying — arming, takes per phone, `.imu`,
+`/track`, F1, video — but a take's own frames and footer only once the file is
+on the Mac.
+
+{: .note }
+> `--selftest` builds a whole synthetic test day, with a fake phone, deliberately
+> broken takes and a pack folder it must refuse: **118 checks, passing on
+> 9 November 2026.** No part of the tool has been run against a real test day —
+> there has not been one. It is written and rehearsed, not proven.
 
 ## What never to claim
 

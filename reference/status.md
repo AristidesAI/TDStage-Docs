@@ -55,7 +55,7 @@ claim here without evidence is a defect in this page.
 | iOS CI | Red in both apps (#48). TDStage AR at `f7fc7b4` (run 42220967993): 16 failing tests, which are 15 assertion failures and one crash in TelemetryHostClearTests (malloc "pointer being freed was not allocated"). The crash restarted the test host. The same suite passed 118 of 118 locally on iOS 26.5 on 6 Nov | #48; CHANGELOG 2026-11-06 | none |
 | Distribution | TestFlight TDStage AR 1.1 (4), uploaded 3 Nov 08:35Z from an Xcode Organizer archive with empty build stamps. Its dSYM shows it contains the #49 fix's code (`83fb5ca`). Stops launching about 1 Feb 2027. The console's expiry warning cannot fire for it | archive record and dSYM (TASK-BOARD, Distribution state); `WebConsole/server.py:1954-1960` | none |
 
-*Generated from the system repository's README (committed 8d5178a). 19 components.*
+*Generated from the system repository's README (committed ecda386). 19 components.*
 
 ## Reading a level
 
