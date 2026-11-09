@@ -1,6 +1,6 @@
 ---
 title: Checking the console
-parent: WebConsole
+parent: Console
 nav_order: 9
 ---
 

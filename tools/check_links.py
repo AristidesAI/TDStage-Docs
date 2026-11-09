@@ -28,8 +28,11 @@ def slug(text):
     """just-the-docs/kramdown heading id: lowercase, punctuation dropped,
     spaces to hyphens."""
     t = text.strip().lower()
-    t = re.sub(r"`|\*|_", "", t)
-    t = re.sub(r"[^a-z0-9\s-]", "", t)
+    # kramdown KEEPS an underscore in a heading id: "`separation_test.py`"
+    # becomes "separation_testpy", not "separationtestpy". Stripping it here
+    # accepted a wrong link and would have rejected the right one (2026-11-09).
+    t = re.sub(r"`|\*", "", t)
+    t = re.sub(r"[^a-z0-9_\s-]", "", t)
     # One hyphen per whitespace CHARACTER, not per run. Dropping punctuation
     # can leave two spaces where "(PoE / cable)" was, and kramdown turns those
     # into two hyphens. Collapsing them here reports working links as broken.
@@ -100,6 +103,10 @@ def demo():
     assert slug("`code` and punctuation!") == "code-and-punctuation"
     # the case that made this tool wrong before it was right
     assert slug("Prefer Ethernet (PoE / cable)") == "prefer-ethernet-poe--cable"
+    # kramdown keeps the underscore and drops the dot; read off the live page
+    # 2026-11-09, after this tool accepted a wrong link and the site 404'd it
+    assert slug("How close is too close? `separation_test.py`") == \
+        "how-close-is-too-close-separation_testpy"
     assert "a-section" in headings(d / "b.md")
     print("self-check ok")
 
