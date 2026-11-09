@@ -12,6 +12,16 @@ single TouchDesigner project, which fuses them into one point cloud in a
 shared stage coordinate space and drives real-time visuals. A web console
 manages the devices and carries the tracking outputs to other systems.
 
+{: .warning }
+**The system is in pre-production, and these pages describe it in the present
+tense.** That is a description of what the software does, not a claim that all
+of it has been proven on a stage. Before quoting anything here as a capability,
+read [How far each part is proven](reference/status.html): every component with
+its evidence and the level that evidence supports, generated from the
+development repository's own status table so it cannot quietly improve. A page
+that describes a behaviour and a table that says it has never run on real
+hardware are both telling the truth, about different things.
+
 {: .note }
 **This documentation is public; the code is not.** Links on these pages to
 issues, to the board or to the source repository go to a private repository and
