@@ -23,9 +23,10 @@ tree.
 
 ## Which one do I run?
 
-There are seven senders and nine self-tests, and picking the wrong one wastes an
-afternoon proving something you were not asking about. Start from what you are
-testing, not from what is convenient to launch.
+There are seven senders, nine self-tests and two ways of judging the filters on
+a real take, and picking the wrong one wastes an afternoon proving something
+you were not asking about. Start from what you are testing, not from what is
+convenient to launch.
 
 ```mermaid
 flowchart TD
@@ -401,6 +402,99 @@ python3 Tools/wiretest/check.py Tools/wiretest/fixture/ar-streamer.wire.gz
 > Ports are 94xx and 95xx only. The script, the Swift harness and `check.py`
 > each refuse the show ports, so this cannot be run into a live rig by accident.
 
+## Judging the filters on a real take
+
+A simulator knows where its surfaces are, so `td_merge_score.py` can score
+against truth. A real take has no truth in it — which is exactly why the
+filters are hard to tune on one. Two tools get a truth anyway, from two
+different directions.
+
+### Do these settings keep a moving limb? `edge_bleed_sweep.py`
+
+The live version of this question is `Tools/limb_test.py`, which drives a phone
+through settings and reads the console's `/api/diag/limbs`. This asks it of a
+**recorded** take, with no phone, no console and no TouchDesigner:
+
+```bash
+python3 Tools/edge_bleed_sweep.py TAKE.tdp4rec            # every config
+python3 Tools/edge_bleed_sweep.py TAKE --only default,flip0 --frames 300
+python3 Tools/edge_bleed_sweep.py --list                  # the configs
+python3 Tools/edge_bleed_sweep.py --selftest              # the ports, on synthetic cases
+```
+
+The ground truth is **Apple Vision person segmentation on each frame's own RGB**
+(`Tools/person_mask.swift`, `.accurate`, upsampled four times, cached). That
+matters: it comes from colour, not depth, so the depth filters are not being
+scored against themselves.
+
+The filters are numpy ports, read from their own sources, of two stages: the
+phone's `stageConditionDepth` Metal kernel — adaptive bimodal edge cull,
+confidence gate, motion-adaptive temporal median, deadband, flip limiter, with
+`StageDepthConditioner.encode`'s parameter mapping — and TouchDesigner's GPU
+path after the merge: `gpu_unproject`'s crop and floor band, `gpu_hyst` on a
+learned `Segmode`, and `gpu_clean`'s density and plan-view cluster gate, with
+the saved tox's own uniform expressions. The metric is
+`CloudStore.limb_stats` from `WebConsole/ingest.py`, replicated line for line
+and aggregated the way `limb_test.py` aggregates it, so the numbers are
+comparable with the live tool's.
+
+Being offline buys four things the live tool cannot see:
+
+| Column | What it measures |
+|---|---|
+| `bleed above floor` | The live `bleed` counts floor cells around the feet as flying pixels. This keeps only ring cells more than 15 cm above the floor |
+| `edge blink` | Silhouette cells that flip valid to invalid, or jump 25 cm or more between frames: the boil the flip limiter exists for |
+| `limb moving` | The third of frames whose mask changed most — the hard third, scored on its own |
+| Paired difference | Every config against `default` on identical frames, with a 95 per cent moving-block bootstrap interval |
+
+{: .warning }
+> **Read the take's frame flags, which it prints at the start.** A TDStage AR
+> take carries the conditioning that already ran on the phone, in `frameFlags`
+> bits 1 to 4. Cells a phone filter removed at record time cannot come back
+> offline, so a setting looser than the recorded one scores at best as the
+> recorded one — it does not score as itself. A raw AVFoundation take, with
+> those bits clear, is the only kind on which every setting is measured from
+> scratch.
+
+`--parity N` checks the numpy port against the shipped Metal kernel on N real
+frames, which needs the TDStage AR checkout beside this one and the Metal
+compiler. The mask helper needs `swiftc` either way. `--selftest` exercises the
+ports on synthetic cases with neither: passing 9 November 2026.
+
+### How thick does a flat thing look? `flat_patch.py`
+
+A flat board — or a wall, or the floor — held still in view of two or more
+phones is its own ground truth. It is a plane, so the spread of its points
+about the best-fit plane **is** the noise, and comparing two filter settings
+needs no simulator at all.
+
+Replay a take into TouchDesigner, dump the cloud once per setting, and measure
+the same box in each dump:
+
+```bash
+python3 TD/newtox/take_play.py 127.0.0.1 9003 0 a.tdp4rec b.tdp4rec --loop
+```
+
+```python
+# in TouchDesigner, once per setting
+import numpy as np
+np.save('/tmp/off.npy', np.array(
+    [tuple(p) for p in op('/project1/TDStageConductor/out_pop').points('P')], 'f4'))
+```
+
+```bash
+python3 Tools/flat_patch.py /tmp/off.npy /tmp/temporal.npy --box -0.4 0.4 1.0 1.6 1.8 2.2
+```
+
+Per file it prints the points in the box, the RMS and 95th-percentile distance
+to the plane, and the thickness — the 5th to 95th percentile of signed
+distance. **The plane is fitted once, to the first file's points**, so every
+setting is judged against one plane rather than against its own.
+
+Lower is better, with one condition that is the whole point of printing the
+count: *as long as the point count does not collapse*. A filter that throws
+most of the board away reports a beautifully thin remainder.
+
 ## Self-tests
 
 These need no GPU and no TouchDesigner, and no sockets apart from the bridge
@@ -422,16 +516,21 @@ them after touching the wire format, the shaders or the receiver.
 | `python3 TD/newtox/human_sim4.py --selftest` | The walk, no sockets. Over 24 two-lap walks with two, three and four walkers, with and without a sitter, no walker's root moves more than 3 cm a frame, pairs still pass 0.45 m apart, every walk is periodic, six sits that cannot be drawn are refused by `configure()` and by the command line, each naming the argument, and a run log's scenario line restores the walker count and walk version. Passed 2026-11-03. |
 
 {: .note }
-**What none of these check** ([#50](https://github.com/AristidesAI/TDStage/issues/50)):
-the phone's own fragmenter against this receiver. The bench packs and
-fragments in Python, and the wire fixture of two real iPhone frames
-(`wire_fixture_test.py`) holds the assembled frame, captured before fragmentation, which the test re-splits with
-the receiver's own packet header. So the 20-byte packet header the phone
-writes (packet index, packet count, payload length, flags) has no
-cross-language check, and a regression in the Swift fragmenter would pass
-every self-test and show up on a rig as frames dropped for missing packets.
-Low risk while real phones stream into this receiver daily; a captured
-datagram fixture would close it.
+**What none of these check on their own**
+([#50](https://github.com/AristidesAI/TDStage/issues/50), now closed by
+`Tools/wiretest` above): the phone's own fragmenter against this receiver.
+Every test in the table packs and fragments in Python, and the wire fixture of
+two real iPhone frames (`wire_fixture_test.py`) holds the **assembled** frame,
+captured before fragmentation, which the test then re-splits with the
+receiver's own packet header. So on this table alone, the 20-byte packet header
+the phone writes — packet index, packet count, payload length, flags — has no
+cross-language check, and a regression in the Swift fragmenter would pass every
+one of them and show up on a rig as frames dropped for missing packets.
+`Tools/wiretest` is the test that closes that, by compiling the shipped
+streamer and capturing what it actually sends. What is still open is that it
+needs the phone app's source, so **CI replays a recording of the streamer
+rather than running it** — re-write the fixture after any change to
+`PointCloudUDPStreamer.swift`.
 
 `hlib.py` and `hlib_grid.py` are pure numpy and OpenCV, with no TouchDesigner
 imports, which is why the same files run inside the tox and in these offline
