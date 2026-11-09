@@ -19,6 +19,7 @@ section. Go to [Operations](../operations/).
 |---|---|
 | [The tracking output](track.html) | **Start here if you are writing the receiver.** Every message and argument, the coordinate frame, what an id promises, and what the system guarantees and what it does not. |
 | [The field stream](field.html) | The second output: occupied 5 cm voxels, people as floor footprints, and the phones' poses, on a WebSocket. What is in each message and what it was computed from. |
+| [How far each part is proven](status.html) | Every component with its state, the evidence for it, and the level that evidence supports. Generated from the system repository's own status table, so it cannot flatter the code. |
 | [Ports and topology](ports.html) | What listens where, which surface is UDP and which is not, and what must never carry depth. |
 | [Why it is built this way](design.html) | The decisions that look arbitrary from outside: UDP with no TCP option, depth on the wire instead of points, dumb phones, receiver-side separation, and the one limit that must never be claimed away. |
 | [Dependencies and requirements](dependencies.html) | What each side needs to run, where it is declared, and what breaks without it |

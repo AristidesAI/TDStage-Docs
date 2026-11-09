@@ -347,26 +347,52 @@ track or decide. This is a choice, and these are the reasons.
 | Raw data can be reprocessed | A recording of what the phone sent can be replayed through a changed receiver. A recording of what a phone concluded cannot. |
 | One streamer, one lifecycle | There is a single streaming path on the phone and a single place that owns the connection. Fewer states means fewer states that can be wrong at a venue. |
 
-The capture itself is raw on purpose. The app uses AVFoundation's LiDAR depth
-camera with filtering turned **off**, so invalid cells stay invalid rather
-than being filled in. Smoothed, hole-filled depth looks better on one phone
-and is worse for fusing several, because it invents geometry that the other
-phones will contradict. Apple's own guidance is that computer-vision work
-should prefer the unfiltered path.
+The capture itself is raw on purpose: invalid cells stay invalid rather than
+being filled in. Smoothed, hole-filled depth looks better on one phone and is
+worse for fusing several, because it invents geometry the other phones will
+contradict.
 
-**The phone uses ARKit for one brief job, marker-based calibration, and then
-swaps back.** Calibration needs no camera motion and works on a static device.
-ARKit is not used for capture, and the reasons are not preferences:
+### Which capture API, and why that changed
+
+{: .note }
+> **Since 2026-11-06 the project ships one phone app, TDStage AR, and it
+> captures with ARKit scene depth.** The original app captured with
+> AVFoundation's LiDAR depth camera with filtering turned off, and used ARKit
+> only for marker calibration. That app is parked, not deleted. Anything you
+> read elsewhere describing AVFoundation as *the* capture path — including
+> older notes in the repository — predates this.
+
+The original comparison is still the reason the first app was built the way it
+was, and it is still true about the two APIs:
 
 | | AVFoundation, unfiltered | ARKit scene depth |
 |---|---|---|
 | The sensor | The same LiDAR, through the same densification | The same LiDAR, through the same densification |
 | Streaming resolution | Higher | Lower |
 | Filtering | Can be turned off | Cannot |
-| Body tracking | Not used | One body per device, and needs camera motion the tripod will never give it |
+| Body tracking | Not used | One body per device, and needs camera motion a tripod will never give it |
 
-Both APIs are the same sensor underneath, so choosing ARKit buys no better
-depth. It costs resolution and forces smoothing on.
+What changed is not that table. It is that **edge bleed turned out to cost more
+than resolution**. Depth at the silhouette of a body smears onto whatever is
+behind it, and those smeared points survive into the fused cloud as a halo that
+no receiver-side cleanup removes reliably. The ARKit fork went after that
+directly: a per-pixel bimodal edge cull, a temporal median, flip hysteresis,
+and ARKit's own person matte. On 6 November the project kept the fork and
+parked the other app rather than maintain two.
+
+Two things about that decision should be said plainly, because they are the
+questions a reviewer asks:
+
+- **The A/B was never run.** Comparing the two paths on resolution against
+  confidence on a real performer is still open (#10). The choice was made on
+  the edge-bleed work, not on a measured comparison of the two capture paths.
+- **ARKit costs latency, and the measurement is not a clean comparison.**
+  Capture to send on 28 October: ARKit **62 to 78 ms with two phones**,
+  AVFoundation **37 ms with one phone**. Different phone counts, so the gap is
+  not all attributable to the API. It has not been re-measured at equal
+  configuration.
+
+Both APIs are the same sensor underneath, so neither buys better raw depth.
 
 ## 6. The limit that must never be claimed away
 

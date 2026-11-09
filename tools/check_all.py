@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run every check, report once, exit non-zero if any failed.
 
-Six checks and two generators, each with its own command, is six commands
+Six checks and three generators, each with its own command, is nine commands
 nobody runs. This is the one to run before pushing, and the one CI runs.
 
 Checks that need the system repository say so and skip when it is absent,
@@ -28,6 +28,7 @@ CHECKS = [
     ("check_contracts.py", True, "the /ctl verb table matches the app"),
     ("check_tox_version.py", True, "the docs are current with the saved project"),
     ("gen_troubleshooting.py --check", True, "the generated troubleshooting page is current"),
+    ("gen_status.py --check", True, "the proof-level page matches the system README"),
     ("gen_api.py --check", True, "the generated API page is current"),
 ]
 

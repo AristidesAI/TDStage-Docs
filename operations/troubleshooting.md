@@ -71,7 +71,7 @@ here is what an operator sees at the desk.
 | TouchDesigner link lost | Open TD with TDStageConductor.tox, then check Settings > TouchDesigner host/port (default 9006). Ping on the Stage page confirms it. |
 | TD send failed | TD host unreachable from this machine: check the TD host/port in Settings, and the firewall. |
 | REJECTING the stream | Receiver wedge (#20): in TD toggle Udpactive off and on, or restart the bridge process (tdp4_bridge.py). |
-| WITHOUT the TDP4 bridge | Start the bridge: python3 TD/newtox/tdp4_bridge.py --port 9004 (show.bat and Tools/show_mac.sh start it). TD switches to it within 2 s. |
+| WITHOUT the TDP4 bridge | Do not start a second bridge. Check: lsof -nP -iUDP:9003 (Windows: netstat -ano \| findstr 9003). If tdp4_bridge holds it, set TD's Point Cloud Udpport to the bridge's --shm-port (9004 under Tools/show_mac.sh and show.bat); TD switches within 2 s. If nothing holds it, start the stack with Tools/show_mac.sh (Windows: show.bat), which starts the bridge. |
 | no IP known | Set the phone's host on its device page, or wait for its first telemetry packet (the console learns the address from it). |
 | send failed | Phone unreachable: check it is on the network and its IP has not changed (device page shows the last seen address). Ping it. |
 | fan-out stopped | Start the fan-out again (Live > Ingest) or run Tools/show_mac.sh; until then TD receives nothing on 9004. |
