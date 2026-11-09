@@ -348,6 +348,59 @@ python3 TD/newtox/tdp4_sim.py 127.0.0.1 9003 15 --devices 7
 The bench binds the port, so it cannot run at the same time as the bridge or
 as TouchDesigner on that port.
 
+## The phone's own packer against the receiver: `Tools/wiretest`
+
+Every other test on this page packs TDP4 in Python and parses it in Python. If
+the phone and the receiver ever drifted apart, none of them would notice. This
+one compiles **the phone app's shipped streamer source**, unmodified, runs it
+for real, and feeds the datagrams it emits to the receiver TouchDesigner uses.
+
+```bash
+./Tools/wiretest/run.sh
+```
+
+It compiles `Net/PointCloudUDPStreamer.swift` from the TDStage AR checkout as
+it stands — no copy, no edit — with a stub for the link chooser, sends 18
+frames through the streamer's own `sendGrid` and `sendAssembled` into a UDP
+socket, and captures every datagram as it arrives. `check.py` then feeds those
+datagrams to `tdp4_receiver`'s reassembler and parser, and replays them through
+`tdp4_bridge` into a memory-mapped file and back out, as TouchDesigner reads
+them.
+
+The comparison is three-way, which is the part that matters: the bytes are
+checked against the streamer's intent, against the receiver, **and against the
+spec's numbers written out independently in `check.py`**. The receiver's own
+constants are checked against those numbers too, so a streamer and a receiver
+that drifted from the spec *together* still fail.
+
+The cases are chosen for the arithmetic that breaks fragmenters: a frame that
+is exactly one full packet, exactly two, two bytes over one, a 1×1 frame, a
+318-datagram frame where the packet index passes 255, a device id with the high
+bit set, and a playback frame through `sendAssembled`. Half-float conversion is
+measured per case from 0.5 to 16 m, including exact ties of both parities, and
+a run of 500 or more cells without an inexact case **fails** — so a generator
+change cannot quietly stop testing the rounding.
+
+Last run 2026-11-09 against TDStage AR `f7fc7b4`: **6,236 checks, 8 frames, 541
+datagrams, passed.**
+
+It needs the phone app's source, so it cannot run in this repository's CI.
+Instead CI replays a committed capture, `fixture/ar-streamer.wire.gz`:
+
+```bash
+python3 Tools/wiretest/check.py Tools/wiretest/fixture/ar-streamer.wire.gz
+```
+
+{: .warning }
+> The fixture catches receiver drift, **not a change in the phone's streamer** —
+> it is a recording of the old streamer. Re-run `run.sh --write-fixture` after
+> any change to `PointCloudUDPStreamer.swift`. The script refuses to write a
+> fixture unless that file is committed and clean, so the manifest always names
+> the exact source the bytes came from.
+>
+> Ports are 94xx and 95xx only. The script, the Swift harness and `check.py`
+> each refuse the show ports, so this cannot be run into a live rig by accident.
+
 ## Self-tests
 
 These need no GPU and no TouchDesigner, and no sockets apart from the bridge
@@ -360,7 +413,7 @@ them after touching the wire format, the shaders or the receiver.
 |---|---|
 | `python3 TD/newtox/tdp4_bench.py --selftest` | Pack, fragment, reassemble, parse. Field round-trips, depth and confidence and colour plane equality through half-float, out-of-order arrival, a missing packet, a stream restart after a lossy run, the TDPH hello. 26 checks; all passed 2026-10-27. |
 | `python3 TD/newtox/tdp4_bridge.py --selftest` | The bridge round trip: packets, through the bridge's own loop, into the memory-mapped file, out through the reader. Includes a torn write, a slot eviction at seventeen devices, a bad payload, a layout mismatch, and the `--shm-port` republish. Passed 2026-10-27. |
-| `python3 TD/newtox/wire_fixture_test.py` | Two frames a real iPhone 18 Pro put on the wire, through `tdp4_receiver`. The fixture `TD/newtox/testdata/real-iphone18-2frames.tdp4rec` holds frames 300 and 301 of a 916-frame take (TDStage 1.0, iOS 26.6, 2026-09-07) exactly as the phone sent them, since a take is the assembled frame. Each must parse as a 256 x 192 depth, confidence and colour frame of the spec's length, with a real room's depth, intrinsics and a principal point in range, a proper rotation, raw AVFoundation confidence of 0 and 2 only, and confidence 0 exactly where depth is invalid; then each is cut into 1452-byte datagrams with 20-byte headers and reassembled byte for byte, with nothing dropped. 23 checks; passed 2026-11-03. This is the only receiver test fed bytes a phone packed rather than Python. |
+| `python3 TD/newtox/wire_fixture_test.py` | Two frames a real iPhone 18 Pro put on the wire, through `tdp4_receiver`. The fixture `TD/newtox/testdata/real-iphone18-2frames.tdp4rec` holds frames 300 and 301 of a 916-frame take (TDStage 1.0, iOS 26.6, 2026-09-07) exactly as the phone sent them, since a take is the assembled frame. Each must parse as a 256 x 192 depth, confidence and colour frame of the spec's length, with a real room's depth, intrinsics and a principal point in range, a proper rotation, raw AVFoundation confidence of 0 and 2 only, and confidence 0 exactly where depth is invalid; then each is cut into 1452-byte datagrams with 20-byte headers and reassembled byte for byte, with nothing dropped. 23 checks; passed 2026-11-03. Note that these bytes came from TDStage 1.0, the non-AR app parked on 6 November, so this proves the receiver against a phone build that is no longer shipped; `Tools/wiretest` above is the check against the app that is. |
 | `python3 TD/newtox/glsl_parity_test.py` | Shader constants and the pose-row layout against their numpy references. A shader edited without its reference fails here instead of on the rig. Passed 2026-10-27. |
 | `python3 TD/newtox/temporal_test.py` | The static-surface temporal depth filter against the merge simulator: on a still scene the depth error must fall at least 2.5 times; on moving performers the body error must stay within one millimetre of raw. |
 | `python3 TD/newtox/pipeline_test_grid.py` | The organized-grid pipeline offline: wire round trip, isolation purity, angle-aware fusion collapsing a two-phone overlap, and the weighted-fuse mechanism. All of this is the CPU path. |
