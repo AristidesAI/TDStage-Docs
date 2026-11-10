@@ -172,8 +172,7 @@ takes the first video format that offers depth and the smallest float depth
 grid inside it, which is **320×240 on an iPhone 17 Pro**. Either way, read the
 grid on the LIVE page's stream line or in the frame header rather than from
 this key. The bandwidth and disk figures on
-[Wire and disk cost](record.html#disk-cost) are computed at 320×240, so they
-overstate an AR phone by about a third.
+[Wire and disk cost](record.html#disk-cost) give both grids.
 
 ---
 

@@ -50,7 +50,7 @@ The tap is a closure the streamer holds under the same lock the send queue
 reads it with, so arming a recording mid-stream is not a race between the
 interface and the packer. The streamer hands it the finished byte array, a
 Swift array, so the hand-off is a copy-on-write reference rather than a memcpy
-of the 154 to 461 kB a 320×240 frame occupies, and control returns to the send queue
+of the 98 to 295 kB a 256×192 frame occupies, and control returns to the send queue
 immediately. Replayed frames are deliberately not tapped: a take cannot record
 itself.
 
@@ -134,7 +134,7 @@ not being written.
 It is the LIVE page's line with the packet count left out:
 
 ```
-TDP4/UDP → 192.168.1.10:9003 · 320×240 · 41203 frm · 0 drop
+TDP4/UDP → 192.168.1.10:9003 · 256×192 · 41203 frm · 0 drop
 ```
 
 Host, port, grid, frames and drops. LIVE adds `· N pkt` between the frame and
@@ -414,24 +414,37 @@ and over a cable in Finder.
 
 ### Disk cost
 
-Write rate at 320×240 and 30 fps, **calculated from the wire format** and then
-divided by the compression ratios above:
+A take is the wire frame, so its grid is the capture grid: **256×192 for
+TDStage AR**, the app the rig deploys, and 320×240 on an iPhone 17 Pro for the
+parked AVFoundation app. There is no separate recording resolution to set.
 
-| Plane set | Uncompressed | Compressed, best case | Compressed, assume this |
+Write rate at 256×192 and 30 fps, **calculated from the wire format**:
+
+| Plane set | Uncompressed | At 2×, which the app assumes | At the measured 1.3 to 1.7× |
 |---|---|---|---|
-| depth | 4.6 MB/s | 1.2 MB/s | 2.3 MB/s |
-| depth+conf | 6.9 MB/s | 1.4 MB/s | 3.5 MB/s |
-| depth+conf+rgb | 13.8 MB/s | 2.2 MB/s | 6.9 MB/s |
+| depth | 2.95 MB/s, 177 MB/min | 89 MB/min | 104 to 136 MB/min |
+| depth+conf | 4.43 MB/s, 266 MB/min | 133 MB/min | 156 to 205 MB/min |
+| depth+conf+rgb | 8.85 MB/s, 531 MB/min | 266 MB/min | 312 to 409 MB/min |
 
-The best case uses the simulated ratios above. The column to plan with assumes
-only 2×, which is what the harshest synthetic noise produced and therefore the
-safer assumption for a real stage.
+Multiply by 1.56 for the AVFoundation app's 320×240.
 
-The headroom figure the app shows assumes the same 2×, deliberately, so that
-"about N minutes left" never over-promises. One real take has been measured
-against these figures: T1, a handheld colour take recorded 2026-09-07 at
-256×192, compressed 2.2×, close to the column to plan with. No 320×240 take
-from a real stage has been measured yet (**not yet verified**).
+{: .warning }
+> **Real takes compress worse than the simulated ratios, and worse than the
+> app's own assumption.** The headroom figure, the "about N minutes left" the
+> RECORD page shows, divides free space by a flat 2×. Every real measurement so
+> far has come in under that:
+>
+> | Take | Ratio |
+> |---|---|
+> | T1, handheld colour, 2026-09-07 | 2.2× |
+> | A studio session on a 16 Pro Max, colour, reported 2026-11-06 | about 1.7× (305 MB a minute) |
+> | The same session, depth+conf | about 1.3× (209 MB a minute) |
+>
+> So on depth+conf the headroom estimate currently **over-promises by about
+> half**: it will say an hour is left where there is nearer forty minutes.
+> Plan a shoot from the right-hand column, not from the app's figure, and
+> treat the 5× and 6× in the simulated table as what synthetic frames give
+> rather than what a stage gives.
 
 ---
 
