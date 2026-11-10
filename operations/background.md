@@ -143,10 +143,14 @@ view:**
    ring of floor stays around each foot, which is the 8 cm feet band doing its
    job. About 0.15 removes all of it and costs the soles: six points out of
    7,819 on a performer, in simulation.
-2. **Turn on Show Wall Plane.** Set Wall Yaw to the side the backdrop is on,
-   then bring Wall Distance in until the pink plane sits just in front of the
-   backdrop points, **0.2 to 0.3 m clear of them**.
-3. **Turn on Backdrop Wall Cut.** The points behind the plane go.
+2. **Set Wall Yaw to face the backdrop**, then pulse **Fit Wall To Cloud**
+   (v93). It reads the merged cloud along that yaw, finds the farthest dense
+   band between 0.5 and 2.5 m high, sets Wall Distance **0.25 m in front of
+   it** and turns on Show Wall Plane. It never turns the cut on. Dragging Wall
+   Distance by hand does the same job: the target is 0.2 to 0.3 m clear of the
+   backdrop points.
+3. **Look at the pink plane**, then **turn on Backdrop Wall Cut**. The points
+   behind the plane go.
 4. **Leave the values.** They save with the tox.
 
 {: .warning }
@@ -157,6 +161,20 @@ view:**
 > cloud.
 >
 > It is off by default, and with it off v89 behaves exactly as v87 did.
+
+{: .note }
+> **Fit refuses rather than guessing, in two cases, and both are cases where a
+> guess would cut people.** With no backdrop in view the farthest dense band
+> *is* a performer, so a band narrower than 2 m across, or one filling less
+> than 80 per cent of its own width in 0.25 m steps, is read as a person or a
+> row of them and declined. And if the yaw faces away from the backdrop, more
+> than a fifth of the remaining points lie beyond the band, which means the
+> stage is behind the proposed wall; that is declined too. The log says which:
+> *"no dense vertical band along yaw X deg ... Set Wall Yaw to face the
+> backdrop first (if the backdrop is behind you, add or subtract 180)."*
+>
+> In simulation a backdrop at -165 degrees and 3.5 m gave a face at 3.35 m and
+> a distance of 3.10 m, and yaws of 15, 0, 90 and -90 were all refused.
 
 **Where it sits in the pipeline** decides what it can and cannot fix. On the
 GPU path, which is the show path, each point meets the crop box and the
@@ -230,11 +248,13 @@ in TouchDesigner can be typed into the console, and the other way round.**
    after the drag.
 2. **Tick Wall cut and set Wall yaw** so the pink plane lies along the
    backdrop.
-3. **Press Fit wall to cloud**, which needs People only off. It proposes a
-   distance 0.15 m in front of the farthest dense band between 0.5 and 2.5 m
-   high, and says what it found: *"starts at 3.95 m ... proposed 3.80 m"*.
-   Apply turns the wall on there. Dragging Wall distance by hand does the same
-   job.
+3. **Set Wall yaw to face the backdrop, then press Fit wall to cloud**, which
+   needs People only off. It proposes a distance 0.15 m in front of the
+   farthest dense band between 0.5 and 2.5 m high, and says what it found:
+   *"starts at 3.95 m ... proposed 3.80 m"*. **It refuses the same two cases
+   the tox refuses**, a band too narrow or too gappy to be a backdrop and a yaw
+   facing away. Apply turns the wall on there. Dragging Wall distance by hand
+   does the same job.
 4. **Show cut points (dimmed)** draws what is being removed, and the status
    line gives the engine's kept points, its voxels and the learned share.
 
@@ -259,10 +279,11 @@ removed. A performer who has gone dim is the failure this view exists to
 catch.*
 
 {: .warning }
-> **Fit wall's 0.15 m margin was not enough in simulation.** It left 300 to 600
-> wall points behind, and 0.3 m cleared them. The guidance on both sides is the
-> same: stop 0.2 to 0.3 m in front of the backdrop, so treat the proposal as a
-> starting point and push it back.
+> **The two Fit buttons do not propose the same distance.** The console leaves
+> **0.15 m** in front of the band and the tox leaves **0.25 m**, and the tox's
+> figure was chosen because the console's left 300 to 600 wall points behind in
+> simulation, where 0.3 m cleared them. So the console's proposal is the one to
+> push back by hand; 0.2 to 0.3 m is the target on both sides.
 
 **Where it sits is the part that makes it worth doing.** The cut runs before
 everything that learns. A point outside it never becomes an engine voxel, so
