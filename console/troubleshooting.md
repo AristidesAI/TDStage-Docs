@@ -372,7 +372,7 @@ gives.
   by hand.
 
 **Fix.** For a real look at merge quality or cloud density, use a browser on the
-venue LAN, or a remote desktop session on the show machine. Everything else in
+venue LAN, or somebody at the machine. Everything else in
 the UI, including the roster, telemetry, `/ctl`, the Log, Stage 3D and the
 settings, is uncapped remotely. It is the point cloud, and only the point cloud,
 that is thinned.

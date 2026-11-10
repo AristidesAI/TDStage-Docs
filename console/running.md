@@ -473,11 +473,37 @@ private, loopback and link local addresses count as on LAN.
 Everything else in the UI is uncapped remotely: the roster, telemetry, `/ctl`,
 the Log, Stage 3D, Markers and the settings. The console thins the point cloud
 and nothing else. Judging merge quality or cloud density needs a browser on the
-venue LAN, or a remote desktop session on the show machine.
+venue LAN, or somebody at the machine.
 
-Use RDP or another remote desktop over Tailscale for TouchDesigner and for
-running the `.bat` files. Phones stay on the venue LAN. Only the browser crosses
-Tailscale.
+Phones stay on the venue LAN. Only the browser crosses Tailscale.
+
+### Driving TouchDesigner from Sydney, without an RDP session
+
+The browser crosses Tailscale; TouchDesigner and the `.bat` files must not
+cross it the obvious way.
+
+{: .warning }
+> **Never start TouchDesigner or a `.bat` file from a Remote Desktop session.**
+> An RDP login **takes over the signed-in console session**: the PC's own
+> screens lock and windows move to the remote session's virtual display, so
+> TouchDesigner's output windows can move or go dark. Worse, the session can
+> get its own `TEMP` subfolder — and the bridge's memory-mapped file lives in
+> `TEMP`. A TouchDesigner started there finds no bridge file, binds 9004
+> itself where no phone sends, and **shows no error of its own**. The console
+> logs an ERROR only when the GPU merge path is on and its link is up.
+
+Use a remote tool that **shares the physical console session** and can reach
+the sign-in screen. None has been chosen or tested yet. If an RDP session has
+already been opened as the show account, hand the session back to the physical
+console with `tscon` as Administrator before using the machine.
+
+After every relaunch of TouchDesigner, turn **UDP Active** and **Console Link
+Active** back on — the saved tox has both off — and check three things:
+
+- `doctor --only temp` names TouchDesigner in its OK line,
+- TouchDesigner's log says `TDP4 via tdp4_bridge`,
+- the console has no `GPU merge path WITHOUT the TDP4 bridge` error.
+
 
 ## Ports, as the code binds them
 
