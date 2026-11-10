@@ -68,11 +68,22 @@ The three controls above used to live on two different pages. They are now one
 custom page, **Stage Cut**, second after Point Cloud, in three groups. The
 names did not change, so anything reading them still works.
 
+![The Stage Cut parameter page in TouchDesigner, second tab after Point Cloud. Three groups: floor and ceiling with Ground Cutoff Height 0.06 and Ceiling Cutoff 4; backdrop wall with Backdrop Wall Cut off, Wall Yaw 0 degrees and Wall Distance 6 m; and the stage box with Crop Min -6, -3, -5 and Crop Max 6, 3, 5 and Stage Crop off.](../assets/img/td-stage-cut-page.webp)
+
+*The page as the working tox holds it, v89 on 10 November 2026. These are the
+saved values rather than the manifest defaults: the ceiling sits at 4 m and the
+box at 6 by 3 by 5, and the wall cut is off, which is how a tox with the
+feature behaves exactly as v87 did.*
+
 | Group | Parameters |
 |---|---|
 | Floor and ceiling | `Floorcut`, `Geoceiling` |
 | Backdrop wall | `Wallcut`, `Wallyaw`, `Walldist` |
 | Stage box | `Cropmin`, `Cropmax`, `Cropon` |
+
+Each group has a header above it explaining what the group cuts, and the third
+one reads `Hdrbox` in v89 because its label was left unset. It is cosmetic,
+and the parameters beneath it are the stage box.
 
 The new part is the **backdrop wall**: a vertical plane at any angle in plan,
 with everything behind it removed at every height.

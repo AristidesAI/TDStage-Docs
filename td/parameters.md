@@ -101,7 +101,9 @@ to cover it.
 > parameters in their old homes.
 
 Second after Point Cloud, in three header groups: floor and ceiling, backdrop
-wall, stage box.
+wall, stage box. [Getting the room out of the
+cloud](../operations/background.html#setting-the-cut-by-hand-the-stage-cut-page)
+has a picture of the page and the procedure for setting it.
 
 | Parameter | Label | Type | Default | Set at | Path | What it does |
 |---|---|---|---|---|---|---|
