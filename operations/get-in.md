@@ -58,8 +58,8 @@ The raw numbers understate the gap, because of how the depth stream is sent.
 One frame from one phone is a hundred to about three hundred packets, depending
 on the grid and whether colour is sent, and the receiver discards
 whole any frame that is missing one of them; nothing is resent. Eight phones
-with colour send around 49,000 packets per second at the simulator's grid, and
-about 76,000 at the grid real phones send.
+with colour send around 49,000 packets per second at the 256×192 the rig
+captures at, and about 76,000 at the parked app's 320×240.
 Wi-Fi under load drops packets in bursts, and a burst that costs single
 packets across many frames costs those whole frames. See
 [Why it is built this way](../reference/design.html).

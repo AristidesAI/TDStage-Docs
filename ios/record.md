@@ -261,7 +261,7 @@ that, a switch and a network card are cheap.
 {: .note }
 Figures of 283 and 566 Mbit/s appear in older notes and in the system
 repository's `CLAUDE.md`. They are the same arithmetic at **256×192**, which is
-what the simulator sends, what everything here was originally computed at, and
+what the simulator sends, what everything here was first computed at, and
 what **TDStage AR sends on every LiDAR iPhone**. So for the deployed rig those
 are the figures to plan with, and this page's 320×240 column applies only to
 the parked AVFoundation app.

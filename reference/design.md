@@ -476,7 +476,7 @@ synthetic streams, not from phones.
 | Transport loss up to 16 streams | 0 incomplete frames, at 573 Mbit/s | Measured 2026-10-26, simulation at 256×192, depth and confidence |
 | Bridge to TouchDesigner delay | 9.5 ms median, 15.3 ms at the 95th percentile | Measured 2026-10-26, simulation at 256×192, depth and confidence |
 | Bridge receive capacity | 114,500 packets per second with no drops, 55 % of one core (twelve phones of 320×240 with colour). An earlier 61,000 was the highest load then tried, not a limit | Measured 2026-10-27, loopback |
-| Eight phones with colour, offered load | 49,000 packets per second at 256×192; about 76,000 at the 320×240 real phones send | Arithmetic from the frame size |
+| Eight phones with colour, offered load | 49,000 packets per second at the rig's 256×192; about 76,000 at the parked app's 320×240 | Arithmetic from the frame size |
 
 Real-phone evidence is **two phones in one room**, measured together since
 2026-10-28. Nothing in this table was produced by eight real phones, and

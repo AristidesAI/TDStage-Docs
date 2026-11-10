@@ -76,21 +76,22 @@ The full argument, with the bandwidth arithmetic behind it, is in
 | A frame with any missing packet is dropped whole | You never receive a partial frame. You receive the next complete one instead. |
 | Latest wins | A newer frame replaces an older unread one. Do not assume you see every frame, and do not build state that depends on seeing them all. |
 | One socket serves every device | Every datagram identifies its own sender, so demultiplex by the device id in the data and not by source address. |
-| Datagrams are kept inside a normal MTU | A frame is split across numbered packets of at most 1,452 payload bytes (about 70 for a 256×192 depth-only frame, about 320 for a 320×240 frame with colour) and reassembled by frame id. Do not rely on IP fragmentation. |
+| Datagrams are kept inside a normal MTU | A frame is split across numbered packets of at most 1,452 payload bytes (about 70 for a depth-only frame and about 204 for one with colour, at the rig's 256×192) and reassembled by frame id. Do not rely on IP fragmentation. |
 
-Check which packet rate you are quoting. The number quoted most often is the
-**simulator's**, and real phones send more.
+Check which grid a packet rate is quoted at, because the two differ by half
+again and both appear in this project's notes.
 
-| Eight phones, 30 fps | 256×192 (the simulator) | **320×240 (iPhone 17 Pro)** |
+| Eight phones, 30 fps | **256×192, the rig's grid and the simulator's** | 320×240, the parked app on a 17 Pro |
 |---|---:|---:|
-| Depth, confidence and colour | 49,000 pkt/s | **76,000 pkt/s** |
-| Depth and confidence (the phone's default setting) | 24,000 pkt/s | **38,000 pkt/s** |
-| Depth alone | 16,000 pkt/s | **25,000 pkt/s** |
+| Depth, confidence and colour | **49,000 pkt/s** | 76,000 pkt/s |
+| Depth and confidence | **24,000 pkt/s** | 38,000 pkt/s |
+| Depth alone | **16,000 pkt/s** | 25,000 pkt/s |
 
-The 49,000 figure that appears in this project's launcher comments and notes is
-the left column: the simulator sends 256×192. A rig of iPhone 17 Pros sends
-320×240, so the show setting is about 38,000 packets per second and colour on
-eight phones is about 76,000.
+TDStage AR captures through ARKit, whose scene depth is 256×192 on every LiDAR
+iPhone, so the left column is both what the simulator sends and what the rig
+sends. The 49,000 figure in the launcher comments is that column. The right
+column applies only to the parked AVFoundation app, which takes the smallest
+float depth format the camera offers.
 
 **The bridge is not the limit.** In a test on 2026-10-27 it handled 114,500
 packets per second (twelve simulated phones at 320×240 with colour, sent over
