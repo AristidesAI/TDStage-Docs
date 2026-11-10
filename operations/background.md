@@ -240,6 +240,24 @@ in TouchDesigner can be typed into the console, and the other way round.**
 
 The colours are the tox's: green for the floor, pink for the wall.
 
+![A 3D view of the console's point cloud with no cut: three performers inside a grey disc of floor points, a dense slab of backdrop points standing behind them, scattered points across a wide green ground grid, and the phones' view frusta drawn in pink.](../assets/img/console-cut-1-before.webp)
+
+*No cut. The engine has all of this to learn: the floor disc, the backdrop
+slab and the scatter beyond the stage. Only the three figures are performers.*
+
+![The same scene after the cut: only the three performers remain, standing on the green floor grid with the pink wall plane behind them and nothing else in the volume.](../assets/img/console-cut-2-after.webp)
+
+*After the floor cut and the wall cut. The engine kept 39,300 of 274,900
+points, an 86 per cent cut, and `/track` went from 18.3 to 28.9 frames per
+second.*
+
+![The same view again with Show cut points on: the performers stay bright while the removed floor and backdrop points are drawn dimmed, showing what the cut took.](../assets/img/console-cut-3-dimmed.webp)
+
+*Show cut points (dimmed), which is how to check a cut rather than trust it.
+The bright figures are what `/track` sees; everything dim is what the cut
+removed. A performer who has gone dim is the failure this view exists to
+catch.*
+
 {: .warning }
 > **Fit wall's 0.15 m margin was not enough in simulation.** It left 300 to 600
 > wall points behind, and 0.3 m cleared them. The guidance on both sides is the
