@@ -40,15 +40,15 @@ python3 WebConsole/server_selftest.py          # offline and deterministic
 python3 WebConsole/server_selftest.py --real   # this Mac's real interfaces, read-only
 ```
 
-It imports the real server module — no `main()`, so no HTTP and no telemetry
-listener, the TouchDesigner link off, config and logs in a temp folder — and
-fakes only the **inputs**: walk tracks, floor clouds, and the text `ifconfig`,
+It imports the real server module, with no `main()`, so no HTTP and no
+telemetry listener, the TouchDesigner link off, and config and logs in a temp
+folder. It fakes only the **inputs**: walk tracks, floor clouds, and the text `ifconfig`,
 `arp` and `route` print. Everything after those inputs is the shipped code.
 
 | It proves | Because it did not |
 |---|---|
 | An applied walk align runs to the end: the job reaches `done`, the poses land as the walk placed them, one Undo step, persisted to disk, the live view synced, the poses sent to TouchDesigner, a phone it placed marked checked, and Undo putting the poses back | It ended `failed: KeyError 'score'` |
-| `usb_links()` finds a cable phone **with the ARP table hidden** — macOS Local Network privacy hides it from Homebrew's Python, so `arp` prints nothing — by asking `route -n get` on each cable instead. Two cables, two links; an address with no neighbour, none; a readable table still works alone | Homebrew's Python cannot read the ARP table |
+| `usb_links()` finds a cable phone **with the ARP table hidden** (macOS Local Network privacy hides it from Homebrew's Python, so `arp` prints nothing) by asking `route -n get` on each cable instead. Two cables, two links; an address with no neighbour, none; a readable table still works alone | Homebrew's Python cannot read the ARP table |
 | `telemetry_host_for` gives a cable phone its own cable's address, and gives a phone on no cable with a typed LAN host the route toward that host | It fell back to the console's LAN address |
 | `GET /api/align/check?wait=1` returns fresh pairs in one call, answers at once from a result under five seconds old, and joins a refresh already running | The first call after a console start returned no pairs and only started a refresh |
 
@@ -91,9 +91,9 @@ It reports where the roster came from and which phones it would hold, every
 WARN and ERROR the boot logs, the poses link-up would push against what the
 running console has right now (`--live`, a read-only GET), the `/track` and
 NDI state, auto-recover, and Rig health. **It exits 1 when a pose would change
-on restart** — which is the question it exists to answer.
+on restart**, which is the question it exists to answer.
 
-Its isolation is worth knowing, because it reads the real config: the copy's
+Its isolation matters because it reads the real config: the copy's
 TouchDesigner and `/track` targets are rewritten to sockets the script itself
 owns, every phone's typed host is cleared, and a fake TouchDesigner answers
 pings so link-up happens and the poses it would have pushed are recorded
@@ -109,7 +109,7 @@ python3 Tools/segment_bench.py --against HEAD   # and compare it tick by tick wi
 It renders the eight-phone show rig with three walkers (`human_sim4.py`, the
 same simulator the console sees), unprojects every valid cell the way ingest
 does, and drives `segment.MotionBG.update` on a simulated 20 Hz clock. Scenes
-are cached — eight seconds of walk, looped — so two variants are compared on
+are cached, eight seconds of walk looped, so two variants are compared on
 identical input rather than on two different random walks.
 
 `--against` compares every state column, the published foreground and
@@ -127,7 +127,7 @@ the table joins, identical output.
 ```
 
 `seg_gpu.TorchMotionBG` against `segment.MotionBG`, tick by tick, on
-`segment_bench`'s cached scenes. On a float64 device — `cpu`, `cuda` — the two
+`segment_bench`'s cached scenes. On a float64 device, `cpu` or `cuda`, the two
 must match **exactly**: every state column, the foreground, the background, the
 guard cells, the stats. MPS keeps float32 times, so there it reports the
 overlap of the published sets instead of demanding equality. Exit 1 on failure.
@@ -135,7 +135,7 @@ overlap of the published sets instead of demanding equality. Exit 1 on failure.
 It needs a Python with torch, and the one that runs the console has none
 ([#39](https://github.com/AristidesAI/TDStage/issues/39)). On this Mac the YOLO
 worker borrows another project's venv, which has torch because ultralytics
-needs it, and `Tools/show_mac.local` — untracked, per machine — exports that
+needs it, and `Tools/show_mac.local`, which is untracked and per machine, exports that
 path as `TDSTAGE_YOLO_PYTHON`. Use the same interpreter here.
 
 ## Do the phones agree where one performer is? `calib_check.py`
@@ -147,13 +147,13 @@ the same place.
 A marker measured from its black square instead of its crop marks is 11 per
 cent small. The phone then believes it stands 11 per cent nearer that marker,
 and because LiDAR depth is metric, its whole cloud slides away from the marker
-along that line — about 0.66 m at 6 m. Two phones on opposite sides slide in
+along that line, about 0.66 m at 6 m. Two phones on opposite sides slide in
 opposite directions, so **one performer appears twice**, and nothing else in
 the console notices.
 
 With exactly one person on stage, this does. Each phone's view of that person
 is reduced to one floor point, then pushed away from the phone by about one
-body depth first — a phone sees only the near surface of a body, so without
+body depth first. A phone sees only the near surface of a body, so without
 that correction every opposite pair would read as a fault.
 
 {: .warning }

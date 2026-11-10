@@ -235,7 +235,7 @@ catches:
 | Phones missing, or paired but not connected | Fewer phones than the plan assumes, found at the Mac rather than at the stand |
 | Duplicate or unconfirmed device ids | START is refused on an unconfirmed id 1 |
 | Depth and telemetry not reaching this Mac | The Mac takes a new `169.254` cable address on a replug and the phone keeps sending to the old one. Telemetry that misses the Mac means the console never learns the phone's address: no `/ctl`, no takes armed |
-| Capture, conditioning or thermal settings that differ | From the app's own registered defaults, read out of `ShowSettings.swift`, **or between the phones** — drift here changes what a cloud looks like |
+| Capture, conditioning or thermal settings that differ | From the app's own registered defaults, read out of `ShowSettings.swift`, **or between the phones**, since drift here changes what a cloud looks like |
 | Recorder settings that lose data | IMU sidecar off, `keepLast` trimming |
 | Crashes, SAFE MODE, the last boot | Out of the recovery log |
 | Takes already on the phone | Storage, and takes from another day about to be pulled into a pack |

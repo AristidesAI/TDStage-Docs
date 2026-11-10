@@ -6,7 +6,7 @@ a line per component with its evidence and the level that evidence supports.
 That table is maintained because the people writing the code have to look at it.
 
 A hand-written copy of it on this site would be a second answer to the same
-question, and the published one is always the one that goes stale — which on
+question, and the published one is always the one that goes stale, which on
 this page is the worst possible failure, because the whole point of it is that
 a reader can trust the labels. The 2026-11-03 fact-check of a client document
 found fifty-one errors and roughly all fifty-one leaned the same way: toward
@@ -53,7 +53,7 @@ python3 tools/gen_status.py
 FOOTER = """
 ## Reading a level
 
-Several rows carry a compound level — "Rig (one phone), Simulated", "Rig
+Several rows carry a compound level: "Rig (one phone), Simulated", "Rig
 (earlier builds)". That is not hedging. It means one part of the claim was
 measured on real hardware and another was not, and the row names which is
 which. Read the evidence column before quoting the row.
@@ -61,7 +61,7 @@ which. Read the evidence column before quoting the row.
 **Levels do not transfer.** A thing proven on one phone is not proven on eight;
 a thing proven in a living room is not proven at stage distances, because the
 room never tested the distance. A simulated result says the code does what it
-was written to do, which is worth knowing and is not the same as the rig
+was written to do. That is not nothing, and it is not the same as the rig
 working.
 
 The strongest single caveat on the whole project sits in the status line above:

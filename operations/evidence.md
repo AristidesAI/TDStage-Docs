@@ -207,7 +207,7 @@ which is which:
 
 | Output | What a point is |
 |---|---|
-| `/track/performer/hand` | The client contract. The **wrist** — YOLO keypoints, or Apple body pose — lifted to 3-D through each phone's own depth and fused across phones, tied to a performer id, `side` 0 the performer's left. Only for a confirmed, un-clustered, non-coasting performer |
+| `/track/performer/hand` | The client contract. The **wrist** (YOLO keypoints, or Apple body pose) lifted to 3-D through each phone's own depth and fused across phones, tied to a performer id, `side` 0 the performer's left. Only for a confirmed, un-clustered, non-coasting performer |
 | The hand dots at `/api/hands` | Per phone, **no identity and no fusion**: a hand detector's 21 landmarks averaged to about the palm centre, lifted to 3-D. Apple Vision on a Mac, MediaPipe in the YOLO worker on Windows. This is what the Live view rings and TouchDesigner's Hands page draw |
 
 The field stream carries neither: F1 0.4 is field voxels, presence and sensor
@@ -222,7 +222,7 @@ python3 Tools/hands_test.py score logs/hands-K.jsonl --stands stands.json
 `check` exits 1 when the scenario cannot run, and `--fix` switches on exactly
 what it needs and nothing else: YOLO keypoints when they are the only way to
 get wrists at a usable rate, the `/track` hands group, and the hand dots. **It
-never switches on `/track` itself and never touches a phone** — the session
+never switches on `/track` itself and never touches a phone**. The session
 script asks for `/track`, so one tool stays responsible for it.
 
 `rec` records both outputs itself, because the console's own `/track` recording
@@ -231,7 +231,7 @@ in base64, and one per new hand-dot reading, each dot carrying `src`: `apple`
 or `mediapipe` for a real hand detector, `yolo` for a body-pose wrist, which
 `hand_track` falls back to on a phone where the hand detector found nothing.
 
-The segments — who did what, when — go in a sidecar as you press Enter through
+The segments, which record who did what and when, go in a sidecar as you press Enter through
 `phone_session.py --plan sydney --only K`: a palm held flat on a stand, *n*
 people spread apart with hands up, two people shoulder to shoulder, fast arm
 sweeps.
@@ -240,7 +240,7 @@ sweeps.
 > **Tape the stands' positions, and give them to the scorer.** A stand's flat
 > top above the floor is measured with tape and goes in `stands.json` in
 > **metres**. Its taped stage position is optional, and that is the trap: with
-> no position, the scorer locates the stand *from the hands themselves* — the
+> no position, the scorer locates the stand *from the hands themselves*: the
 > densest group in plan of the hands near palm height over every hold. That is
 > a guess, and scoring hands against a stand position inferred from those same
 > hands flatters the result. Tape the position whenever the stand sits on a
@@ -382,8 +382,8 @@ that armed it; a name beginning with a step id or card (`6g-rgb`, `XT12`,
 that recorded none; otherwise `other/`. A guess is only a guess, and the
 summary names every file a guessed window took by time alone.
 
-Re-running it is safe and cheap. Nothing on a phone is changed — `devicectl`
-lists and copies out, nothing more — and no source file is modified or deleted.
+Re-running it is safe and cheap. Nothing on a phone is changed, since `devicectl`
+lists and copies out and nothing more, and no source file is modified or deleted.
 A pulled file already on the Mac is not pulled twice, copies are APFS clones on
 the same volume, and verification, checksums and MCAP files are cached. The
 pack folder must be new, empty, or one this tool wrote before; any other folder
@@ -393,15 +393,15 @@ inside one. Files it did not write are left alone and listed, and only
 
 It exits 0 when nothing is missing, 1 when something is (those ALL CAPS lines),
 and 2 when it refused the folder. The dry run gives the same code for
-everything it can judge before copying — arming, takes per phone, `.imu`,
-`/track`, F1, video — but a take's own frames and footer only once the file is
+everything it can judge before copying (arming, takes per phone, `.imu`,
+`/track`, F1, video), but a take's own frames and footer only once the file is
 on the Mac.
 
 {: .note }
 > `--selftest` builds a whole synthetic test day, with a fake phone, deliberately
 > broken takes and a pack folder it must refuse: **118 checks, passing on
-> 9 November 2026.** No part of the tool has been run against a real test day —
-> there has not been one. It is written and rehearsed, not proven.
+> 9 November 2026.** No part of the tool has been run against a real test day,
+> because there has not been one. It is written and rehearsed, not proven.
 
 ## What never to claim
 
@@ -422,9 +422,9 @@ way**: toward sounding more finished than the evidence supported. A second pass
 on 9 November found more of the same in client-readable lines across the
 repository.
 
-That is the useful finding, and it is not about carelessness. Drift in this
-material does not wander in both directions — it flatters. Which means a
-correction is not finished when it is made: somebody writing the next revision,
+That finding is not about carelessness. Drift in this material does not wander
+in both directions. It flatters. So a correction is not finished when it is
+made: somebody writing the next revision,
 in good faith, from memory of how the system was described before, puts the old
 sentence back.
 
@@ -439,7 +439,7 @@ and runs of spaces are collapsed first, so a sentence that got re-wrapped still
 matches. **12 files, 27 withdrawn wordings, 16 required, 0 problems, 9 November
 2026**, and a GitHub workflow runs it on every change to the files it reads.
 
-The records are deliberately **not** read — the changelog, the analysis that
+The records are deliberately **not** read: the changelog, the analysis that
 found the errors, the day plan. They keep the history as it was written,
 including the wording that was withdrawn. A check that forced the record to
 agree with the current wording would be erasing the evidence that the

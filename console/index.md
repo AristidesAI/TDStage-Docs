@@ -17,8 +17,8 @@ browse to `http://<show-machine-ip>:9080`.
 
 ## How it is built, and why that way
 
-Four decisions shape everything on the pages that follow. They are worth reading
-before the control lists, because most of the console's odd behaviour is one of
+Four decisions shape everything on the pages that follow. Read them before the
+control lists, because most of the console's odd behaviour is one of
 these four being honest about itself.
 
 **One process, many threads, no framework.** `server.py` is a

@@ -232,8 +232,7 @@ Read the current values and ranges from `GET /api/settings`, or from
 `SCHEMA["tracking"]` in `WebConsole/settings.py`. Hover any row in the Tuning
 panel for its help text, which comes from that same schema.
 
-Two of its behaviours are worth knowing even without the numbers, because they
-look like faults:
+Two of its behaviours look like faults and are not:
 
 - **`/track` deliberately publishes zero performers rather than the raw room**
   until the learned background is mature and has settled. Walls and tripods are

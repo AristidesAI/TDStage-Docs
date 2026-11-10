@@ -47,7 +47,7 @@ flowchart TD
   K --> L["Fragment and send:<br/>the live path, untouched"]
 ```
 
-Four details in that path are worth knowing before changing anything in it.
+Four details in that path govern what you can safely change.
 
 **The frame id is not in the frame.** It lives in the 20-byte packet header, so
 a replayed frame takes a fresh id from the same counter a live frame would, and

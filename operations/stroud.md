@@ -1,10 +1,10 @@
 ---
-title: Stroud — the plan
+title: "Stroud: the plan"
 parent: Operations
 nav_order: 5
 ---
 
-# Stroud — the plan
+# Stroud: the plan
 
 Where every phone, marker and tape line goes at Brunel's Goods Shed, Stroud,
 for the test of **24 to 26 November 2026**. [Rig get-in](get-in.html) is the
@@ -55,7 +55,7 @@ Mathias on 3 November, and it is the one these tables describe.
 The front-and-back shape is the one the show-rig simulations use, and it suits
 a shallow stage. Stroud's area is 8 m deep, which is deeper than that shape
 reaches: about 40 % of the volume goes unseen, and it is unseen at the two
-**ends** rather than in the middle — 8 % of the metre in front of the front
+**ends** rather than in the middle: 8 % of the metre in front of the front
 row, and 1 to 27 % of the 2 m by the screen. Side rows put every phone within
 reach of the centre instead.
 
@@ -77,7 +77,7 @@ undo reverts it.
 > more views). Six is the most the brief's three-to-six range allows, and the
 > plan spends it on breadth rather than on overlap.
 
-## Where the phones go — six
+## Where the phones go, at six
 
 ![Coverage model of the Stroud 8 x 6 m playing area with six phones on 2.25 m stands: floor cells coloured by how many phones see them, phone positions P1 to P6 with their yaw and pitch, markers M1 to M10, the gauze and the rear screen.](../assets/img/stroud-coverage-6-phones.webp)
 
@@ -100,7 +100,7 @@ Every phone is in landscape. G0 and S0 are the floor points under the middle
 of the gauze and of the screen; the two tape measurements are the cross-check
 that a position is right, and both must agree within 3 cm.
 
-## Where the phones go — three
+## Where the phones go, at three
 
 The three phones in hand are two iPhone 18 Pro and one 17 Pro Max. Any phone
 can take any position.
@@ -115,8 +115,8 @@ can take any position.
 | P2 | −X | −4.00 | −2.00 | 6.00 m | 343.4° | −35.0° | (−0.92, −1.08) | 7.21 / 4.47 m |
 | P3 | −X | −4.00 | +2.00 | 2.00 m | 16.6° | −35.0° | (−0.92, +1.08) | 4.47 / 7.21 m |
 
-Three phones see 60 % of the volume once and **10 % twice** — about 4 m² of
-floor with two views. That is enough to measure synchronisation, calibration
+Three phones see 60 % of the volume once and **10 % twice**, which is about
+4 m² of floor with two views. That is enough to measure synchronisation, calibration
 and the fusion of two views on one person standing in the overlap. It is not a
 tracking test of the area, and should not be reported as one.
 
@@ -128,7 +128,7 @@ the marker.
 
 | Marker | x | z | Seen by, and at what range |
 |---|---|---|---|
-| M1 (stage origin) | +0.00 | +0.00 | none within 4 m — it is the tape datum |
+| M1 (stage origin) | +0.00 | +0.00 | none within 4 m; it is the tape datum |
 | M2 | −2.75 | +1.75 | P5 at 3.11 m, P6 at 3.11 m |
 | M3 | +2.75 | +1.75 | P1 at 3.11 m, P2 at 3.11 m |
 | M4 | −2.25 | −1.00 | P4 at 3.22 m, P5 at 3.02 m |
@@ -142,8 +142,8 @@ the marker.
 With three phones the marker set is smaller: M1 at the origin, M2 at
 (−2.75, 0.00), M3 at (−1.75, 0.00), M4 at (+2.50, −1.50), M5 at (+2.50, −2.50).
 
-No phone sees the origin marker inside 4 m — the nearest mount is 4 m away in
-plan — and two phones on opposite sides, 8 m apart, can never share one. That
+No phone sees the origin marker inside 4 m, since the nearest mount is 4 m away
+in plan, and two phones on opposite sides, 8 m apart, can never share one. That
 is fine: each phone takes its absolute pose from any single marker whose
 position was taped, so a shared marker is a cross-check rather than a
 requirement. Keep M1 anyway; it is the tape datum and a far check for
@@ -153,7 +153,7 @@ everyone.
 > **Tell the console the printed size.** These are A3, which is A4 scaled by
 > 1.41. The solver takes the marker's real edge length from the console, so a
 > marker printed at one size and declared at another moves every phone placed
-> from it by exactly that ratio — a clean, plausible, completely wrong rig.
+> from it by exactly that ratio: a clean, plausible, completely wrong rig.
 > Measure a printed marker's edge and enter it on the Markers page before
 > calibrating anything.
 
@@ -178,7 +178,7 @@ positions along the room are not confirmed.
 5. **The side lines**, x = ±4.00 m. At 1.0 m from G0 and 1.0 m from S0,
    measure 4.00 m square off the centreline each side and snap a line through
    each pair. If the area is centred in the room, these lines land 2.40 m from
-   the side walls — a check, not a measurement to work from.
+   the side walls, which is a check rather than a measurement to work from.
 6. **Each phone's foot.** On its side line, measure z from the cross line
    (positive toward the gauze), or use the "z from the gauze line" column. Check
    against both tape diagonals to G0 and S0; they must agree within 3 cm.
@@ -198,7 +198,7 @@ positions along the room are not confirmed.
 
 ## What is still unverified
 
-Worth reading before anyone plans around a number here.
+Read it before anyone plans around a number here.
 
 | | Status |
 |---|---|
@@ -214,7 +214,7 @@ Two things the plot cannot show:
   the projection. It is not in this plan for that reason. If a rear view is
   ever wanted, it goes off to one side or above the screen, and loses the
   straight view of the performers' backs.
-- **Pitches were swept for this venue** — 30 to 35° down, rather than the 20 to
+- **Pitches were swept for this venue**, at 30 to 35° down, rather than the 20 to
   25° the show-rig simulations use for a 4 m stage. Steeper sees more floor and
   cuts heads off at the far end.
 

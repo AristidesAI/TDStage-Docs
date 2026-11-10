@@ -288,7 +288,7 @@ curl -s http://localhost:9080/api/live | python3 -m json.tool | grep -A3 bridge
    points are arriving at all before looking at confidence. The sibling ARKit
    app does supply a real per-cell confidence.
 
-A related trap worth knowing: `latency.confMin` zeroes out depth cells below a
+A related trap: `latency.confMin` zeroes out depth cells below a
 confidence level before unprojecting. It defaults to 0, which keeps everything.
 If someone raised it, cells vanish from the cloud with no warning and no log
 line.
@@ -340,7 +340,7 @@ curl -s http://localhost:9080/api/diag/age | python3 -m json.tool
 - **Off the LAN you are capped**, to 5 frames per second and 20,000 points for
   the whole frame. That is not a stutter, it is the cap. See below.
 
-**One server side lever worth knowing.** `latency.segTick` is the segmentation
+**One server side lever.** `latency.segTick` is the segmentation
 engine's period and the dominant server side latency lever, because `/track`
 filters the current cloud against the last published set. The default is 0.05 s,
 which is 20 Hz.

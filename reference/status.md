@@ -59,11 +59,11 @@ the TDP4 wire and iOS CI rows) were made against `8d5178a`, from
 | iOS CI | TDStage AR: green at AR `master` `1420d7d` (GitHub run 42550139732, 9 Nov 02:17Z): 119 tests, 0 failures, iOS 26.5 simulator. `1420d7d` adds only the CI workflow change and one test file to `f7fc7b4`, the commit the phones run. The red runs at `f7fc7b4` (run 42220967993: 16 failing tests) came from the workflow picking an iOS 26.2 simulator, where the test host aborts. TDStage (the non-AR app, out of scope since 6 Nov): still red, last run 41583482978 at `f74f74c` (3 Nov), not re-run. #48 is open | #48; run 42550139732 (a push to AR `master` at `1420d7d`); CHANGELOG 2026-11-09 (TDStage AR CI). That entry was written before the push and says `1420d7d` was not pushed and not run on GitHub. It was pushed to AR `master` later on 9 Nov and ran green (CHANGELOG 2026-11-09, "README and Notes: the bridge outage") | Simulated (CI runner) |
 | Distribution | TestFlight TDStage AR 1.1 (4), uploaded 3 Nov 08:35Z from an Xcode Organizer archive with empty build stamps. Its dSYM shows it contains the #49 fix's code (`83fb5ca`). Stops launching about 1 Feb 2027. The console's expiry warning cannot fire for it | archive record and dSYM (TASK-BOARD, Distribution state); `WebConsole/server.py:1954-1960` | none |
 
-*Generated from the system repository's README (committed 57dec18). 19 components.*
+*Generated from the system repository's README (committed 89708b8). 19 components.*
 
 ## Reading a level
 
-Several rows carry a compound level — "Rig (one phone), Simulated", "Rig
+Several rows carry a compound level: "Rig (one phone), Simulated", "Rig
 (earlier builds)". That is not hedging. It means one part of the claim was
 measured on real hardware and another was not, and the row names which is
 which. Read the evidence column before quoting the row.
@@ -71,7 +71,7 @@ which. Read the evidence column before quoting the row.
 **Levels do not transfer.** A thing proven on one phone is not proven on eight;
 a thing proven in a living room is not proven at stage distances, because the
 room never tested the distance. A simulated result says the code does what it
-was written to do, which is worth knowing and is not the same as the rig
+was written to do. That is not nothing, and it is not the same as the rig
 working.
 
 The strongest single caveat on the whole project sits in the status line above:

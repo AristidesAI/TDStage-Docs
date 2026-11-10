@@ -143,9 +143,9 @@ Each phone goes where the coverage plan puts it. Coverage is the whole reason
 there is more than one phone: a performer hidden from one camera has to be
 visible to another, and that only happens if you planned the angles.
 
-For Stroud the plan is already worked out to the centimetre — every phone's
+For Stroud the plan is already worked out to the centimetre: every phone's
 position, yaw and pitch, every marker, and the tape procedure that sets them
-out: **[Stroud — the plan](stroud.html)**.
+out. It is on **[Stroud: the plan](stroud.html)**.
 
 ![Coverage model of the Stroud 8 x 6 m playing area with six phones on 2.25 m stands: floor cells coloured by how many phones see them, phone positions P1 to P6 with their yaw and pitch, markers M1 to M10, the gauze and the rear screen.](../assets/img/stroud-coverage-6-phones.webp)
 
@@ -162,7 +162,7 @@ phone sees, not where the phone points.
 
 A plan is searched, not drawn. `Tools/room_plan.py` takes a room and a test
 area and looks for the phone positions, heights, pitch and yaw that give the
-most **two-view** coverage of that area — two views, because one view is a
+most **two-view** coverage of that area. Two views, because one view is a
 position a body can hide from. Then it lays out every tape mark the scenarios
 need and writes the plan out:
 
@@ -202,12 +202,12 @@ wanted, and never copy one into the other.**
 
 | | Position | Yaw |
 |---|---|---|
-| **Stage frame** — TouchDesigner, `/track`, `marks.json` | Origin on the floor at the room centre, Y up, metres | — |
-| **Console plan** — a roster phone's `px` `py` `pz`, a marker's `x` `y` `z` | `px` = X, `py` = -Z, `pz` = height | `yawDeg` is a plan heading: 0 faces +X, 90 faces upstage (-Z), 180 faces -X, 270 faces downstage (+Z) |
-| **Registration** — the tox's `Regyaw`, what goes over `/tdstage/pose` | — | The plan heading **plus 90**, wrapped to -180 to 180 |
+| **Stage frame**, meaning TouchDesigner, `/track`, `marks.json` | Origin on the floor at the room centre, Y up, metres | n/a |
+| **Console plan**, meaning a roster phone's `px` `py` `pz`, a marker's `x` `y` `z` | `px` = X, `py` = -Z, `pz` = height | `yawDeg` is a plan heading: 0 faces +X, 90 faces upstage (-Z), 180 faces -X, 270 faces downstage (+Z) |
+| **Registration**, meaning the tox's `Regyaw`, what goes over `/tdstage/pose` | n/a | The plan heading **plus 90**, wrapped to -180 to 180 |
 
 The plus 90 is not an arbitrary offset: a levelled stream leaves the phone
-facing +Z, so a phone whose plan heading is 0 — facing +X — is 90 degrees round
+facing +Z, so a phone whose plan heading is 0, facing +X, is 90 degrees round
 from where its own stream starts.
 
 The console is the only thing that converts (`reg_yaw` and `plan_yaw` in
@@ -406,7 +406,7 @@ correlation. It is available from the same align control, and runs in a
 separate Python. Open3D never loads inside the console or TouchDesigner, the
 same rule his component follows.
 
-The part worth knowing is what TDStage adds to it, and why.
+What TDStage adds to it, and why, is the part to read.
 
 **His method assumes a camera could be tipped any way. Ours cannot be.** Every
 phone levels itself on gravity, so pitch and roll are already known and only a
@@ -429,7 +429,7 @@ noise: it is the direction the shared surfaces do not pin down.
 {: .note }
 Not yet run on the live rig; the phones were offline when it was measured.
 The choice of solver is therefore still open, and the pair of them disagreeing
-on a real stage would itself be worth knowing.
+on a real stage would itself be a result.
 
 ### Correcting a phone that is not quite level
 
@@ -458,8 +458,8 @@ phone to TouchDesigner the same way a move or a turn does.
 
 ### Using both on one rig
 
-The two solvers compose, and neither covers a whole rig on its own, so this is
-the arrangement worth knowing:
+The two solvers compose, and neither covers a whole rig on its own, so use them
+in this order:
 
 1. **Run the cloud solve first.** It places every phone that shares scenery
    with a neighbour.
@@ -535,8 +535,8 @@ client receives positions in that frame, so that error goes out with every
 
 A performer stands still on five to seven taped marks in turn. For each mark,
 their `/track` position over the span they held it is paired with that mark's
-taped position, and a 2D rigid fit of the tape onto those positions — rotation
-and shift, no scale — gives four readings:
+taped position, and a 2D rigid fit of the tape onto those positions (rotation
+and shift, no scale) gives four readings:
 
 | Reading | What it says |
 |---|---|
@@ -563,16 +563,16 @@ python3 Tools/frame_fit.py --live http://localhost:9080 \
 pose, never POSTs and never sends `/ctl`. What to do about a result is yours.
 
 Given `--pivot=X,Z`, phone 1's typed position, it also says what the fit means
-*if all of it comes from phone 1's own typed pose* — which is the usual cause,
-since every other phone is solved relative to phone 1, so a yaw error there
+*if all of it comes from phone 1's own typed pose*, which is the usual cause.
+Every other phone is solved relative to phone 1, so a yaw error there
 turns the whole rig about it. The yaw and the common offset do not depend on
 the pivot; the position line does, by about 1.7 cm per degree for a pivot a
 metre out.
 
 {: .note }
 > **If the marks only fit with z mirrored, it says so**, and the likely cause
-> is `marks.json` holding the console's plan `py` rather than stage `z` — the
-> plan's `py` is -z ([the two yaw conventions](#the-two-yaw-conventions)). The
+> is `marks.json` holding the console's plan `py` rather than stage `z`, since
+> the plan's `py` is -z ([the two yaw conventions](#the-two-yaw-conventions)). The
 > console's own output z flip cannot be the cause: that is applied to the OSC
 > wire only, after the frames `frame_fit` reads.
 

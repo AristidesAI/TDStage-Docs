@@ -214,7 +214,7 @@ Re-check, read only, so the padlock does not stop it, and a console on older
 code answers `this console has no calibration check yet`. The method and its
 limits are in [Rig get-in](../operations/get-in.html#the-one-person-test).
 
-Four of the session rows carry Fix lines worth knowing before you need them:
+Four of the session rows carry Fix lines. Read them before you need them:
 
 | Row | When it appears | Fix |
 |---|---|---|

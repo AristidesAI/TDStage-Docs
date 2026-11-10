@@ -294,7 +294,7 @@ truncated, and the result is emitted as seven channels.
 
 ### Where the per-device registration is applied
 
-This is the correction most worth reading. A phone's extrinsic is
+Of the three, this is the one to understand. A phone's extrinsic is
 gravity-levelled but **origin-centred**: the phone knows which way is up and
 nothing about where it stands. Three phones therefore pile up on top of each
 other until something tells each one where it is. The `registration` table is
@@ -444,7 +444,7 @@ run on the main thread.
 
 ### Why the organized grid gives identity without smoothing
 
-This is the insight the whole pipeline rests on.
+The rest of the pipeline rests on this one property.
 
 In an organized depth grid, cell `(u, v)` is the **same camera ray every
 frame**. A surface in front of that ray gets measured again and again. The

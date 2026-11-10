@@ -26,7 +26,7 @@ system as a leftover and remove it.
 
 "A lost packet costs one frame from one phone" is true of a packet lost on a
 quiet link. It is **not** true of a packet dropped because a switch's buffer
-filled, and that case deserves naming because the arithmetic says it can happen
+filled. That case needs stating, because the arithmetic says it can happen
 on the switch discussed for Stroud.
 
 A phone sends a frame's packets back to back, with no pacing: one ARKit colour
@@ -36,8 +36,8 @@ and the phones' frame clocks are not locked to each other, so their phases
 drift and two frames will at times start at nearly the same moment. While *k*
 frames arrive together, *k* - 1 of them wait in the switch's buffer.
 
-Netgear publishes a buffer of **192 KB** for the GS316EPP and its family —
-**smaller than one colour frame**.
+Netgear publishes a buffer of **192 KB** for the GS316EPP and its family, which
+is **smaller than one colour frame**.
 
 | ARKit frame, 256 × 192 | Packets | In the buffer | On a gigabit line | Frames together to exceed 192 KB |
 |---|---:|---:|---:|---:|
@@ -61,8 +61,8 @@ scattered singles.
 > ports; the burst figures are computed from the frame size. Loopback cannot
 > show any of this, which is why the 70 per cent guideline leaves the link a
 > third free and why **a paper fit is not a pass**. The two tests that would
-> settle it — a real burst through the real switch, and how closely the phones'
-> phases line up after a Start — are open on
+> settle it, a real burst through the real switch and how closely the phones'
+> phases line up after a Start, are open on
 > [#42](https://github.com/AristidesAI/TDStage/issues/42) and have not been run.
 
 The full argument, with the bandwidth arithmetic behind it, is in

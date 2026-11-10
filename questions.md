@@ -36,8 +36,8 @@ frame from an iPhone 18 Pro.*
 So on a stage only 4 m deep, a phone looking across it covers **roughly 5.7 m
 of width**. Three phones along one side cover 14 m once. Two-view coverage of
 the whole width means phones from both sides, which is **about six**. That is
-also the number the Stroud plan settles on for its 8 × 6 m playing area —
-smaller, but deeper, so the two shapes need a similar count for different
+also the number the Stroud plan settles on for its 8 × 6 m playing area, which
+is smaller but deeper, so the two shapes need a similar count for different
 reasons. At three phones, the same plan leaves most of that area seen by one
 phone or by none.
 
@@ -48,7 +48,7 @@ phone or by none.
 > above shrink and the count goes up.
 
 The honest way to answer this for a real venue is to run the search on its
-actual plan — `Tools/room_plan.py` looks for the positions, heights, pitch and
+actual plan. `Tools/room_plan.py` looks for the positions, heights, pitch and
 yaw that give the most two-view coverage of a named area, and writes the tape
 marks with it. [Where a plan like that comes
 from](operations/get-in.html#where-a-plan-like-that-comes-from) describes it.
@@ -71,7 +71,7 @@ all. A performer at 7 to 8 m is outside it.
 a lens at 2.25 m.*
 
 **The answer is where the phones are mounted, not what the software does.**
-Aerial work at 7 to 8 m needs phones rigged **within 4 to 5 m of the action** —
+Aerial work at 7 to 8 m needs phones rigged **within 4 to 5 m of the action**,
 on the truss or on towers, looking across or down at the aerial zone. A view
 from straight above stacks limbs onto bodies, so a high phone wants an angle
 rather than a plan view.
@@ -83,7 +83,7 @@ builds nothing on it.
 
 {: .note }
 > **Two range figures appear in our material and they measure different
-> things.** Ranging — whether the sensor returns a depth at all — is taken as
+> things.** Ranging, meaning whether the sensor returns a depth at all, is taken as
 > trustworthy to about 5 to 6 m. The 4.5 m above is the *usable body* figure
 > the coverage model plans on, which is the stricter of the two and the right
 > one for deciding where a phone stands. Neither has been measured on a person
@@ -136,7 +136,7 @@ is the procedure.
 {: .warning }
 > **One marker per A4 sheet, not two.** The marker is the whole printed image,
 > and the console's default of 195 mm is A4 at true size, measured between the
-> centres of the four crop marks — not the black square, which is about 89 per
+> centres of the four crop marks, not the black square, which is about 89 per
 > cent of that. Measuring the square instead sets every phone **11 per cent
 > too near its marker**, which solves perfectly and solves to the wrong answer:
 > each phone's cloud slides away from its marker, and one performer appears as
@@ -149,7 +149,7 @@ the rig is called built.
 
 ## Which phones, and how old can they be?
 
-**An iPhone Pro with LiDAR, 12 Pro or later** — the app streams the rear LiDAR
+**An iPhone Pro with LiDAR, 12 Pro or later.** The app streams the rear LiDAR
 depth and there is nothing to capture without it.
 
 Everything the project has measured was measured on **iPhone 17 Pro and 18
@@ -167,7 +167,7 @@ needed to be.
 
 The [proof-level page](reference/status.html) is the component-by-component
 answer, and it is generated from the engineering record rather than written for
-a reader, which is the point of it.
+a reader. That is deliberate.
 
 In short: the phone app, the wire protocol, the TouchDesigner hub, the console,
 the client outputs and the recording format exist and run. What has **not**

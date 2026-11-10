@@ -113,7 +113,7 @@ if its weight is at least 190, which under the smoothing above means present
 in about two consecutive frames, so a one-frame flicker of a stale mask does
 not raise a body.
 
-Two things worth knowing before building on it:
+Two things to settle before building on it:
 
 - **Presence is always people**, whatever the field carries. If the console's
   person filter is off, the field holds everything the phones see, but
@@ -164,9 +164,9 @@ python3 Tools/f1_dump.py --port 9001 --out logs/f1-D-cross.f1bin
 python3 Tools/f1_dump.py --read logs/f1-D-cross.f1bin   # counts per kind, span, rate
 ```
 
-One length-prefixed record per WebSocket binary message — `f64` host arrival
+One length-prefixed record per WebSocket binary message: `f64` host arrival
 time in Unix seconds, `u32` payload length, then the `SMSF`, `SMSP` or `SMSS`
-payload as sent. Nothing is decoded on the way in, which is the point: **the
+payload as sent. Nothing is decoded on the way in, so **the
 client receives the bytes their own consumer would have seen**, per scenario,
 rather than this project's interpretation of them. The file is flushed after
 every message, so Ctrl-C and a crash lose the same nothing.

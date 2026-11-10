@@ -18,7 +18,7 @@ the restore that puts the show back on it.
 
 This is for a machine that will not come back within a couple of minutes. A
 single process crashing, or TouchDesigner crashing, is handled on the show PC
-itself — [during a show](failure.html#during-a-show) covers those.
+itself. [During a show](failure.html#during-a-show) covers those.
 
 ## What fails, and what covers it
 
@@ -59,14 +59,14 @@ markers, the alignment or the console's settings.
 ./Tools/backup_state.sh            # ~/TDStage-Backups/<date-time>/
 ```
 
-Run it from the checkout — Terminal on a Mac, Git Bash on Windows. Measured at
+Run it from the checkout, in Terminal on a Mac or Git Bash on Windows. Measured at
 **2.5 to 2.6 s for 423 MB**, three runs at the lowest CPU priority beside a
 live console, and it is read-only against the checkout it reads.
 
 | In the snapshot | What |
 |---|---|
 | `repos/<repo>.bundle` | Every branch and tag of both repositories; clones with no network |
-| `repos/<repo>.uncommitted.patch` | The working tree against HEAD, binaries included — a modified tox, a `.toe` |
+| `repos/<repo>.uncommitted.patch` | The working tree against HEAD, binaries included: a modified tox, a `.toe` |
 | `repos/<repo>.untracked.tgz` | Files git neither tracks nor ignores. A nested clone is kept; linked worktrees are left out and listed |
 | `console/config.json`, `config-backups/`, `profiles/` | The roster, markers, settings and targets; the console's own last 50 saves; each phone's stored profile |
 | `td/*.tox` | The working tox and the newest numbered one |
@@ -111,7 +111,7 @@ becomes a refresh, which clears what the first run left.
 
 ## The switchover
 
-1. **Take the show PC off the network.** Pull its cable or switch it off — it
+1. **Take the show PC off the network.** Pull its cable or switch it off. It
    must not still hold the show address.
 2. **Plug the standby into the show switch.**
 3. **Start the stack**: `WebConsole\windows\show.bat`, or `Tools/show_mac.sh`.
@@ -135,8 +135,8 @@ becomes a refresh, which clears what the first run left.
 {: .warning }
 > **Never over Remote Desktop.** On Windows, drive the standby at the machine,
 > or from a tool that shares its console session. An RDP session can have its
-> own `TEMP` folder — which is where the bridge's memory-mapped file lives, so
-> the bridge and TouchDesigner stop sharing one — and it takes over the
+> own `TEMP` folder, which is where the bridge's memory-mapped file lives, so
+> the bridge and TouchDesigner stop sharing one. It also takes over the
 > machine's own screens.
 
 ## How long it takes
@@ -159,7 +159,7 @@ starting on CUDA, and the phones finding the new machine.
 
 | Lost | Why | Way back |
 |---|---|---|
-| Every change since the last snapshot — roster, markers, alignment, settings, profiles | A snapshot is one moment, and the show PC's own backups are on the dead machine | Snapshot after every such change |
+| Every change since the last snapshot: roster, markers, alignment, settings, profiles | A snapshot is one moment, and the show PC's own backups are on the dead machine | Snapshot after every such change |
 | TouchDesigner edits not saved into the tox | The snapshot copies the file on disk | Save the tox, numbered, after every edit |
 | The learned background and floor, if the standby is in another room | They belong to one room | Learn them again on the empty stage |
 | Clock offsets, learned phone addresses, `/track` performer ids, consensus history, the motion background | The console holds these in memory only | Rebuilt as the phones stream. **`/track` ids start again, and the client must treat them as new** |
@@ -171,8 +171,7 @@ stored profiles come back with the console.
 
 ## What the rehearsal found
 
-Worth reading, because every one of these would have been found during a real
-switchover instead.
+Every one of these would otherwise have been found during a real switchover.
 
 | Found | What it would have done |
 |---|---|

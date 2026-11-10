@@ -21,7 +21,7 @@ flowchart TD
   Q{"Where are you?"}
   Q -- "at a desk, phones<br/>not yet sent" --> A["Preparing a phone"]
   Q -- "in a room, building<br/>the rig" --> B["Rig get-in"]
-  B -- "the room is Stroud" --> S["Stroud — the plan"]
+  B -- "the room is Stroud" --> S["Stroud: the plan"]
   Q -- "something has<br/>stopped" --> C{"Mid-show?"}
   Q -- "writing a figure<br/>into a document" --> D["Evidence and claims"]
 
@@ -33,7 +33,7 @@ flowchart TD
 |---|---|
 | [Preparing a phone](phone-preparation.html) | Everything that must happen before a phone reaches a venue, and why it cannot wait. |
 | [Rig get-in](get-in.html) | Building the rig in the order that avoids rework. |
-| [Stroud — the plan](stroud.html) | The November venue's own numbers: where each phone and marker goes, and how to set it out with a tape. |
+| [Stroud: the plan](stroud.html) | The November venue's own numbers: where each phone and marker goes, and how to set it out with a tape. |
 | [When something fails](failure.html) | What recovers by itself, what you do, and what has no fallback. Start at the triage tree. |
 | [Evidence and claims](evidence.html) | How to produce a number you can defend, and what not to claim. |
 | [Troubleshooting](troubleshooting.html) | Symptom-first fixes, generated from the console's own messages. |

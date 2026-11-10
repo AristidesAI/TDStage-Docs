@@ -115,7 +115,7 @@ non-zero when the page is behind the code.
 **They read the committed code, not the checkout.** That is deliberate. The
 system repository is worked on by more than one session at a time, so reading
 the working tree means a half-finished change can be published as documentation
-before it is even committed — and `--check` then calls the page stale against
+before it is even committed, and `--check` then calls the page stale against
 code that may still be rewritten or dropped. It happened on 2026-10-27: a
 regeneration picked up another session's uncommitted rewrite of the fix hints,
 and the page would have described behaviour that did not exist yet.
@@ -140,7 +140,7 @@ and `12.0` compare equal.
 
 An entry whose pattern stops matching is an **error, not a pass**. If it passed,
 rewording a sentence would switch its check off silently, which is exactly the
-failure the file exists to prevent — re-point the entry at the new wording
+failure the file exists to prevent. Re-point the entry at the new wording
 instead. Like the generators, it reads the committed code unless you pass
 `--working-tree`.
 
@@ -175,10 +175,10 @@ not beside this one.
 Every figure says where it came from, because the same quantity has very
 different values depending on how it was produced:
 
-- **measured, real phone** — and say the phone count, it changes the answer
-- **measured, simulation** — proves the code path, not the physics
-- **built, not verified** — it runs, there is no rig evidence
-- **not yet verified** — needs hardware we have not had
+- **measured, real phone**, and say the phone count, since it changes the answer
+- **measured, simulation**, which proves the code path and not the physics
+- **built, not verified**: it runs, there is no rig evidence
+- **not yet verified**: needs hardware we have not had
 
 Real-phone evidence is currently one phone. Every multi-phone figure is
 simulation.

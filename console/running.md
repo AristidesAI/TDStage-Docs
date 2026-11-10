@@ -77,14 +77,14 @@ the Live view without them.
 
    {: .warning }
    **A Block rule beats every Allow rule, including these four.** Cancelling
-   Windows' "allow access" prompt makes a per-program **Block** rule — and so
-   does any answer, when the account is not an administrator. A block on
+   Windows' "allow access" prompt makes a per-program **Block** rule, and so
+   does any answer when the account is not an administrator. A block on
    `TouchDesigner.exe` or on the show's `python.exe` then overrides the port
    rules above and nothing arrives, with four green firewall rules on screen.
    `doctor` reads the enabled inbound Block rules and prints the
    `Remove-NetFirewallRule -Name` line for the offender: a block on
    TouchDesigner or the show's Python fails doctor on a network type in use,
-   and a block on some other Python — Blender's, say — is a warning only.
+   and a block on some other Python, Blender's for instance, is a warning only.
 
 5. **Set the machine up for a show: `WebConsole\windows\power.bat`.**
 
@@ -140,7 +140,7 @@ the Live view without them.
 {: .note }
 > **The Windows-only trap that self-test now covers.** On Windows a datagram
 > sent to a port nobody is listening on comes back as ICMP port-unreachable,
-> and Winsock then raises `WSAECONNRESET` on the **next** call on that socket —
+> and Winsock then raises `WSAECONNRESET` on the **next** call on that socket,
 > so one phone that is off can break the next command to a different phone.
 > Every UDP socket in the show is exposed to it: the console's `/ctl` socket
 > (every phone, the TouchDesigner link, the phones' pongs), the `/track`
@@ -154,8 +154,8 @@ the Live view without them.
 > neither raising.
 >
 > Two honest caveats, both as of 9 November 2026: it **has not yet run on
-> Windows** — it passes on macOS by construction, and the Windows CI job is
-> what will exercise it — and the tox's copy of `clib` is still the old one
+> Windows**, since it passes on macOS by construction and the Windows CI job is
+> what will exercise it, and the tox's copy of `clib` is still the old one
 > ([the current drift](../td/maintenance.html#where-it-stands-today)).
 
 YOLO weights (`yolo26n-seg.pt`, `yolo26n-pose.pt`) and the MediaPipe hand model
@@ -487,7 +487,7 @@ cross it the obvious way.
 > An RDP login **takes over the signed-in console session**: the PC's own
 > screens lock and windows move to the remote session's virtual display, so
 > TouchDesigner's output windows can move or go dark. Worse, the session can
-> get its own `TEMP` subfolder — and the bridge's memory-mapped file lives in
+> get its own `TEMP` subfolder, and the bridge's memory-mapped file lives in
 > `TEMP`. A TouchDesigner started there finds no bridge file, binds 9004
 > itself where no phone sends, and **shows no error of its own**. The console
 > logs an ERROR only when the GPU merge path is on and its link is up.
@@ -498,7 +498,7 @@ already been opened as the show account, hand the session back to the physical
 console with `tscon` as Administrator before using the machine.
 
 After every relaunch of TouchDesigner, turn **UDP Active** and **Console Link
-Active** back on — the saved tox has both off — and check three things:
+Active** back on, since the saved tox has both off, and check three things:
 
 - `doctor --only temp` names TouchDesigner in its OK line,
 - TouchDesigner's log says `TDP4 via tdp4_bridge`,

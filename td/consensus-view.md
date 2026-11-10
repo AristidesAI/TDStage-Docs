@@ -4,7 +4,7 @@ parent: TouchDesigner
 nav_order: 8
 ---
 
-# Consensus view — the console's tracking, drawn in TouchDesigner
+# Consensus view: the console's tracking, drawn in TouchDesigner
 
 The console decides who is on stage. The consensus view puts that decision
 inside TouchDesigner, as performers and hands you can instance geometry on,
@@ -13,7 +13,7 @@ without recomputing any of it.
 {: .warning }
 > **This is not in the tox yet.** The module, the DAT callbacks and the wiring
 > steps exist and are tested; the operators have not been built into
-> `TDStageConductor.tox`. Every result on this page is **simulated** — recorded
+> `TDStageConductor.tox`. Every result on this page is **simulated**: recorded
 > bundles, synthetic phones, CI. It has never run inside TouchDesigner against
 > real bodies, and TouchDesigner has never been run on the Windows show machine
 > at all. [How far each part is proven](../reference/status.html) is the list.
@@ -23,13 +23,13 @@ without recomputing any of it.
 Person tracking lives in the console (`WebConsole/track_emit.py`): it fuses
 each phone's person instances over the multi-view consensus foreground, keeps
 ids through dropouts, raises `clustered` when two bodies merge, and fuses
-wrists across phones into hands. It sends that out as `/track` OSC bundles —
-the client contract, one bundle per frame at 30 Hz.
+wrists across phones into hands. It sends that out as `/track` OSC bundles, the
+client contract, one bundle per frame at 30 Hz.
 
 The consensus view **receives those same bundles** and keeps the newest frame.
 Nothing is recalculated in TouchDesigner. What you see is what the client bus
-receives, which is the point: if the visuals and the client disagree about
-where a performer is, it is no longer because two different trackers ran.
+receives, so if the visuals and the client disagree about where a performer is,
+it is no longer because two different trackers ran.
 
 It is not the Hands page. The Hands page draws per-phone dots from
 `hands_lib`, which have no identity. These hands belong to a performer id and
@@ -56,14 +56,14 @@ TDSTAGE_TRACK_COPY=127.0.0.1:7001
 
 Byte for byte, every bundle, each target on its own socket.
 `WebConsole/windows/run.bat` sets it for the show console. Three things about
-it are worth knowing before you debug a silent view:
+it explain most silent views:
 
 - **It is read from the environment at start.** A console you started by hand
   does not copy, so a scratch console cannot feed the show's TouchDesigner.
   `TDSTAGE_TRACK_COPY=none` turns it off.
 - **Copies are sent only while `/track` is on**, and independently of the bus.
   When the content workstation is off or its link is down, the console counts
-  the bus error and **still sends the copy** — so the view keeps working
+  the bus error and **still sends the copy**, so the view keeps working
   through a dead bus, which is the failure it most needs to survive.
 - **Zero performers is a normal early state.** Until the console's
   segmentation has learned the empty stage, it sends frames with nobody in
@@ -81,7 +81,7 @@ it are worth knowing before you debug a silent view:
 | `Consensusf1` | off | Reads performer size from the F1 presence stream |
 | `Consensusf1url` | ws://127.0.0.1:9001/ | The console's F1 WebSocket |
 | `Consensusshow3d` | on | Render flag for both geometries |
-| `Consensusstatus` | — | Read-only; warns first, counts second |
+| `Consensusstatus` | n/a | Read-only; warns first, counts second |
 
 {: .note }
 > **Leave `Consensusf1` off on the show** until it has been measured with eight
@@ -110,8 +110,8 @@ id, pulled toward amber while `clustered` is raised. With nobody on stage, or a
 stale stream, each CHOP carries a single zero sample with `active = 0`, so
 instanced markers draw nothing rather than piling up at the origin.
 
-`consensus_table` carries the same frame as a table, refreshed twice a second —
-for reading, not for the hot path. Nothing is written to a table per frame.
+`consensus_table` carries the same frame as a table, refreshed twice a second,
+for reading rather than for the hot path. Nothing is written to a table per frame.
 
 ## Where the markers actually sit
 
@@ -119,7 +119,7 @@ This is the part to understand before trusting a position on screen.
 
 TouchDesigner places a cloud point as trim, registration, tilt, `Flooroffset`,
 the level solve, then the phone's extrinsic. The console places a performer
-with registration, tilt and the extrinsic — the same registration, because the
+with registration, tilt and the extrinsic. The same registration, because the
 console pushes its poses to TouchDesigner. The console never sees the other
 two.
 
@@ -160,8 +160,8 @@ decoding, and that `stop()` frees the port within 50 ms.
 python3 TD/newtox/consensus_view.py --replay TD/newtox/testdata/track-sim-hands.jsonl.gz --to 127.0.0.1:7001 --loop
 ```
 
-Replays 900 recorded bundles — 3,347 performer records, 1 to 6 performers, 842
-bundles with a clustered performer, 1,313 hands — as the exact datagrams the
+Replays 900 recorded bundles (3,347 performer records, 1 to 6 performers, 842
+bundles with a clustered performer, 1,313 hands) as the exact datagrams the
 console sent. This is how to exercise the view, or the geometry hanging off it,
 with no phones and no console.
 
@@ -183,7 +183,7 @@ previous parser raised 14 `OverflowError`.
 
 Not yet done. In `/project1/TDStageConductor`:
 
-1. Text DAT `consensus_view` — the text of `TD/newtox/consensus_view.py`.
+1. Text DAT `consensus_view`, holding the text of `TD/newtox/consensus_view.py`.
 2. Execute DAT `consensus_exec` with Frame Start and Frame End on.
 3. Text DATs `consensus_callbacks` and `consensus_hands_callbacks`, with Script
    CHOPs `consensus` and `consensus_hands` using them.
@@ -191,11 +191,11 @@ Not yet done. In `/project1/TDStageConductor`:
 5. The **Consensus** custom page, with the parameters and defaults in the table
    above.
 6. `geo_consensus`: a Cylinder SOP, radius 1, height 1, standing on y = 0,
-   instanced from `consensus` — translate `x y z`, scale `radius height radius`,
+   instanced from `consensus`: translate `x y z`, scale `radius height radius`,
    colour `r g b`, active; render flag `parent().par.Consensusshow3d`; a
    Constant MAT at about 0.35 alpha.
 7. `geo_consensus_hands`: a Sphere SOP of radius 0.07, instanced from
-   `consensus_hands` — translate, colour, active; same render flag.
+   `consensus_hands`: translate, colour, active; same render flag.
 8. Add both to `render_pc`'s Geometry list.
 9. Out CHOPs `out_consensus` and `out_consensus_hands` for the content network.
 10. Save as the next numbered tox and the working copy, following

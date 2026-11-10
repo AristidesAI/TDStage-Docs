@@ -166,8 +166,8 @@ cells:
 *Per cent of one gigabit line, with framing. Arithmetic, confirmed against the
 simulator's byte counts exactly.*
 
-**So on ARKit, colour from all eight phones fits one gigabit** — 60 per cent,
-inside the 70 per cent guideline — and the 2.5 GbE hardware is not needed for
+**So on ARKit, colour from all eight phones fits one gigabit** at 60 per cent,
+inside the 70 per cent guideline, and the 2.5 GbE hardware is not needed for
 bandwidth. It is still needed if the show runs AVFoundation, or ARKit at 60 fps,
 or more than about nine colour phones.
 
@@ -393,8 +393,8 @@ contradict.
 > captures with ARKit scene depth.** The original app captured with
 > AVFoundation's LiDAR depth camera with filtering turned off, and used ARKit
 > only for marker calibration. That app is parked, not deleted. Anything you
-> read elsewhere describing AVFoundation as *the* capture path — including
-> older notes in the repository — predates this.
+> read elsewhere describing AVFoundation as *the* capture path, including
+> older notes in the repository, predates this.
 
 The original comparison is still the reason the first app was built the way it
 was, and it is still true about the two APIs:

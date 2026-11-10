@@ -335,7 +335,7 @@ nothing to vendor.
 
 ### The Info.plist keys that fail like network faults
 
-This is the part worth reading before blaming the network. Several of these
+Read this before blaming the network. Several of these
 keys, when missing, produce a symptom that looks exactly like a connectivity
 problem, because iOS refuses an operation silently rather than reporting a
 permissions error anywhere the operator will see it.

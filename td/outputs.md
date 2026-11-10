@@ -85,7 +85,7 @@ downstream has to repeat it.
 
 ## `out_pop`: the merged point cloud
 
-This is the output to build content on.
+Build content on this one.
 
 `out_pop` follows `null_pop`, which follows `pc_switch`. The switch is driven
 by `Mergegpu`, so the POP carries one of two chains.

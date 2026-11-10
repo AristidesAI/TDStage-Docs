@@ -143,7 +143,7 @@ python3 TD/newtox/tox_drift.py --extract /tmp/v87-dats    # every DAT's text as 
 Run it after every numbered save. The result you want is **0 differ and 0 in
 the tox only**, which means the repository is the tox's code.
 
-`--extract` is also a backup worth having. It writes the tox's code out as
+`--extract` doubles as a backup. It writes the tox's code out as
 plain text files, readable and diffable without TouchDesigner.
 
 On current TouchDesigner, `toeexpand` exits 1 even when it worked. The tool
@@ -214,7 +214,7 @@ that would be lost.
 
 Loading those five and saving the next numbered tox is what clears it. Until
 then, a result of 5 differ is the expected one and does not mean something has
-gone wrong — but the Windows fix in `clib` is only in the tox once that is
+gone wrong. But the Windows fix in `clib` is only in the tox once that is
 done, which matters for the show machine.
 
 ### Hot-swapping a module DAT in a running tox

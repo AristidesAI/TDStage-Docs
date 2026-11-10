@@ -361,14 +361,14 @@ for real, and feeds the datagrams it emits to the receiver TouchDesigner uses.
 ```
 
 It compiles `Net/PointCloudUDPStreamer.swift` from the TDStage AR checkout as
-it stands — no copy, no edit — with a stub for the link chooser, sends 18
+it stands, with no copy and no edit, plus a stub for the link chooser. It sends 18
 frames through the streamer's own `sendGrid` and `sendAssembled` into a UDP
 socket, and captures every datagram as it arrives. `check.py` then feeds those
 datagrams to `tdp4_receiver`'s reassembler and parser, and replays them through
 `tdp4_bridge` into a memory-mapped file and back out, as TouchDesigner reads
 them.
 
-The comparison is three-way, which is the part that matters: the bytes are
+The comparison is three-way. The bytes are
 checked against the streamer's intent, against the receiver, **and against the
 spec's numbers written out independently in `check.py`**. The receiver's own
 constants are checked against those numbers too, so a streamer and a receiver
@@ -379,7 +379,7 @@ is exactly one full packet, exactly two, two bytes over one, a 1×1 frame, a
 318-datagram frame where the packet index passes 255, a device id with the high
 bit set, and a playback frame through `sendAssembled`. Half-float conversion is
 measured per case from 0.5 to 16 m, including exact ties of both parities, and
-a run of 500 or more cells without an inexact case **fails** — so a generator
+a run of 500 or more cells without an inexact case **fails**, so a generator
 change cannot quietly stop testing the rounding.
 
 Last run 2026-11-09 against TDStage AR `f7fc7b4`: **6,236 checks, 8 frames, 541
@@ -393,8 +393,8 @@ python3 Tools/wiretest/check.py Tools/wiretest/fixture/ar-streamer.wire.gz
 ```
 
 {: .warning }
-> The fixture catches receiver drift, **not a change in the phone's streamer** —
-> it is a recording of the old streamer. Re-run `run.sh --write-fixture` after
+> The fixture catches receiver drift. It cannot catch **a change in the phone's
+> streamer**, being a recording of the old one. Re-run `run.sh --write-fixture` after
 > any change to `PointCloudUDPStreamer.swift`. The script refuses to write a
 > fixture unless that file is committed and clean, so the manifest always names
 > the exact source the bytes came from.
@@ -442,12 +442,12 @@ Run 9 November 2026, ring preset, no fusion, no registration error:
 Read the 6-device column against the other two and the whole argument for more
 phones is in one place: **six views split two bodies from 0.30 m, where one or
 two views need 0.50 to 0.60 m.** Below 0.25 m every configuration reports one
-performer, and purity sits near 50 per cent — which is what a coin flip looks
+performer, and purity sits near 50 per cent. That is what a coin flip looks
 like when half the points of a merged pair get the one surviving id.
 
 {: .warning }
 > **Simulated.** This is `merge_sim`'s world, the shipping pipeline, and an
-> exact ground truth — which is why a number exists at all. It is not two
+> exact ground truth, which is why a number exists at all. It is not two
 > people in a room. It says what the code does to a known input, and the
 > figures should be quoted that way: *in simulation, with six phones, two
 > standing bodies separate from 0.30 m apart.*
@@ -460,7 +460,7 @@ like when half the points of a merged pair get the one surviving id.
 ## Judging the filters on a real take
 
 A simulator knows where its surfaces are, so `td_merge_score.py` can score
-against truth. A real take has no truth in it — which is exactly why the
+against truth. A real take has no truth in it, which is exactly why the
 filters are hard to tune on one. Two tools get a truth anyway, from two
 different directions.
 
@@ -483,9 +483,9 @@ matters: it comes from colour, not depth, so the depth filters are not being
 scored against themselves.
 
 The filters are numpy ports, read from their own sources, of two stages: the
-phone's `stageConditionDepth` Metal kernel — adaptive bimodal edge cull,
+phone's `stageConditionDepth` Metal kernel (adaptive bimodal edge cull,
 confidence gate, motion-adaptive temporal median, deadband, flip limiter, with
-`StageDepthConditioner.encode`'s parameter mapping — and TouchDesigner's GPU
+`StageDepthConditioner.encode`'s parameter mapping), and TouchDesigner's GPU
 path after the merge: `gpu_unproject`'s crop and floor band, `gpu_hyst` on a
 learned `Segmode`, and `gpu_clean`'s density and plan-view cluster gate, with
 the saved tox's own uniform expressions. The metric is
@@ -499,7 +499,7 @@ Being offline buys four things the live tool cannot see:
 |---|---|
 | `bleed above floor` | The live `bleed` counts floor cells around the feet as flying pixels. This keeps only ring cells more than 15 cm above the floor |
 | `edge blink` | Silhouette cells that flip valid to invalid, or jump 25 cm or more between frames: the boil the flip limiter exists for |
-| `limb moving` | The third of frames whose mask changed most — the hard third, scored on its own |
+| `limb moving` | The third of frames whose mask changed most: the hard third, scored on its own |
 | Paired difference | Every config against `default` on identical frames, with a 95 per cent moving-block bootstrap interval |
 
 {: .warning }
@@ -507,7 +507,7 @@ Being offline buys four things the live tool cannot see:
 > take carries the conditioning that already ran on the phone, in `frameFlags`
 > bits 1 to 4. Cells a phone filter removed at record time cannot come back
 > offline, so a setting looser than the recorded one scores at best as the
-> recorded one — it does not score as itself. A raw AVFoundation take, with
+> recorded one. It does not score as itself. A raw AVFoundation take, with
 > those bits clear, is the only kind on which every setting is measured from
 > scratch.
 
@@ -518,7 +518,7 @@ ports on synthetic cases with neither: passing 9 November 2026.
 
 ### How thick does a flat thing look? `flat_patch.py`
 
-A flat board — or a wall, or the floor — held still in view of two or more
+A flat board, or a wall, or the floor, held still in view of two or more
 phones is its own ground truth. It is a plane, so the spread of its points
 about the best-fit plane **is** the noise, and comparing two filter settings
 needs no simulator at all.
@@ -542,12 +542,11 @@ python3 Tools/flat_patch.py /tmp/off.npy /tmp/temporal.npy --box -0.4 0.4 1.0 1.
 ```
 
 Per file it prints the points in the box, the RMS and 95th-percentile distance
-to the plane, and the thickness — the 5th to 95th percentile of signed
+to the plane, and the thickness, which is the 5th to 95th percentile of signed
 distance. **The plane is fitted once, to the first file's points**, so every
 setting is judged against one plane rather than against its own.
 
-Lower is better, with one condition that is the whole point of printing the
-count: *as long as the point count does not collapse*. A filter that throws
+Lower is better, with one condition, which is why the count is printed: *as long as the point count does not collapse*. A filter that throws
 most of the board away reports a beautifully thin remainder.
 
 ## Self-tests
@@ -578,13 +577,13 @@ Every test in the table packs and fragments in Python, and the wire fixture of
 two real iPhone frames (`wire_fixture_test.py`) holds the **assembled** frame,
 captured before fragmentation, which the test then re-splits with the
 receiver's own packet header. So on this table alone, the 20-byte packet header
-the phone writes — packet index, packet count, payload length, flags — has no
+the phone writes (packet index, packet count, payload length, flags) has no
 cross-language check, and a regression in the Swift fragmenter would pass every
 one of them and show up on a rig as frames dropped for missing packets.
 `Tools/wiretest` is the test that closes that, by compiling the shipped
 streamer and capturing what it actually sends. What is still open is that it
 needs the phone app's source, so **CI replays a recording of the streamer
-rather than running it** — re-write the fixture after any change to
+rather than running it**. Re-write the fixture after any change to
 `PointCloudUDPStreamer.swift`.
 
 `hlib.py` and `hlib_grid.py` are pure numpy and OpenCV, with no TouchDesigner
