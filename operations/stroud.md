@@ -31,10 +31,10 @@ one set of numbers rather than three.
 | Origin | the centre of the playing area, on the floor |
 | Playing area | 6.0 m across (X) by 8.0 m deep (Z) |
 | +Z | toward the gauze |
-| −Z | toward the rear screen |
+| -Z | toward the rear screen |
 | +X | your right, standing at the gauze facing the screen |
 | Y | up, to the centre of the LiDAR lens |
-| Yaw | the console's convention: 0 faces +X, 90 faces the screen, 180 faces −X, 270 faces the gauze |
+| Yaw | the console's convention: 0 faces +X, 90 faces the screen, 180 faces -X, 270 faces the gauze |
 | Pitch | negative is tilted down |
 
 This is the same origin the client integration uses, so a position read off
@@ -89,12 +89,12 @@ all are outside the 6 m width of the projected images.
 
 | Phone | Side | x | z | z from the gauze line | Yaw | Pitch | Aim the axis at (x, z) | Tape to G0 / S0 |
 |---|---|---|---|---|---|---|---|---|
-| P1 | +X | +4.00 | +3.50 | 0.50 m | 148.8° | −32.5° | (+0.98, +1.67) | 4.03 / 8.50 m |
-| P2 | +X | +4.00 | +0.00 | 4.00 m | 195.0° | −35.0° | (+0.90, +0.83) | 5.66 / 5.66 m |
-| P3 | +X | +4.00 | −2.50 | 6.50 m | 192.0° | −35.0° | (+0.86, −1.83) | 7.63 / 4.27 m |
-| P4 | −X | −4.00 | −2.50 | 6.50 m | 348.0° | −35.0° | (−0.86, −1.83) | 7.63 / 4.27 m |
-| P5 | −X | −4.00 | +0.00 | 4.00 m | 345.0° | −35.0° | (−0.90, +0.83) | 5.66 / 5.66 m |
-| P6 | −X | −4.00 | +3.50 | 0.50 m | 31.2° | −32.5° | (−0.98, +1.67) | 4.03 / 8.50 m |
+| P1 | +X | +4.00 | +3.50 | 0.50 m | 148.8° | -32.5° | (+0.98, +1.67) | 4.03 / 8.50 m |
+| P2 | +X | +4.00 | +0.00 | 4.00 m | 195.0° | -35.0° | (+0.90, +0.83) | 5.66 / 5.66 m |
+| P3 | +X | +4.00 | -2.50 | 6.50 m | 192.0° | -35.0° | (+0.86, -1.83) | 7.63 / 4.27 m |
+| P4 | -X | -4.00 | -2.50 | 6.50 m | 348.0° | -35.0° | (-0.86, -1.83) | 7.63 / 4.27 m |
+| P5 | -X | -4.00 | +0.00 | 4.00 m | 345.0° | -35.0° | (-0.90, +0.83) | 5.66 / 5.66 m |
+| P6 | -X | -4.00 | +3.50 | 0.50 m | 31.2° | -32.5° | (-0.98, +1.67) | 4.03 / 8.50 m |
 
 Every phone is in landscape. G0 and S0 are the floor points under the middle
 of the gauze and of the screen; the two tape measurements are the cross-check
@@ -111,9 +111,9 @@ can take any position.
 
 | Phone | Side | x | z | z from the gauze line | Yaw | Pitch | Aim the axis at (x, z) | Tape to G0 / S0 |
 |---|---|---|---|---|---|---|---|---|
-| P1 | +X | +4.00 | −1.50 | 5.50 m | 180.6° | −35.0° | (+0.79, −1.47) | 6.80 / 4.72 m |
-| P2 | −X | −4.00 | −2.00 | 6.00 m | 343.4° | −35.0° | (−0.92, −1.08) | 7.21 / 4.47 m |
-| P3 | −X | −4.00 | +2.00 | 2.00 m | 16.6° | −35.0° | (−0.92, +1.08) | 4.47 / 7.21 m |
+| P1 | +X | +4.00 | -1.50 | 5.50 m | 180.6° | -35.0° | (+0.79, -1.47) | 6.80 / 4.72 m |
+| P2 | -X | -4.00 | -2.00 | 6.00 m | 343.4° | -35.0° | (-0.92, -1.08) | 7.21 / 4.47 m |
+| P3 | -X | -4.00 | +2.00 | 2.00 m | 16.6° | -35.0° | (-0.92, +1.08) | 4.47 / 7.21 m |
 
 Three phones see 60 % of the volume once and **10 % twice**, which is about
 4 m² of floor with two views. That is enough to measure synchronisation, calibration
@@ -129,18 +129,18 @@ the marker.
 | Marker | x | z | Seen by, and at what range |
 |---|---|---|---|
 | M1 (stage origin) | +0.00 | +0.00 | none within 4 m; it is the tape datum |
-| M2 | −2.75 | +1.75 | P5 at 3.11 m, P6 at 3.11 m |
+| M2 | -2.75 | +1.75 | P5 at 3.11 m, P6 at 3.11 m |
 | M3 | +2.75 | +1.75 | P1 at 3.11 m, P2 at 3.11 m |
-| M4 | −2.25 | −1.00 | P4 at 3.22 m, P5 at 3.02 m |
-| M5 | +2.25 | −1.00 | P2 at 3.02 m, P3 at 3.22 m |
-| M6 | −2.75 | +0.75 | P5 at 2.68 m, P6 at 3.77 m |
+| M4 | -2.25 | -1.00 | P4 at 3.22 m, P5 at 3.02 m |
+| M5 | +2.25 | -1.00 | P2 at 3.02 m, P3 at 3.22 m |
+| M6 | -2.75 | +0.75 | P5 at 2.68 m, P6 at 3.77 m |
 | M7 | +2.75 | +0.75 | P1 at 3.77 m, P2 at 2.68 m |
-| M8 | −2.00 | +0.00 | P4 at 3.91 m, P5 at 3.01 m |
+| M8 | -2.00 | +0.00 | P4 at 3.91 m, P5 at 3.01 m |
 | M9 | +2.00 | +0.00 | P2 at 3.01 m, P3 at 3.91 m |
 | M10 | +0.00 | +3.50 | none within 4 m (P1 and P6 at 4.59 m) |
 
 With three phones the marker set is smaller: M1 at the origin, M2 at
-(−2.75, 0.00), M3 at (−1.75, 0.00), M4 at (+2.50, −1.50), M5 at (+2.50, −2.50).
+(-2.75, 0.00), M3 at (-1.75, 0.00), M4 at (+2.50, -1.50), M5 at (+2.50, -2.50).
 
 No phone sees the origin marker inside 4 m, since the nearest mount is 4 m away
 in plan, and two phones on opposite sides, 8 m apart, can never share one. That
@@ -191,7 +191,7 @@ positions along the room are not confirmed.
    centre of the image. With the pitch already set this fixes yaw to about ±1°.
 10. **Markers.** Tape each one on its (x, z), long edge parallel to the cross
     line, image top toward the screen. Enter the same (x, z) in the console
-    (the console's plan view uses y = −z).
+    (the console's plan view uses y = -z).
 11. **Check in the console.** Every phone should report its markers at the
     ranges in the table, ±10 cm. A phone that cannot see a marker the table
     says it should is mis-aimed.
