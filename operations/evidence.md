@@ -321,6 +321,7 @@ both on [the TD testing page](../td/testing.html).
 | `imu_sync.py`, `limb_test.py`, `hand_truth_score.py` | Clock alignment, limb fidelity, hand accuracy |
 | `hands_test.py` | The hands scenario end to end: whether it can run, both hand outputs recorded, then scored against taped stands |
 | `consensus_skew_score.py` | What the phones' frame skew costs a fast forearm, scored from the takes with nothing running: it lines them up by capture time, using the console's own clock offsets and capture age |
+| `mid360.py` | A contingency rather than a measurement: if a Livox Mid-360 is on site, it records the sensor's raw UDP beside the phone takes so its density and registration can be judged later, and so it can serve as a ground truth the phones were never scored against |
 | `track_score.py` | A recorded tracking output, scored |
 | `sydney_pack.py` | Not a measurement: the delivery folder, from everything the day produced |
 
@@ -401,6 +402,27 @@ on the Mac.
 > broken takes and a pack folder it must refuse: **118 checks, passing on
 > 9 November 2026.** No part of the tool has been run against a real test day,
 > because there has not been one. It is written and rehearsed, not proven.
+
+## If a Livox Mid-360 turns up
+
+The project has no dependency on one, and nothing in the system reads from it.
+But a spinning lidar beside the rig for a day is the only chance to get an
+independent ground truth for what the phones saw, and the recording has to
+happen on the day or not at all.
+
+```bash
+python3 Tools/mid360.py record scan.m360 --seconds 60   # points :56301, IMU :56401
+python3 Tools/mid360.py info scan.m360                  # packets, rate, time span, CRC
+python3 Tools/mid360.py points scan.m360 -o scan.npy --window 0.5
+```
+
+It needs **neither the Livox SDK nor ROS**. The sensor pushes plain unicast
+UDP and the tool only listens, so nothing is configured and nothing is sent to
+it. `--selftest` passes with no hardware.
+
+Record it beside the takes, with a note of where the sensor stood. Whether
+anything is ever scored against it is a later decision; not having the
+recording forecloses it.
 
 ## What never to claim
 

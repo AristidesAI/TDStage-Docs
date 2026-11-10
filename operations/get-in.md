@@ -431,6 +431,14 @@ Not yet run on the live rig; the phones were offline when it was measured.
 The choice of solver is therefore still open, and the pair of them disagreeing
 on a real stage would itself be a result.
 
+### The two solvers, by name
+
+The cloud solve is `TD/newtox/rig_align.py` and the walk solve is
+`TD/newtox/walk_align.py`, both pure numpy and both runnable outside
+TouchDesigner. Neither needs naming to use the console's buttons; they are here
+so that somebody reading the repository can find the code behind **Align to
+#N** and **Solve walk** without guessing.
+
 ### A third path that exists in code and is not wired up
 
 `TD/newtox/tdx_bridge.py`, `tdx_push.py` and `tdx_sources.py` convert Darien
