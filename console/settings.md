@@ -279,6 +279,11 @@ Read the current values and ranges from `GET /api/settings`, or from
 `SCHEMA["tracking"]` in `WebConsole/settings.py`. Hover any row in the Tuning
 panel for its help text, which comes from that same schema.
 
+**Five of them do have a documented meaning**, because the cyr preset sets
+them: `detSource`, `maskGate`, `footMax`, `spanMin` and `maxPerformers`, in
+[f1, and the inverted performer](#f1-and-the-inverted-performer). Applying that
+preset changes this group, so read what it does before pressing it.
+
 Two of its behaviours look like faults and are not:
 
 - **`/track` deliberately publishes zero performers rather than the raw room**

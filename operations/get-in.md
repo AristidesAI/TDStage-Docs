@@ -431,6 +431,19 @@ Not yet run on the live rig; the phones were offline when it was measured.
 The choice of solver is therefore still open, and the pair of them disagreeing
 on a real stage would itself be a result.
 
+### A third path that exists in code and is not wired up
+
+`TD/newtox/tdx_bridge.py`, `tdx_push.py` and `tdx_sources.py` convert Darien
+Brito's component's own calibration into roster poses and offer to push them to
+the console. **None of it is in the tox**: there is no DAT and no parameter for
+it, so it cannot be run from the interface today. It is in the repository
+because the conversion was worked out and tested, not because it is a route
+anybody can take at a get-in.
+
+The route that does exist is `Alignmethod` = `open3d`, above, which runs the
+same project's Open3D refine as a **measurement** and leaves applying it to the
+console.
+
 ### Correcting a phone that is not quite level
 
 A phone on a stand levels its own cloud from gravity at any mounting angle, so
