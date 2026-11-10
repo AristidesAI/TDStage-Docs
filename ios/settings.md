@@ -164,13 +164,16 @@ the grid that is captured or sent. The phone still stores it, reports it and
 carries it in a profile. The app refuses a change while a take is recording,
 because a take is one file with one geometry in its header.
 
-So its default of `256x192` is **not** what the phone sends, and reading it as
-a statement about the wire is the mistake this key invites. The phone takes the
-first video format that offers depth and the smallest float depth grid inside
-it, which is **320×240 on an iPhone 17 Pro**. To know what a phone is really sending, read the grid on the LIVE
-page's stream line or the frame header rather than this key. Bandwidth and disk
-figures that assume 256×192 understate a real phone by about half again:
-[Wire and disk cost](record.html#disk-cost).
+So reading it as a statement about the wire is the mistake this key invites.
+What the phone sends depends on which app it runs. **TDStage AR, the app the
+rig deploys, sends 256×192 on every LiDAR iPhone**, because that is ARKit's
+scene-depth grid and it does not vary by model. This app, the AVFoundation one,
+takes the first video format that offers depth and the smallest float depth
+grid inside it, which is **320×240 on an iPhone 17 Pro**. Either way, read the
+grid on the LIVE page's stream line or in the frame header rather than from
+this key. The bandwidth and disk figures on
+[Wire and disk cost](record.html#disk-cost) are computed at 320×240, so they
+overstate an AR phone by about a third.
 
 ---
 

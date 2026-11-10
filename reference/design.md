@@ -83,13 +83,15 @@ function of data the receiver already holds, and sending them anyway means
 paying bandwidth to transmit information that was already there.
 
 {: .warning }
-**The grid is the phone's choice, not a constant, and it decides every number
-below.** The app takes the first video format that offers depth and the smallest
-float depth grid behind it, which is **320×240 on an iPhone 17 Pro**, 1.56 times the cells of the 256×192 that
-the simulator uses and that most figures in this project were first computed
-at. A `stage.depthgrid` setting exists and is inert. So read the right
-column for a real rig, and the left one only when you are reasoning about
-simulated phones.
+**The grid decides every number below, and it depends on which app the phone is
+running.** TDStage AR, the app the rig deploys, captures through ARKit, and
+ARKit's scene depth is **256×192 on every LiDAR iPhone**: a 12 Pro, a 16 Pro
+Max and an 18 Pro all send the same grid. The parked AVFoundation app takes the
+first video format that offers depth and the smallest float grid behind it,
+which is **320×240 on an iPhone 17 Pro**, 1.56 times the cells. A
+`stage.depthgrid` setting exists in both and is inert in both. So the left
+column is the deployed rig and the simulator; the right column is the parked
+app's path.
 
 The table assumes 30 fps over a gigabit link with roughly 940 Mbit/s usable.
 Its figures are **arithmetic from the transport spec** (cell count times bytes

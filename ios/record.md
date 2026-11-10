@@ -216,7 +216,9 @@ confidence, and there the plane means what its name says. Cost `depth+conf` on
 this app knowing that the extra 18 Mbit/s a phone buys a validity mask.
 
 Wire cost per phone, **calculated from the wire format** at 30 fps and the
-**320×240** grid an iPhone 17 Pro actually sends:
+**320×240** grid this app takes on an iPhone 17 Pro. TDStage AR, the app the
+rig deploys, sends 256×192 and so costs about a third less; its figures are in
+the note below.
 
 | Plane set | Bytes per frame | Per phone | Eight phones |
 |---|---|---|---|
@@ -254,8 +256,10 @@ that, a switch and a network card are cheap.
 {: .note }
 Figures of 283 and 566 Mbit/s appear in older notes and in the system
 repository's `CLAUDE.md`. They are the same arithmetic at **256×192**, which is
-what the simulator sends and what everything here was originally computed at.
-A real phone sends 1.56 times the cells.
+what the simulator sends, what everything here was originally computed at, and
+what **TDStage AR sends on every LiDAR iPhone**. So for the deployed rig those
+are the figures to plan with, and this page's 320×240 column applies only to
+the parked AVFoundation app.
 
 {: .note }
 **There is no longer a Depth grid picker.** It was removed on 2026-10-27,
@@ -267,9 +271,11 @@ reported in telemetry and rides in a profile, but it is not a bandwidth or
 thermal lever.
 
 What you get instead is the smallest float depth format the camera offers,
-which is **320×240 on an iPhone 17 Pro**. It is not 256×192 by rule, and a
-mixed rig of models can send more than one grid. Every frame carries its own
-dimensions, so nothing downstream minds.
+which is **320×240 on an iPhone 17 Pro**. On this app it is not 256×192 by
+rule, and a mixed rig of models can send more than one grid. On TDStage AR it
+**is** 256×192 by rule, on every model, because ARKit's scene depth is that
+size and the camera format does not enter into it. Every frame carries its own
+dimensions either way, so nothing downstream minds.
 
 ### Capture rate
 
