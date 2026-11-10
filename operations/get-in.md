@@ -406,7 +406,7 @@ correlation. It is available from the same align control, and runs in a
 separate Python. Open3D never loads inside the console or TouchDesigner, the
 same rule his component follows.
 
-What TDStage adds to it, and why, is the part to read.
+What TDStage adds to it, and why, follows.
 
 **His method assumes a camera could be tipped any way. Ours cannot be.** Every
 phone levels itself on gravity, so pitch and roll are already known and only a

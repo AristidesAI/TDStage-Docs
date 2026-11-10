@@ -23,7 +23,7 @@ Every default below is what a fresh install uses. The show is expected to run
 on the defaults, and each key exists mainly so one effect can be switched off
 for a measurement.
 
-## Edge cull: the part that removes the halo
+## Edge cull, which removes the halo
 
 A per-pixel test that reads a cell's neighbours, decides whether the 3×3 window
 straddles a real discontinuity, and drops the cell if it is sitting in the gap
@@ -44,7 +44,7 @@ cells** than 66 on a replayed take, and what grows at 70 is real floor around
 the feet rather than points floating above it. It is not the default yet
 because that result came from a take replay and wants a live A/B on the rig.
 
-## Temporal median: the part that stops the boil
+## Temporal median, which stops the boil
 
 A median of each cell's own last three samples, taken per cell, never across
 neighbours.
@@ -58,9 +58,9 @@ neighbours.
 | `stage.fliplimit` | `0.0` | Flips before a cell is muted. **Off**, because muting cost a moving limb's edge for good |
 | `stage.arsmoothed` | `false` | Use ARKit's own smoothed depth instead of raw scene depth. **Off for a show**: Apple's smoothing lags moving surfaces. It exists so the difference can be seen in an A/B |
 
-The motion threshold is the one to understand, because a plain median-3 returns
-the previous sample for *any* steady motion: one frame late, every frame, which
-is what made arms stretch on this path. With the threshold at its default, a
+Read the motion threshold before changing anything here. A plain median-3
+returns the previous sample for *any* steady motion: one frame late, every
+frame, which is what made arms stretch on this path. With the threshold at its default, a
 cell is treated as still unless it moves more than `max(2 cm, 1 % of range)`
 between frames. At 4.5 m that is 4.5 cm a frame, so radial motion under about
 1.35 m/s at 30 fps counts as still and is sent one frame late. An edge crossing

@@ -115,7 +115,7 @@ for reading rather than for the hot path. Nothing is written to a table per fram
 
 ## Where the markers actually sit
 
-This is the part to understand before trusting a position on screen.
+Understand this before trusting a position on screen.
 
 TouchDesigner places a cloud point as trim, registration, tilt, `Flooroffset`,
 the level solve, then the phone's extrinsic. The console places a performer
