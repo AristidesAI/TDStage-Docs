@@ -121,8 +121,17 @@ def main():
             continue
         for v in sorted(union - page):
             where = ", ".join(rel for rel, f in read if v in f)
+            hint = ""
+            if all(rel.startswith(AR_REPO_NAME) for rel, f in read if v in f):
+                # The ARKit app is a separate repository that other sessions
+                # edit while this check runs. A verb or key that appears there
+                # and nowhere else is usually one that has just landed, and
+                # occasionally one that is about to be amended away.
+                hint = (" (that repository is edited outside this one: if the"
+                        " addition is real, document it; if a peer is mid-work,"
+                        " re-run)")
             problems.append(f'{c["what"]}: `{v}` is in {where} '
-                            f'and not on {page_name}')
+                            f'and not on {page_name}{hint}')
         for v in sorted(page - union):
             problems.append(f'{c["what"]}: `{v}` is on {page_name} '
                             f'and in neither app')
