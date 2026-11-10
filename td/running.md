@@ -200,14 +200,17 @@ second with no loss at twelve colour streams of 320×240, at 55 per cent of one
 core. An earlier figure of 61,000 was the highest load tried at the time, not a
 ceiling.
 
-Eight phones sending depth, confidence and colour would be about 49,000 packets
-per second **at the simulator's 256×192 grid**, and about 76,300 at the 320×240
-a real iPhone 17 Pro sends. Both are arithmetic from the frame size; the second
-was also run on loopback (eight colour sims at 320×240, 76,300 packets per
-second, none lost), so it is inside what the bridge was measured to carry. At
-that grid the binding limit is the gigabit link, not the bridge: eight colour
-phones are 937 Mbit/s with framing. Real phones through the show switch have
-not been measured.
+Eight phones sending depth, confidence and colour is about 49,000 packets per
+second **at 256×192**, the grid the simulator uses and the grid TDStage AR
+sends, and about 76,300 at the 320×240 the parked AVFoundation app takes on an
+iPhone 17 Pro. Both are arithmetic from the frame size; the second was also run
+on loopback (eight colour sims at 320×240, 76,300 packets per second, none
+lost), so even that one is inside what the bridge was measured to carry.
+
+The binding limit is the link rather than the bridge, and how tight it is
+depends on the grid: eight colour phones are about 600 Mbit/s with framing at
+256×192 and 937 Mbit/s at 320×240. Real phones through the show switch have not
+been measured.
 
 Do not put the relay in front of the bridge in a show configuration.
 

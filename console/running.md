@@ -432,12 +432,16 @@ Then check, in order:
 - Each phone gets a PoE adapter into USB-C. In the app, "Prefer Ethernet (PoE /
   cable)" is on by default, and the Link line must read **Ethernet**. Set the
   destination to the PC's wired address, or push it from the console.
-- Bandwidth, at the 320×240 grid an iPhone 17 Pro sends, framing included:
-  eight phones at depth+conf is about 469 Mbit/s; with colour on every phone
-  about 937 Mbit/s, 94 per cent of a gigabit link with no headroom (six colour
-  phones fit a gigabit uplink, eight do not), which is why the uplink is 2.5G.
-  The 280 and 570 Mbit/s in older notes were computed at the simulator's
-  256×192 grid. Wi-Fi is the fallback only.
+- Bandwidth, framing included, depends on which app the phones run. At
+  TDStage AR's **256×192**, eight phones at depth+conf is about 300 Mbit/s and
+  about 600 Mbit/s with colour on every one, which is 60 per cent of a gigabit
+  link and inside the 70 per cent guideline. At the parked AVFoundation app's
+  320×240 on an iPhone 17 Pro the same two are about 469 and 937 Mbit/s, and
+  the second is 94 per cent of a gigabit link with no headroom. **The 2.5G
+  uplink was decided on the 320×240 figures**; on ARKit it is not needed for
+  bandwidth ([what the move to ARKit does to that
+  decision](../reference/design.html#what-the-move-to-arkit-does-to-that-decision)).
+  Wi-Fi is the fallback only.
 - The console logs "stream left Ethernet" when a phone drops to Wi-Fi, and
   `GET /healthz` lists it under `offWired`.
 
