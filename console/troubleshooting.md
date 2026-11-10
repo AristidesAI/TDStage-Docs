@@ -192,7 +192,8 @@ running with the wrong second target.
 
 **Do not reach for the fan out relay.** `udp_fanout.py` is legacy. It lost
 packets above about 30,000 datagrams per second, and eight phones with colour
-are 49,000 at the simulator's grid (about 76,000 at the grid real phones send).
+are 49,000 at the 256x192 the rig's phones send (about 76,000 at the 320x240
+the parked AVFoundation app sends).
 The bridge alone took 114,500 with no loss
 (measured 2026-10-27 on loopback with simulated phones on the Mac; the 61,000
 in older notes was the highest load then tried, not a limit). The Start fan out button
@@ -226,11 +227,13 @@ problem is downstream.
 1. **Turn colour on.** The Live view's Phone cameras panel has **Colour ON for
    all phones**, which sets `stage.udpPlanes = depth+conf+rgb` on every enabled
    phone. Budget for it: the button's own figure, about 35 to about 71 Mbit/s
-   per phone, is the simulator's 256x192 grid. Real phones send 320x240, where
-   each phone goes from about 59 to about 117 Mbit/s and eight phones with
-   colour are about 937 Mbit/s, 94 % of one gigabit link (computed from the
-   wire format in `Notes/Bandwidth-Options-42.md`, matching the 2026-10-27
-   loopback measurement with simulated phones on the Mac).
+   per phone, is the 256x192 grid, which is what TDStage AR sends, so eight
+   phones with colour are about 600 Mbit/s on the line, 60 % of one gigabit
+   link. The parked AVFoundation app sends 320x240, where each phone goes from
+   about 59 to about 117 Mbit/s and eight with colour are about 937 Mbit/s,
+   94 % of a gigabit link (computed from the wire format in
+   `Notes/Bandwidth-Options-42.md`, matching the 2026-10-27 loopback
+   measurement with simulated phones on the Mac).
 2. **Check the second switch.** On TDStage (not TDStage AR) `stage.colorEnabled`
    must also be on, or the rgb plane is left off the wire even when the planes
    include it. Two switches, both needed.

@@ -198,8 +198,9 @@ there is no relay in the show path any more.
 
 **There is no fan out relay in front of it, and there should not be.**
 `udp_fanout.py` is legacy. It lost packets above about 30,000 per second, and
-eight phones with colour are 49,000 at the simulator's grid, about 76,000 at
-the 320×240 a real iPhone 17 Pro sends; the bridge alone took 114,500 per second
+eight phones with colour are 49,000 at the 256×192 the rig's phones send and
+about 76,000 at the 320×240 the parked AVFoundation app sends; the bridge alone
+took 114,500 per second
 with no loss at twelve colour streams, 55 per cent of one core (simulated phones
 at 320×240 over loopback on the development Mac, recorded in the #42 note of
 2026-10-28 and repeated by `Tools/link_test.py` on 2026-11-03, when eight colour

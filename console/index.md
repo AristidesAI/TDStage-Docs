@@ -297,13 +297,14 @@ than packets.
 and the console can start and stop it, but it is not the show path. It copied
 every datagram with three syscalls and lost packets above about 30,000 per
 second (0 % loss at 25,000, 24 % at 40,000; the development Mac, 2026-10-27).
-Eight phones with colour are 49,000 at the simulator's grid. At the real 320x240
-grid the bridge alone received 114,500 per second with no loss at twelve colour
-streams (`Tools/link_test.py`, loopback on the development Mac, 2026-11-03); the
-61,000 in older notes was the highest load then tried, not a limit. *Measured,
-simulation*. Real phones send that bigger grid, so eight of them with colour
-offer about 76,000, also received without loss in the same run. Keep the relay
-only for a no bridge CPU path.
+Eight phones with colour are 49,000 at the 256x192 grid the rig's phones send.
+At 320x240, the parked AVFoundation app's grid, the bridge alone received
+114,500 per second with no loss at twelve colour streams (`Tools/link_test.py`,
+loopback on the development Mac, 2026-11-03); the 61,000 in older notes was the
+highest load then tried, not a limit. *Measured, simulation*. Eight phones with
+colour at that bigger grid offer about 76,000, also received without loss in
+the same run, so the bridge clears both grids and the relay clears neither.
+Keep the relay only for a no bridge CPU path.
 
 The architecture **diagram** in the system repository's `CLAUDE.md` still shows
 the relay as the show path. That diagram is stale. Its **port table** is still
