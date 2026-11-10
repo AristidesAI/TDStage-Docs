@@ -74,7 +74,9 @@ names did not change, so anything reading them still works.
 defaults: the ceiling sits at 4 m and the box at 6 by 3 by 5, and the wall cut
 is off, which is how a tox with the feature behaves exactly as v87 did. **v90
 adds a Show Floor Plane toggle to the first group and a Show Wall Plane toggle
-to the second**, and gives the third group the label it is missing here.*
+to the second**, and labels the third group, which reads as its parameter name
+here and as "Stage box: sides and depth (GPU path always crops to it)" from
+v90 on.*
 
 | Group | Parameters |
 |---|---|
@@ -118,15 +120,17 @@ of the backdrop, and the grey slab behind it is what the cut will take.*
 
 ![The same scene with the backdrop points gone. The pink plane and the green floor grid remain, and the three performers are intact.](../assets/img/stage-cut-2-wall-cut-on.webp)
 
-*Backdrop Wall Cut on. The slab is gone and the performers are whole. Dark
-speckle still sits around each pair of feet: that is the floor, which the wall
-cut does not touch.*
+*Backdrop Wall Cut on. The slab is gone and the performers are whole: 7,819
+performer points before and after, and not one wall point left. The dark
+speckle around each pair of feet is the other cut's business. Those are the
+4,339 floor points still inside the feet band, which `gpu_clean` keeps near
+bodies and the wall cut does not touch.*
 
 ![The same scene again with the floor speckle around the feet gone and the green grid sitting higher relative to the performers.](../assets/img/stage-cut-3-floor-015-wall-cut.webp)
 
-*Ground Cutoff raised to 0.15 m. The green grid rises with it, and the rings of
-floor around the feet go. This is the setting that costs six points off a
-performer's soles.*
+*Ground Cutoff raised to 0.15 m. The green grid rises with it and the rings go:
+4,339 floor points to none. It costs six of the 7,819 performer points, off the
+soles, and what is left is 7,813 points of which every one is a performer.*
 
 So the order to work in is: **show the wall plane, line it up, then cut.**
 Turning the cut on first means placing a plane against points it is already
