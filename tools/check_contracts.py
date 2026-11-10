@@ -44,6 +44,24 @@ CONTRACTS = [
         "source_re": r'case "/tdlidar/ctl/([a-z/]+)"',
         "note": "both apps' own switch over incoming OSC addresses",
     },
+    {
+        # Same reasoning as the verbs, same near-miss: three keys that exist
+        # only in the AR app (stage.capture, stage.confidenceGate,
+        # stage.rec.imu) were on no page at all, and stage.capture is the one
+        # that decides the grid, the confidence plane and whether a person
+        # matte exists (2026-11-10). A key nobody wrote down is a control
+        # nobody can use and a default nobody can question.
+        "what": "phone settings keys",
+        "pages": ["ios/settings.md", "ios/arkit.md", "ios/record.md",
+                  "ios/playback.md", "ios/live.md", "ios/ctl.md"],
+        "page_re": r"`(stage\.[A-Za-z.]+)`",
+        "sources": [
+            ("system", "TDStage/ShowSettings.swift"),
+            ("ar", "TDStageARKit/ShowSettings.swift"),
+        ],
+        "source_re": r'"(stage\.[A-Za-z.]+)"',
+        "note": "every key either app registers a default for",
+    },
 ]
 
 # The ARKit app is its own repository, beside the system one.
@@ -82,7 +100,11 @@ def main():
 
     problems = []
     for c in CONTRACTS:
-        page = set(re.findall(c["page_re"], (ROOT / c["page"]).read_text(encoding="utf-8")))
+        pages = c.get("pages") or [c["page"]]
+        page = set()
+        for pg in pages:
+            page |= set(re.findall(c["page_re"], (ROOT / pg).read_text(encoding="utf-8")))
+        page_name = pages[0] if len(pages) == 1 else f"{len(pages)} pages"
         union, read = set(), []
         for which, rel in c["sources"]:
             if which == "ar" and not have_ar:
@@ -100,9 +122,9 @@ def main():
         for v in sorted(union - page):
             where = ", ".join(rel for rel, f in read if v in f)
             problems.append(f'{c["what"]}: `{v}` is in {where} '
-                            f'and not on {c["page"]}')
+                            f'and not on {page_name}')
         for v in sorted(page - union):
-            problems.append(f'{c["what"]}: `{v}` is on {c["page"]} '
+            problems.append(f'{c["what"]}: `{v}` is on {page_name} '
                             f'and in neither app')
         if not (union - page or page - union):
             only = {rel: f - set().union(*(g for r, g in read if r != rel))

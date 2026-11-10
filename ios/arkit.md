@@ -23,6 +23,33 @@ Every default below is what a fresh install uses. The show is expected to run
 on the defaults, and each key exists mainly so one effect can be switched off
 for a measurement.
 
+## The switch that decides everything else
+
+| Key | Default | What it does |
+|---|---|---|
+| `stage.capture` | `arkit` | `arkit` runs the ARKit renderer: frame-aligned confidence and person matte, a 256×192 ceiling. `avfoundation` runs the parent project's raw renderer: no confidence, no matte, up to 320×240. Changing it needs a capture restart, which the controller performs |
+| `stage.confidenceGate` | `false` | Drop every cell ARKit rates low |
+| `stage.rec.imu` | `true` | Write the 100 Hz `.imu` sidecar beside each take |
+
+`stage.capture` is the one setting on this page that changes what every other
+number means, because it changes the grid, the confidence plane and whether a
+person matte exists at all. It is a string, so it is set with the `/ctl` string
+form rather than a number.
+
+{: .note }
+> **The confidence gate is off for a measured reason, not an unexamined one.**
+> It drops every ARKit "low" cell, and low is where thin, fast-moving limbs
+> sit. Measured with `Tools/limb_test.py` on a moving person: with the gate on,
+> limbs kept 0.44 with 96 per cent of frames below 0.6; with it off, 0.80 with
+> 9 per cent. Body coverage went 0.77 to 0.89 and bleed 0.019 to 0.032, and
+> TouchDesigner's cleanup absorbs that extra bleed. Turning it on trades limbs
+> for tidiness at the silhouette, which is the wrong way round for this show.
+
+The IMU sidecar is on by default and worth leaving on: it is the only record
+of what the phone itself was doing during a take, at 100 Hz on the same clock
+as the frames, and `ar_phone_check.py` reports a phone that has it switched off
+as a recorder setting that loses data.
+
 ## Edge cull, which removes the halo
 
 A per-pixel test that reads a cell's neighbours, decides whether the 3×3 window
