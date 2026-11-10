@@ -421,19 +421,23 @@ reason is arithmetic rather than taste.
 The xyz coordinates are a deterministic function of `depth x ray(u, v)`, and
 the ray comes from the intrinsics, which the receiver already has. Sending
 points means paying for information the receiver can regenerate for free on
-the GPU. At eight streams of the 320 by 240 grid an iPhone 17 Pro sends:
+the GPU. At eight streams, with the share against the roughly 940 Mbit/s a
+gigabit link carries:
 
-| On the wire | Bandwidth at 30 fps, eight streams | Share of gigabit |
+| On the wire | 256 by 192, the rig's grid | 320 by 240, the parked app's |
 |---|---|---|
-| Depth only, half-float | about 295 Mbit/s | 31 per cent |
-| Depth and confidence (the show default) | about 442 Mbit/s | 47 per cent |
-| Depth, confidence and colour | about 885 Mbit/s | 94 per cent |
-| xyz points on device | about 2.2 Gbit/s | does not fit |
+| Depth only, half-float | about 189 Mbit/s, 20 per cent | about 295 Mbit/s, 31 per cent |
+| Depth and confidence (the show default) | about 283 Mbit/s, 30 per cent | about 442 Mbit/s, 47 per cent |
+| Depth, confidence and colour | about 566 Mbit/s, 60 per cent | about 885 Mbit/s, 94 per cent |
+| xyz points on device | about 1.4 Gbit/s, does not fit | about 2.2 Gbit/s, does not fit |
 
-Those figures are payload arithmetic from the frame size, not measurements;
-framing adds about six per cent, and the share is against the roughly 940
-Mbit/s a gigabit link carries. xyz on device is 7.5 times depth-only and does
-not fit on the link at all, so the conclusion is not a close call. The
+TDStage AR captures through ARKit, whose scene depth is 256 by 192 on every
+LiDAR iPhone, so the left column is the rig and the right one is the parked
+AVFoundation app on an iPhone 17 Pro. Those figures are payload arithmetic from
+the frame size, not measurements, and framing adds about six per cent.
+
+xyz on device is 7.5 times depth-only and does not fit on the link at either
+grid, so the conclusion is not a close call. The
 [system-wide page](../reference/design.html) gives the same table at both
 grids and on both bases.
 

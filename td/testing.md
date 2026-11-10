@@ -93,7 +93,7 @@ python3 TD/newtox/tdp4_sim.py <host> <port> <seconds> [options]
 | `--planes P` | `depth+conf` | `depth`, `depth+conf` or `depth+conf+rgb` |
 | `--spread-ms N` | 0 | Spread a frame's packets over this long instead of back to back |
 | `--first-id N` | 101 | First device id; a second sender on the same switch takes 201 |
-| `--grid WxH` | `256x192` | Depth grid; the iPhone 17 Pro streams `320x240`, so use that for show-rig load tests |
+| `--grid WxH` | `256x192` | Depth grid. The default is what TDStage AR streams, so it is already the show-rig grid; pass `320x240` only to model the parked AVFoundation app |
 
 Positional defaults are `127.0.0.1`, port 9003, 30 seconds.
 
@@ -109,12 +109,16 @@ The sim prints its own arithmetic before it starts: frame bytes, packets per
 frame, per-device and aggregate Mbit/s. Those are computed from the frame size,
 not measured. At the default 256x192 grid with depth and confidence a frame is
 147,576 bytes in 102 packets, 35.9 Mbit/s per device at 30 frames per second
-and 287 Mbit/s for eight devices. At the iPhone 17 Pro's 320x240 the same
-planes are 230,520 bytes in 159 packets, 56.1 Mbit/s per device, 449 Mbit/s for
-eight and 897 Mbit/s for sixteen. A show-rig load test
-([#42](https://github.com/AristidesAI/TDStage/issues/42)) has to offer the
-320x240 figure, so pass `--grid 320x240`; the default grid understates the rig
-by a factor of 1.56.
+and 287 Mbit/s for eight devices. **That default is the rig's grid**: TDStage
+AR captures through ARKit, whose scene depth is 256x192 on every LiDAR iPhone,
+so a show-rig load test at the default is already modelling the real load.
+
+The parked AVFoundation app is the one that sends 320x240 on an iPhone 17 Pro.
+At that grid the same planes are 230,520 bytes in 159 packets, 56.1 Mbit/s per
+device, 449 Mbit/s for eight and 897 Mbit/s for sixteen, a factor of 1.56 over
+the default. Pass `--grid 320x240` to model that app
+([#42](https://github.com/AristidesAI/TDStage/issues/42)), not to model the
+rig.
 
 ### What `tdp4_sim.py` cannot test
 
@@ -654,9 +658,9 @@ place:
 | Transport | 0 incomplete frames up to 16 streams, 573 Mbit/s |
 | Bridge to TouchDesigner latency | p50 9.5 ms, p95 15.3 ms |
 
-Do not present any of these as a rig number. They were also sent at the spec's
+Do not present any of these as a rig number. They were sent at the spec's
 256x192 grid: `tdp4_sim.py` had no other grid until `--grid` arrived on
 2026-10-27, and 573 Mbit/s sits beside the 574.5 Mbit/s it computes for sixteen
-devices at 256x192, far from the 897 Mbit/s of 320x240. The rig's phones stream
-320x240, where the same arithmetic gives 897 Mbit/s for sixteen streams and
-449 Mbit/s for eight.
+devices at 256x192. That grid **is** what the rig's phones stream, so the load
+is the right one; what makes these headroom figures rather than rig figures is
+the machine they ran on, with the person model idle and nothing rendering.
