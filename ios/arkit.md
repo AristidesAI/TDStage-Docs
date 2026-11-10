@@ -135,6 +135,12 @@ leave it off, so the phone streams the body whatever its orientation.
 > tracking, and should not plan on the model, the hands or presence for those
 > moments. More phones do not fix it, because the failure is the body rather
 > than the view.
+>
+> The console side has two settings for exactly this, a presence source that
+> works from depth and a one-button preset that puts the whole chain on
+> geometry: [f1, and the inverted
+> performer](../console/settings.html#f1-and-the-inverted-performer). Both are
+> off by default and both cost frame rate.
 
 Feeding the segmenter a rotated frame is possible on the AVFoundation path,
 which carries the rotation explicitly, but only two rotations exist there:

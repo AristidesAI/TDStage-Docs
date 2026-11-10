@@ -366,6 +366,86 @@ setting. The story is in section 1 below.
 
 ---
 
+## f1, and the inverted performer
+
+{: .note }
+> **Both of these are off by default and land 12 November 2026** with
+> `sys/integ-c` ([#62](https://github.com/AristidesAI/TDStage/issues/62)).
+> Every figure is **simulated**. No real inverted body has been through either
+> of them.
+
+The person model wants an upright body. The client's own rotation test on
+6 November found about **22 per cent of the upright detection rate at 180
+degrees**, which matters because the Stroud performer is a cyr wheel artist and
+is inverted or sideways for much of the act. Anything downstream that waits for
+a person-model vote loses that body.
+
+Two settings answer it, and they can be used separately.
+
+### Where F1 presence comes from
+
+| Key | Default | What it does |
+|---|---|---|
+| `presenceSource` | `consensus` | `consensus` is the strict multi-view person-model vote, and `SMSP` stays byte-identical to before. `depth` takes the motion engine's foreground with no model vote, which is the same set of points **People only = Motion** keeps |
+
+`SMSF`, the occupancy field, is the same either way. On `depth`, presence
+reports nobody until the engine has matured.
+
+In simulation with the model seeing nobody, `consensus` gave **0 clusters in
+207 of 207 frames** against a mean of **2.56** under `depth`. That is the whole
+case for the setting, and also the shape of its cost.
+
+{: .warning }
+> **`depth` presence will report things that are not people.** Any cluster that
+> is not learned background and passes presence's body gates, a top between
+> 0.3 and 2.6 m and a radius up to 1.2 m, becomes a presence cluster: a prop, a
+> chair somebody moved, the wheel itself. Those gates are fixed in code and are
+> not settings.
+>
+> A 2 m wheel side-on with a performer sits near that 1.2 m radius limit, and
+> **what it does there has not been measured**.
+
+### The cyr preset
+
+One button in the Live view's People only section, applying seven settings
+together:
+
+| Setting | Value |
+|---|---|
+| `latency.personMode` | `motion` |
+| `tracking.detSource` | `geometry` |
+| `tracking.maskGate` | off |
+| `tracking.footMax` | 2.4 m |
+| `tracking.spanMin` | 0.3 m |
+| `tracking.maxPerformers` | 1 |
+| `f1.presenceSource` | `depth` |
+
+`footMax` opens to 2.4 m because the wheel side-on is about 2 m across, and
+`maxPerformers` is 1 because the preset takes the model out of the loop
+entirely.
+
+{: .warning }
+> **It is for one performer, and the button says so.** With the mask gate off
+> and detection on geometry, it cannot separate two people who touch. This is
+> arm B: a configuration for one body in a wheel, not a better general setting.
+
+**Reverse puts back the values that were there before the apply, not the
+defaults.** The prior values are stored in the configuration, so they survive a
+console restart, and a key edited by hand after the apply is restored too. The
+routes are `POST /api/preset` with `apply` or `reverse`, `GET /api/preset` for
+the state, and `/api/live` carries a `presets` field. A reverse with nothing to
+reverse answers 409.
+
+In simulation the preset held `/track` at one performer, and after the reverse
+every setting equalled its value before the apply.
+
+{: .warning }
+> **It costs frame rate, and the figure is from a Mac.** Under the same load the
+> preset ran F1 at **8.3 Hz and `/track` at 9.7 Hz**, against **13.8 and 20.9**
+> at the defaults. Most of that is the Motion filter and clustering every point
+> with the mask off. **This has not been measured on the show PC**, which is the
+> machine the number has to hold on.
+
 ## Three things about this schema that will trip you up
 
 ### 1. The person filter used to forget what you picked
