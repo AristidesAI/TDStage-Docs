@@ -32,6 +32,14 @@ checked by checksum; v87 is the clean save that removed the Sydney bench
 registration rows from the file, so a fresh show machine no longer starts with
 three phones placed where they stood in a living room.
 
+{: .warning }
+> **The saved tox is behind the repository in five of its scripts.** `clib`,
+> `hands_lib`, `hlib`, `hlib_grid` and `udp_pc_exec` each carry an older copy
+> than `TD/newtox/`, so loading the tox as it stands runs without the fixes
+> waiting in those files, the Windows UDP connection-reset switch among them.
+> [Where it stands today](maintenance.html#where-it-stands-today) names which
+> fix is waiting in each, and the loading sequence is on the same page.
+
 ## The topology
 
 Phones send TDP4 depth grids over UDP. A separate process receives them and
