@@ -105,6 +105,7 @@ in order.
 
 | You are about to | Read |
 |---|---|
+| Work out whether this fits your stage | [Questions we get asked](questions.html) |
 | Send phones to a venue | [Preparing a phone](operations/phone-preparation.html) |
 | Build a rig in a room | [Rig get-in](operations/get-in.html) |
 | Work out why something stopped | [When something fails](operations/failure.html) |
