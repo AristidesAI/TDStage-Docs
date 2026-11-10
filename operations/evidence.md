@@ -321,6 +321,7 @@ both on [the TD testing page](../td/testing.html).
 | `heat_test.py` | One change at a time against a hot phone, restoring the screen, streaming state and planes it found afterwards (capture path and edge cull go back to the app defaults) |
 | `imu_sync.py`, `limb_test.py`, `hand_truth_score.py` | Clock alignment, limb fidelity, hand accuracy |
 | `hands_test.py` | The hands scenario end to end: whether it can run, both hand outputs recorded, then scored against taped stands |
+| `consensus_skew_score.py` | What the phones' frame skew costs a fast forearm, scored from the takes with nothing running: it lines them up by capture time, using the console's own clock offsets and capture age |
 | `track_score.py` | A recorded tracking output, scored |
 | `sydney_pack.py` | Not a measurement: the delivery folder, from everything the day produced |
 
