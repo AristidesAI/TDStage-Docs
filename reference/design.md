@@ -160,6 +160,39 @@ same relief by giving something up: colour from most of the rig, colour detail,
 colour frame rate, or days of protocol work. This one costs a switch and a
 network card.
 
+### Recomputing any of this: `bw_matrix.py`
+
+Every figure in this section comes from one tool, so a different configuration
+does not need arguing about.
+
+```bash
+python3 Tools/bw_matrix.py --table       # the whole matrix, no sockets
+python3 Tools/bw_matrix.py --selftest    # the packet maths against the spec
+```
+
+It computes from the TDP4 spec's packet arithmetic and checks itself against
+the transport spec, issue 42's own table and `link_test.py`, 30 checks in all.
+`--measure` sends the real simulator into the real receive bench on loopback
+and verifies the bench counted exactly the bytes the maths predicted. It
+refuses the show's ports, so it cannot land on a running bridge or console.
+
+At the rig's grid, with framing, the options it prices are:
+
+| Option | 6 phones | 7 phones | 8 phones |
+|---|---:|---:|---:|
+| Colour on every phone | 450 (45 %) | 525 (53 %) | **600 (60 %)** |
+| Colour on three, depth and confidence on the rest | 338 (34 %) | 375 (38 %) | 413 (41 %) |
+| Colour at 10 Hz on every phone | 300 (30 %) | 350 (35 %) | 400 (40 %) |
+| Depth and confidence, no colour | 225 (23 %) | 263 (26 %) | 300 (30 %) |
+| Depth only | 150 (15 %) | 175 (18 %) | 200 (20 %) |
+
+*Mbit/s and the share of a gigabit line, ARKit at 256×192 and 30 fps.*
+
+The middle two rows are the levers if a venue's link ever does bind: colour on
+a subset of the rig, or colour at a lower rate than depth. Neither is needed at
+a gigabit link on this grid, and both exist priced rather than as something to
+work out under pressure.
+
 ### What the move to ARKit does to that decision
 
 Every figure above is the **AVFoundation** capture grid, 320 × 240, which is

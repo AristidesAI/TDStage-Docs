@@ -109,6 +109,22 @@ a git checkout, or one holding `WebConsole/`, is refused.
 A restore that stopped part way is simply run again into the same folder: it
 becomes a refresh, which clears what the first run left.
 
+## Checking the pair of them without a standby
+
+```bash
+python3 Tools/standby_restore_test.py
+```
+
+It drives the snapshot and the restore end to end against throwaway
+repositories, **44 checks, all passing on 10 November 2026**. Two of them are
+the race a real snapshot can lose: a commit landing just before the bundle is
+written, and one landing just after. In both the backup has to exit 0, the
+MANIFEST's commit has to be the bundle's own, and the snapshot has to restore
+every file. The Windows CI job runs it.
+
+This is the check to run after touching either script, because the failure it
+guards against is one nobody sees until the day the snapshot is needed.
+
 ## The switchover
 
 1. **Take the show PC off the network.** Pull its cable or switch it off. It
