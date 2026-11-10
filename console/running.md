@@ -75,11 +75,60 @@ the Live view without them.
    | TDStage Console HTTP | TCP 9080 | LocalSubnet and 100.64.0.0/10 |
    | TDStage F1 WebSocket | TCP 9001 | LocalSubnet and 100.64.0.0/10 |
 
-5. **Check with `WebConsole\windows\doctor.bat`.** Every line should read OK,
+   {: .warning }
+   **A Block rule beats every Allow rule, including these four.** Cancelling
+   Windows' "allow access" prompt makes a per-program **Block** rule — and so
+   does any answer, when the account is not an administrator. A block on
+   `TouchDesigner.exe` or on the show's `python.exe` then overrides the port
+   rules above and nothing arrives, with four green firewall rules on screen.
+   `doctor` reads the enabled inbound Block rules and prints the
+   `Remove-NetFirewallRule -Name` line for the offender: a block on
+   TouchDesigner or the show's Python fails doctor on a network type in use,
+   and a block on some other Python — Blender's, say — is a warning only.
+
+5. **Set the machine up for a show: `WebConsole\windows\power.bat`.**
+
+   ```
+   windows\power.bat               apply (asks for Administrator)
+   windows\power.bat --dry-run     what would change, changes nothing
+   windows\power.bat --check       read only; exit 1 if anything is not as the show needs
+   ```
+
+   | It sets | So that |
+   |---|---|
+   | Power plan High performance, and on **both** mains and battery: sleep never, hibernate never, display off never, disk off never, USB selective suspend off | A USB UPS that reports itself as a battery switches Windows to the DC settings mid-show. USB selective suspend is what drops a phone on USB-C or a USB network adapter |
+   | The screen saver off, for the account that runs it | It applies without signing out |
+   | Windows Update paused for 35 days, the most Settings allows | An update that installs is an update that restarts |
+
+   Each value is read first and left alone when it is already right, and a
+   pause that already ends later is never shortened. The screen saver is a
+   per-account setting and the rest is machine-wide, so an account that is not
+   an administrator still turns off **its own** screen saver rather than the
+   administrator's.
+
+   {: .warning }
+   **Pausing updates does not cancel a restart that is already waiting** from
+   an update installed before the pause. Restart the PC once after `power.bat`
+   and before the show. `--check` is the pre-show reading, and it counts the
+   pause as wanted only while seven or more days are left on it, which is the
+   point `doctor` starts warning from.
+
+6. **Check with `WebConsole\windows\doctor.bat`.** Every line should read OK,
    and the compute section must say `yoloDevice=auto resolves to cuda`. If it
    says cpu, the CUDA torch wheel did not install: set `TORCH_INDEX_URL` and run
    `install.bat` again.
-6. **Run `python xplat.py` once**, from `WebConsole` with the virtual
+
+   Two of its sections exist for failures that look like something else:
+
+   | Section | What it catches |
+   |---|---|
+   | Firewall Block rules | The trap above |
+   | Bridge file and TEMP | The bridge's memory-mapped file lives in each process's own `TEMP`. A bridge, a console and a TouchDesigner running as **different accounts** have different `TEMP` folders, so the file one writes is not the file another reads, and each side looks healthy alone. It reads the account and `TEMP` of every running bridge, console and TouchDesigner and fails when they differ, then checks the file's writer pid and heartbeat |
+
+   `doctor --only temp` runs that second check on its own. Without `psutil` it
+   says so rather than reporting "bridge not running", and `--selftest` runs 52
+   checks, which the Windows CI job runs too.
+7. **Run `python xplat.py` once**, from `WebConsole` with the virtual
    environment's Python. It is the cross-process self-test for the
    platform-specific half of the console (the file locking that stops two
    consoles sharing one configuration, among other things). That code takes a

@@ -495,8 +495,12 @@ links its issue where it has one; the full, current list is the
 [board](https://github.com/users/AristidesAI/projects/1) and the [issues](https://github.com/AristidesAI/TDStage/issues).
 
 **No hot standby for the show machine.** If it dies, the rebuild is from a
-snapshot onto another machine. Whether the rig runs one machine or two is
-still an open decision.
+snapshot onto another machine, and that is now a rehearsed procedure with
+measured times rather than an idea: [when the show machine
+dies](standby.html). It is still not a hot standby. The restore takes seconds
+and the switchover around three to five minutes, the minutes are designed
+rather than measured, and none of it has run on Windows or on a rig. Whether
+the rig travels with a second machine at all is still an open decision.
 
 **A phone that crashes or reboots stays down until somebody reaches it.**
 iOS has no supervisor: nothing can open an app on a locked phone. Everything
