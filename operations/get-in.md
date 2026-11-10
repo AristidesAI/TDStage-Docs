@@ -485,6 +485,7 @@ Do not call a rig built until all of these pass:
       solve finished.
 - [ ] A person walking the playing area stays tracked as they cross between
       the areas each phone covers.
+- [ ] **The frame agrees with the tape**, not just the phones with each other.
 - [ ] The output reaches whatever is consuming it.
 
 ### The one-person test
@@ -523,6 +524,57 @@ needs a second pair at ninety degrees.
 The walking test is still the one that catches coverage problems. A rig can
 pass every other check and still have a gap that only shows when someone walks
 through it.
+
+### Does the frame agree with the tape? `frame_fit.py`
+
+The one-person test asks whether the phones agree with **each other**. They can
+agree perfectly and the whole rig still be turned a degree or two against the
+room, or sitting ten centimetres from where the tape says the origin is. The
+client receives positions in that frame, so that error goes out with every
+`/track` bundle and nothing on the rig notices.
+
+A performer stands still on five to seven taped marks in turn. For each mark,
+their `/track` position over the span they held it is paired with that mark's
+taped position, and a 2D rigid fit of the tape onto those positions — rotation
+and shift, no scale — gives four readings:
+
+| Reading | What it says |
+|---|---|
+| **Frame yaw** | How far `/track`'s frame is turned against the tape, in degrees, with a standard deviation from the residuals. Same sense as the roster's `yawDeg` and the registration yaw |
+| **O lands at** | Where `/track` puts the taped origin |
+| **Common offset** | The mean of the per-mark errors: the whole frame sitting off |
+| **Residual, per mark** | What is left after the fit. Body-centre noise, a single-view bias, or a mark taped somewhere other than `marks.json` says. **A frame correction cannot remove it** |
+
+From a recorded file, with the span each mark was held:
+
+```bash
+python3 Tools/frame_fit.py WebConsole/logs/track-<stamp>.jsonl \
+    --marks marks.json --on B1=2-9 --on B2=17-24 --on B3=32-39
+```
+
+Or live, against a running console, prompting for each mark in turn:
+
+```bash
+python3 Tools/frame_fit.py --live http://localhost:9080 \
+    --marks marks.json --order B1,B2,B3,B4,B5,K1,K4 --hold 5
+```
+
+**It only reads.** It opens a file or does a single GET, and never writes a
+pose, never POSTs and never sends `/ctl`. What to do about a result is yours.
+
+Given `--pivot=X,Z`, phone 1's typed position, it also says what the fit means
+*if all of it comes from phone 1's own typed pose* — which is the usual cause,
+since every other phone is solved relative to phone 1, so a yaw error there
+turns the whole rig about it. The yaw and the common offset do not depend on
+the pivot; the position line does, by about 1.7 cm per degree for a pivot a
+metre out.
+
+{: .note }
+> **If the marks only fit with z mirrored, it says so**, and the likely cause
+> is `marks.json` holding the console's plan `py` rather than stage `z` — the
+> plan's `py` is -z ([the two yaw conventions](#the-two-yaw-conventions)). The
+> console's own output z flip cannot be the cause: that is applied to the OSC
+> wire only, after the frames `frame_fit` reads.
 
 ## What to record before you leave
 

@@ -454,7 +454,8 @@ swap places with its neighbours.
 That buys two things at once.
 
 It makes a dropped frame harmless. A lost packet costs one frame from one
-phone. The next frame measures the same rays, so there is no positional
+phone ([except when a switch's buffer is what dropped
+it](../reference/ports.html#where-that-rule-stops-holding-the-switchs-buffer)). The next frame measures the same rays, so there is no positional
 artefact and nothing to interpolate across. Compare the alternative: an
 unordered point list has no cell identity, so a dropped frame is a gap you
 have to invent your way out of.

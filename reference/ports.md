@@ -22,6 +22,49 @@ network is busiest, which is during a show.
 So there is no TCP mode and no TCP fallback. Treat any TCP you find in this
 system as a leftover and remove it.
 
+### Where that rule stops holding: the switch's buffer
+
+"A lost packet costs one frame from one phone" is true of a packet lost on a
+quiet link. It is **not** true of a packet dropped because a switch's buffer
+filled, and that case deserves naming because the arithmetic says it can happen
+on the switch discussed for Stroud.
+
+A phone sends a frame's packets back to back, with no pacing: one ARKit colour
+frame is 204 packets, 0.31 MB in a switch's buffer, 2.5 ms on a gigabit line.
+Each phone has its own switch port, so each delivers that burst at full speed,
+and the phones' frame clocks are not locked to each other, so their phases
+drift and two frames will at times start at nearly the same moment. While *k*
+frames arrive together, *k* - 1 of them wait in the switch's buffer.
+
+Netgear publishes a buffer of **192 KB** for the GS316EPP and its family —
+**smaller than one colour frame**.
+
+| ARKit frame, 256 × 192 | Packets | In the buffer | On a gigabit line | Frames together to exceed 192 KB |
+|---|---:|---:|---:|---:|
+| Depth only | 68 | 0.10 MB | 0.8 ms | 3 |
+| Depth + confidence | 102 | 0.15 MB | 1.3 ms | 3 |
+| Depth + confidence + colour | 204 | 0.31 MB | 2.5 ms | **2** |
+
+Two colour frames starting together leave 0.31 MB waiting against 0.20 MB of
+buffer, so about 74 packets have nowhere to go. The switch drops whatever
+arrives while the buffer is full, and packets from **both** phones are
+arriving, so both frames lose packets and the receiver discards both. They need
+not start exactly together either: the queue grows about 0.12 MB a millisecond,
+so two colour frames starting within about 0.9 ms of each other overflow it.
+And while those two phones' phases stay that close it repeats every frame, so
+the loss arrives as a stretch of lost frames from two phones rather than as
+scattered singles.
+
+{: .warning }
+> **Arithmetic, not measurement.** The buffer size is the maker's published
+> figure for the whole switch, with no statement of how it is shared between
+> ports; the burst figures are computed from the frame size. Loopback cannot
+> show any of this, which is why the 70 per cent guideline leaves the link a
+> third free and why **a paper fit is not a pass**. The two tests that would
+> settle it — a real burst through the real switch, and how closely the phones'
+> phases line up after a Start — are open on
+> [#42](https://github.com/AristidesAI/TDStage/issues/42) and have not been run.
+
 The full argument, with the bandwidth arithmetic behind it, is in
 [Why it is built this way](design.html).
 

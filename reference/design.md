@@ -151,6 +151,40 @@ same relief by giving something up: colour from most of the rig, colour detail,
 colour frame rate, or days of protocol work. This one costs a switch and a
 network card.
 
+### What the move to ARKit does to that decision
+
+Every figure above is the **AVFoundation** capture grid, 320 × 240, which is
+what the decision had in front of it on 30 October. The app the rig actually
+deploys now captures through ARKit, at 256 × 192, and that is 44 per cent fewer
+cells:
+
+| Colour from every phone | 6 phones | 7 phones | 8 phones |
+|---|---:|---:|---:|
+| ARKit, 256 × 192 | 450 Mbit/s (45 %) | 525 (53 %) | 600 (60 %) |
+| AVFoundation, 320 × 240 | 703 Mbit/s (70 %) | 820 (82 %) | 937 (94 %) |
+
+*Per cent of one gigabit line, with framing. Arithmetic, confirmed against the
+simulator's byte counts exactly.*
+
+**So on ARKit, colour from all eight phones fits one gigabit** — 60 per cent,
+inside the 70 per cent guideline — and the 2.5 GbE hardware is not needed for
+bandwidth. It is still needed if the show runs AVFoundation, or ARKit at 60 fps,
+or more than about nine colour phones.
+
+That matters for Stroud, because the switch discussed for it has gigabit ports
+and no 2.5 G port at all, so with that switch the link is 1 GbE whatever card
+the machine has. As of 9 November no 2.5 G switch or card has been bought.
+
+{: .warning }
+> **Bandwidth is not the only question the link has to answer**, and the other
+> one is open on both grids: what the switch does when several phones' frames
+> arrive at once on separate ports. The buffer arithmetic says two colour frames
+> starting within about a millisecond of each other overflow the switch named
+> for Stroud. [Where the lost-packet rule stops
+> holding](ports.html#where-that-rule-stops-holding-the-switchs-buffer) has the
+> figures. It is settled by real phones through the real switch at the get-in,
+> with colour on fewer phones as the fallback on site.
+
 The same choice will come again, so the principle is worth stating:
 **the cheapest thing in this system is usually the hardware.** A protocol
 change costs days of work across the phone, TouchDesigner, the console, the
