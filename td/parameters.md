@@ -92,7 +92,8 @@ to cover it.
 ## Stage Cut
 
 {: .note }
-> **New in tox v89, 2026-11-10, and not on `main` until 12 November.** The
+> **New in tox v89 and extended in v90, 2026-11-10, and not on `main` until
+> 12 November.** The
 > branch is `stroud/stage-cut-td`; the running TouchDesigner already has it.
 > The parameters below kept their names, so every expression that reads them
 > is unchanged. What moved is the page: `Floorcut` and `Geoceiling` came from
@@ -110,6 +111,8 @@ has a picture of the page and the procedure for setting it.
 | `Wallcut` | Backdrop Wall Cut | Toggle | False | Get-in | both | Removes everything past a vertical backdrop plane, at every height. Off by default, and with it off the tox behaves as v87 did |
 | `Wallyaw` | Wall Yaw (deg) | Float | 0.0 | Get-in | both | Which way the wall faces in plan. 0 is upstage, square to the stage at +z; positive turns its normal toward +x; range -180 to 180 |
 | `Walldist` | Wall Distance (m) | Float | 6.0 | Get-in | both | Distance from stage centre to the plane along that normal. Range 0.5 to 20 |
+| `Floorviz` | Show Floor Plane | Toggle | False, on in the working tox | Get-in | preview | **Display only.** The green floor grid at Ground Cutoff Height, sized and centred to the stage box, 0.5 m cells. Moved from the View page in v90 |
+| `Wallviz` | Show Wall Plane | Toggle | False | Get-in | preview | **Display only.** A pink grid on the wall plane, from the ground cutoff to the ceiling and 2 m wider than the box. Draws with the cut on or off, so the plane can be placed before anything is removed. New in v90 |
 
 A point is cut when `sin(Wallyaw) × x + cos(Wallyaw) × z` exceeds `Walldist`.
 The GPU path reads the three as one uniform, `uWall` = (sin, cos, distance,

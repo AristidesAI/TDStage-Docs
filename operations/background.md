@@ -59,10 +59,10 @@ parameter. Anything below `Floorcut` minus 0.08 m is gone.
 ### Setting the cut by hand: the Stage Cut page
 
 {: .note }
-> **Tox v89, and not on `main` until 12 November 2026.** It is on the branch
+> **Tox v90, and not on `main` until 12 November 2026.** It is on the branch
 > `stroud/stage-cut-td`, and the TouchDesigner that is running already has it.
-> Every figure below is **simulated**: six synthetic phones, one frozen frame.
-> None of it has run on a rig.
+> Every figure and picture below is **simulated**: six synthetic phones, one
+> frozen frame. None of it has run on a rig.
 
 The three controls above used to live on two different pages. They are now one
 custom page, **Stage Cut**, second after Point Cloud, in three groups. The
@@ -70,10 +70,11 @@ names did not change, so anything reading them still works.
 
 ![The Stage Cut parameter page in TouchDesigner, second tab after Point Cloud. Three groups: floor and ceiling with Ground Cutoff Height 0.06 and Ceiling Cutoff 4; backdrop wall with Backdrop Wall Cut off, Wall Yaw 0 degrees and Wall Distance 6 m; and the stage box with Crop Min -6, -3, -5 and Crop Max 6, 3, 5 and Stage Crop off.](../assets/img/td-stage-cut-page.webp)
 
-*The page as the working tox holds it, v89 on 10 November 2026. These are the
-saved values rather than the manifest defaults: the ceiling sits at 4 m and the
-box at 6 by 3 by 5, and the wall cut is off, which is how a tox with the
-feature behaves exactly as v87 did.*
+*The page at v89. These are the saved values rather than the manifest
+defaults: the ceiling sits at 4 m and the box at 6 by 3 by 5, and the wall cut
+is off, which is how a tox with the feature behaves exactly as v87 did. **v90
+adds a Show Floor Plane toggle to the first group and a Show Wall Plane toggle
+to the second**, and gives the third group the label it is missing here.*
 
 | Group | Parameters |
 |---|---|
@@ -81,9 +82,7 @@ feature behaves exactly as v87 did.*
 | Backdrop wall | `Wallcut`, `Wallyaw`, `Walldist` |
 | Stage box | `Cropmin`, `Cropmax`, `Cropon` |
 
-Each group has a header above it explaining what the group cuts, and the third
-one reads `Hdrbox` in v89 because its label was left unset. It is cosmetic,
-and the parameters beneath it are the stage box.
+Each group has a header above it saying what that group cuts.
 
 The new part is the **backdrop wall**: a vertical plane at any angle in plan,
 with everything behind it removed at every height.
@@ -100,6 +99,39 @@ when `sin(yaw) × x + cos(yaw) × z` is greater than `Walldist`, which is the
 same expression on both merge paths and is pinned there by
 `glsl_parity_test.check_wall_cut`.
 
+#### Seeing where the cut sits before it cuts
+
+Two wireframe planes in the preview show where the two cuts are, so they can be
+placed against the cloud by eye rather than by arithmetic. **Both are display
+only and remove nothing**, and the wall plane draws whether or not the cut is
+on, which is what lets it be lined up first.
+
+| Toggle | Draws |
+|---|---|
+| `Floorviz` Show Floor Plane | The green floor grid, at Ground Cutoff Height, sized and centred to the stage box in 0.5 m cells. It was on the View page before v90 |
+| `Wallviz` Show Wall Plane | A pink grid on the Wall Yaw and Wall Distance plane, from the ground cutoff up to the ceiling and 2 m wider than the box. New in v90, off by default |
+
+![Three point-cloud performers in orange, green and blue on a green wireframe floor grid, with a dense grey slab of backdrop points behind a pink wireframe plane. The wall cut is off, so the backdrop is still in the cloud.](../assets/img/stage-cut-1-wall-plane-cut-off.webp)
+
+*Show Wall Plane on, Backdrop Wall Cut still off. The pink plane sits in front
+of the backdrop, and the grey slab behind it is what the cut will take.*
+
+![The same scene with the backdrop points gone. The pink plane and the green floor grid remain, and the three performers are intact.](../assets/img/stage-cut-2-wall-cut-on.webp)
+
+*Backdrop Wall Cut on. The slab is gone and the performers are whole. Dark
+speckle still sits around each pair of feet: that is the floor, which the wall
+cut does not touch.*
+
+![The same scene again with the floor speckle around the feet gone and the green grid sitting higher relative to the performers.](../assets/img/stage-cut-3-floor-015-wall-cut.webp)
+
+*Ground Cutoff raised to 0.15 m. The green grid rises with it, and the rings of
+floor around the feet go. This is the setting that costs six points off a
+performer's soles.*
+
+So the order to work in is: **show the wall plane, line it up, then cut.**
+Turning the cut on first means placing a plane against points it is already
+removing.
+
 **Setting it, on an empty stage with the phones aligned and the merged cloud in
 view:**
 
@@ -107,10 +139,11 @@ view:**
    ring of floor stays around each foot, which is the 8 cm feet band doing its
    job. About 0.15 removes all of it and costs the soles: six points out of
    7,819 on a performer, in simulation.
-2. **Turn on Backdrop Wall Cut.** Set Wall Yaw to the side the backdrop is on,
-   then bring Wall Distance in until the wall disappears, and **stop 0.2 to
-   0.3 m in front of it**.
-3. **Leave the values.** They save with the tox.
+2. **Turn on Show Wall Plane.** Set Wall Yaw to the side the backdrop is on,
+   then bring Wall Distance in until the pink plane sits just in front of the
+   backdrop points, **0.2 to 0.3 m clear of them**.
+3. **Turn on Backdrop Wall Cut.** The points behind the plane go.
+4. **Leave the values.** They save with the tox.
 
 {: .warning }
 > **The wall cut fails closed, and it is one plane.** A plane set through the
