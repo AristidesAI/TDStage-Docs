@@ -118,6 +118,7 @@ as cancelling an armed start or stepping one frame forward, it is allowed.
 | `/tdlidar/ctl/blackout` | `0|1`, default 1 | Screen blackout. A bare pulse blacks out |
 | `/tdlidar/ctl/fps` | `n` | Capture rate, clamped 5 to 60. Applies live |
 | `/tdlidar/ctl/imu` | none | One-shot attitude report. Replies on `/device/attitude` |
+| `/tdlidar/ctl/imu/lock` | none, or 0 to clear | **TDStage AR only.** Locks the phone's present attitude as the reference the movement alarm measures against, and resets the moved-tilt and moved-yaw figures to zero. A bare pulse locks; an explicit 0 clears the lock. Locking is refused silently when CoreMotion has not delivered a pose yet, so send it once the phone has been still on its stand |
 | `/tdlidar/ctl/ping` | none, or `seq` `[hostTime]` | Liveness, or clock sync. Replies on `/device/pong`. See [clock sync](#clock-sync) |
 
 ## Settings

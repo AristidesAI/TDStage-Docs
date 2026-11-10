@@ -26,16 +26,32 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
+# Two apps ship this surface and they are not identical. The rig deploys
+# TDStage AR; the AVFoundation app is parked. Checking one of them is how
+# `/tdlidar/ctl/imu/lock` stayed undocumented: it exists only in the AR app, so
+# a check that read the parked app's source saw a table that matched perfectly
+# (2026-11-10). The page must carry the UNION, and a verb missing from one app
+# is named with the app it came from, so the page can say "TDStage AR only".
 CONTRACTS = [
     {
         "what": "/ctl verbs",
         "page": "ios/ctl.md",
         "page_re": r"`/tdlidar/ctl/([a-z/]+)`",
-        "source": "TDStage/Net/OSCReceiver.swift",
+        "sources": [
+            ("system", "TDStage/Net/OSCReceiver.swift"),
+            ("ar", "TDStageARKit/Net/OSCReceiver.swift"),
+        ],
         "source_re": r'case "/tdlidar/ctl/([a-z/]+)"',
-        "note": "the app's own switch over incoming OSC addresses",
+        "note": "both apps' own switch over incoming OSC addresses",
     },
 ]
+
+# The ARKit app is its own repository, beside the system one.
+AR_REPO_NAME = "TDStageARKit"
+
+
+def ar_repo(repo: pathlib.Path) -> pathlib.Path:
+    return repo.parent / AR_REPO_NAME
 
 
 def source_state(repo: pathlib.Path, rel: str, working_tree=False):
@@ -59,22 +75,42 @@ def main():
         print(f"system repo not found at {repo} - skipping")
         return
 
+    ar = ar_repo(repo)
+    have_ar = (ar / AR_REPO_NAME).exists()
+    if not have_ar:
+        print(f"note: {ar} is not here, so only the system repo's half is checked")
+
     problems = []
     for c in CONTRACTS:
         page = set(re.findall(c["page_re"], (ROOT / c["page"]).read_text(encoding="utf-8")))
-        code = set(re.findall(c["source_re"], source_state(repo, c["source"], a.working_tree)))
-        if not code:
-            problems.append(f'{c["what"]}: found none in {c["source"]} '
-                            f"- the code's shape changed, re-point this check")
+        union, read = set(), []
+        for which, rel in c["sources"]:
+            if which == "ar" and not have_ar:
+                continue
+            root = ar if which == "ar" else repo
+            found = set(re.findall(c["source_re"], source_state(root, rel, a.working_tree)))
+            if not found:
+                problems.append(f'{c["what"]}: found none in {rel} '
+                                f"- the code's shape changed, re-point this check")
+                continue
+            read.append((rel, found))
+            union |= found
+        if not read:
             continue
-        for v in sorted(code - page):
-            problems.append(f'{c["what"]}: `{v}` is in {c["source"]} '
+        for v in sorted(union - page):
+            where = ", ".join(rel for rel, f in read if v in f)
+            problems.append(f'{c["what"]}: `{v}` is in {where} '
                             f'and not on {c["page"]}')
-        for v in sorted(page - code):
+        for v in sorted(page - union):
             problems.append(f'{c["what"]}: `{v}` is on {c["page"]} '
-                            f'and not in {c["source"]}')
-        if not (code - page or page - code):
-            print(f'{c["what"]}: {len(code)} match ({c["note"]})')
+                            f'and in neither app')
+        if not (union - page or page - union):
+            only = {rel: f - set().union(*(g for r, g in read if r != rel))
+                    for rel, f in read} if len(read) > 1 else {}
+            extra = "; ".join(f"{len(v)} only in {rel.split('/')[0]}"
+                              for rel, v in only.items() if v)
+            print(f'{c["what"]}: {len(union)} match ({c["note"]})'
+                  + (f" - {extra}" if extra else ""))
 
     if problems:
         print("\n".join("  " + p for p in problems))
@@ -91,6 +127,13 @@ def demo():
     # the asymmetry the check reports, both ways round
     assert set(re.findall(src_re, src)) - set(re.findall(page_re, page)) == {"stop"}
     assert set(re.findall(page_re, page)) - set(re.findall(src_re, src)) == {"rec/play"}
+    # the union rule: a verb in only ONE of the two apps still has to be on the
+    # page, which is the case that went unnoticed while one app was read
+    ar_only = 'case "/tdlidar/ctl/imu/lock": return .imuLock'
+    union = set(re.findall(src_re, src)) | set(re.findall(src_re, ar_only))
+    assert "imu/lock" in union and "imu/lock" not in set(re.findall(src_re, src))
+    page_both = page + "\n| `/tdlidar/ctl/stop` | ... |\n| `/tdlidar/ctl/imu/lock` | ... |"
+    assert union - set(re.findall(page_re, page_both)) == set()
     print("self-check ok")
 
 
