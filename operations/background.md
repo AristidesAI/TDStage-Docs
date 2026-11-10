@@ -56,6 +56,84 @@ the same point is always kept or always dropped.
 feet are not cut off at the ankle. It is fixed in the shader and is not a
 parameter. Anything below `Floorcut` minus 0.08 m is gone.
 
+### Setting the cut by hand: the Stage Cut page
+
+{: .note }
+> **Tox v89, and not on `main` until 12 November 2026.** It is on the branch
+> `stroud/stage-cut-td`, and the TouchDesigner that is running already has it.
+> Every figure below is **simulated**: six synthetic phones, one frozen frame.
+> None of it has run on a rig.
+
+The three controls above used to live on two different pages. They are now one
+custom page, **Stage Cut**, second after Point Cloud, in three groups. The
+names did not change, so anything reading them still works.
+
+| Group | Parameters |
+|---|---|
+| Floor and ceiling | `Floorcut`, `Geoceiling` |
+| Backdrop wall | `Wallcut`, `Wallyaw`, `Walldist` |
+| Stage box | `Cropmin`, `Cropmax`, `Cropon` |
+
+The new part is the **backdrop wall**: a vertical plane at any angle in plan,
+with everything behind it removed at every height.
+
+| Parameter | Default | Range |
+|---|---|---|
+| `Wallcut` Backdrop Wall Cut | off | toggle |
+| `Wallyaw` Wall Yaw (deg) | 0 | -180 to 180 |
+| `Walldist` Wall Distance (m) | 6.0 | 0.5 to 20 |
+
+`Wallyaw` points at the side the backdrop is on: **0 is upstage**, square to
+the stage at +z; 90 is the +x side; 180 and -180 are downstage. A point is cut
+when `sin(yaw) × x + cos(yaw) × z` is greater than `Walldist`, which is the
+same expression on both merge paths and is pinned there by
+`glsl_parity_test.check_wall_cut`.
+
+**Setting it, on an empty stage with the phones aligned and the merged cloud in
+view:**
+
+1. **Raise Ground Cutoff until the floor goes.** At the default 0.06 a thin
+   ring of floor stays around each foot, which is the 8 cm feet band doing its
+   job. About 0.15 removes all of it and costs the soles: six points out of
+   7,819 on a performer, in simulation.
+2. **Turn on Backdrop Wall Cut.** Set Wall Yaw to the side the backdrop is on,
+   then bring Wall Distance in until the wall disappears, and **stop 0.2 to
+   0.3 m in front of it**.
+3. **Leave the values.** They save with the tox.
+
+{: .warning }
+> **The wall cut fails closed, and it is one plane.** A plane set through the
+> stage removes performers with no warning of any kind. There is no second
+> plane either, so a raked or curved backdrop wants the plane just inside its
+> nearest point, and whatever the backdrop hides beyond that stays in the
+> cloud.
+>
+> It is off by default, and with it off v89 behaves exactly as v87 did.
+
+**Where it sits in the pipeline** decides what it can and cannot fix. On the
+GPU path, which is the show path, each point meets the crop box and the
+ceiling first, then the wall, then the floor band, then the learned
+background. On the CPU paths the wall is applied after voxel fusion,
+background learning and auto-align collection, and before `Segmode`.
+
+That ordering on the CPU side is deliberate in one respect: **alignment still
+sees the wall**, because a flat backdrop is a useful feature for registration.
+Cutting it before the solver would take away something the solver wants.
+
+In simulation, with a backdrop at -165 degrees and 3.5 m, the cut took 52,953
+wall points to zero on the GPU path and 30,583 to zero on the CPU path, with
+performer points unchanged at 7,819 and 5,825. A 0.15 m floor cut and the wall
+cut together left 7,813 points, all of them performer. With the room left in,
+only 5 per cent of the points were a performer at all.
+
+{: .warning }
+> **The console has its own separate cut, and setting one does not set the
+> other.** TouchDesigner's Stage Cut page and the console's Live view cut are
+> two controls over two pipelines. Nothing is pushed between them. This is the
+> same split as everywhere else on this page, and it is the thing most likely
+> to catch somebody out, because the two views can be made to look identical
+> while publishing different clouds.
+
 ### In the console
 
 The engine's inclusion box is five keys in `segmentation`, and points outside

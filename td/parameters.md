@@ -89,6 +89,46 @@ move the cleanup and hysteresis grid without moving the crop. The split is
 deliberate. The crop decides what is in the room, and the hash grid only has
 to cover it.
 
+## Stage Cut
+
+{: .note }
+> **New in tox v89, 2026-11-10, and not on `main` until 12 November.** The
+> branch is `stroud/stage-cut-td`; the running TouchDesigner already has it.
+> The parameters below kept their names, so every expression that reads them
+> is unchanged. What moved is the page: `Floorcut` and `Geoceiling` came from
+> Level, the crop box from Point Cloud, and `Wallcut`, `Wallyaw` and
+> `Walldist` are new. Their rows elsewhere on this page describe the same
+> parameters in their old homes.
+
+Second after Point Cloud, in three header groups: floor and ceiling, backdrop
+wall, stage box.
+
+| Parameter | Label | Type | Default | Set at | Path | What it does |
+|---|---|---|---|---|---|---|
+| `Wallcut` | Backdrop Wall Cut | Toggle | False | Get-in | both | Removes everything past a vertical backdrop plane, at every height. Off by default, and with it off the tox behaves as v87 did |
+| `Wallyaw` | Wall Yaw (deg) | Float | 0.0 | Get-in | both | Which way the wall faces in plan. 0 is upstage, square to the stage at +z; positive turns its normal toward +x; range -180 to 180 |
+| `Walldist` | Wall Distance (m) | Float | 6.0 | Get-in | both | Distance from stage centre to the plane along that normal. Range 0.5 to 20 |
+
+A point is cut when `sin(Wallyaw) × x + cos(Wallyaw) × z` exceeds `Walldist`.
+The GPU path reads the three as one uniform, `uWall` = (sin, cos, distance,
+on), and `glsl_parity_test.check_wall_cut` pins the GPU expression and the CPU
+one to each other, so a change to either without the other fails before it
+reaches a rig.
+
+**Order within the cut.** On the GPU path a point meets the crop box and the
+ceiling, then the wall, then the floor band, then the learned background. On
+the CPU paths the wall is applied after voxel fusion, background learning and
+auto-align collection, and before `Segmode`, which leaves the backdrop visible
+to the alignment solver on purpose: a flat wall is a feature worth registering
+against.
+
+{: .warning }
+> **One plane, and it fails closed.** A plane set through the stage removes
+> performers, silently. There is no second plane, so a raked or curved
+> backdrop wants the plane just inside its nearest point. Using it is on
+> [Getting the room out of the cloud](../operations/background.html#setting-the-cut-by-hand-the-stage-cut-page),
+> with the figures, which are simulated.
+
 ## View
 
 The preview render. None of this touches the output cloud.

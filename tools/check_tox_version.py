@@ -70,6 +70,19 @@ def versions_in_docs(root=ROOT):
     return found
 
 
+def uncommitted_versions():
+    """Numbered toxes that exist in the checkout but are not committed yet.
+
+    A tox is saved long before its branch lands, and the docs follow the tox a
+    reader is actually running. Committed-only was right until a feature
+    shipped to the running TouchDesigner days before its merge (v89, the Stage
+    Cut page, 2026-11-10) and the check called a page that documented it a
+    liar. A version present in the checkout is real; one present nowhere is the
+    error this file exists for.
+    """
+    return sorted(set(versions_on_disk(working_tree=True)) - set(versions_on_disk()))
+
+
 def main():
     disk = versions_on_disk(working_tree="--working-tree" in sys.argv)
     if not disk:
@@ -79,11 +92,18 @@ def main():
     if not docs:
         print(f"no version mentioned anywhere in the docs; project is at v{latest}")
         sys.exit(1)
-    ahead = [n for n in docs if n > latest]
+    saved = uncommitted_versions()
+    ahead = [n for n in docs if n > latest and n not in saved]
+    for n in sorted(n for n in docs if n in saved):
+        print(f"note: v{n} is saved in the checkout and not committed yet; "
+              f"{len(docs[n])} mention(s) allowed")
     if ahead:
         for n in sorted(ahead):
-            print(f"  docs claim v{n}, which is not on disk: {', '.join(docs[n][:3])}")
+            print(f"  docs claim v{n}, which exists neither in the commit "
+                  f"nor in the checkout: {', '.join(docs[n][:3])}")
         sys.exit(1)
+    if saved:
+        latest = max(latest, max(saved))
     if max(docs) < latest:
         print(f"  docs' newest mention is v{max(docs)}, project is at v{latest}")
         print(f"  pages quoting v{max(docs)}: {', '.join(docs[max(docs)])}")
