@@ -24,7 +24,9 @@ has_children: true
 | Capture to send | 62 to 78 ms, measured with two phones on 28 October | 37 ms, measured with one phone the same day. Different phone counts, so the gap is not a clean comparison |
 | `stage.stabilization` | Read | Ignored |
 
-Why the project chose the slower, lower-resolution path is on
+[What TDStage AR adds](arkit.html) documents the depth conditioning pass and
+the twenty-odd settings that steer it, which exist only in that app. Why the
+project chose the slower, lower-resolution path is on
 [Why it is built this way](../reference/design.html): edge bleed at a
 silhouette turned out to cost more than resolution, and the A/B between the two
 capture paths was never run.

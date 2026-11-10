@@ -93,6 +93,34 @@ so it fires early by however long a build waited before upload. That is
 pessimistic on purpose. A build made without the script's stamp (an Xcode
 Archive) reports no date and never warns.
 
+### What is on TestFlight now, and what testers actually have
+
+| | TDStage AR |
+|---|---|
+| On TestFlight | **1.1 (4)**, uploaded 2026-11-03 08:35Z |
+| Stops launching | about **2027-02-01** |
+| Built by | an Xcode Organizer archive, not `Support/testflight.sh` |
+| Build stamps | **empty**, so the console's expiry warning cannot fire for it ([#56](https://github.com/AristidesAI/TDStage/issues/56)) |
+| Contains | the [#49](https://github.com/AristidesAI/TDStage/issues/49) relaunch fix's code, read from the uploaded archive's dSYM |
+| What the rig's own phones run | a **Debug 1.2 (5)**, installed directly with `devicectl` on 2026-11-07, never through TestFlight |
+
+{: .warning }
+> **An uploaded build is not a build anybody has.** A build appears in App
+> Store Connect as soon as it finishes processing, and testers see nothing
+> until it is added to their group, which for external testers also means Beta
+> App Review. So a tester reporting "TestFlight offers no update" while a newer
+> build exists is the normal symptom of a build that was uploaded and not
+> released, and the fix is in App Store Connect rather than on the phone.
+>
+> Check what a phone is really running from its own telemetry on `/device/app`,
+> not from what was uploaded.
+
+Two consequences worth planning around. A build with empty stamps gets **no
+expiry warning at all** from the console, so build 4's own clock has to be
+tracked by hand until a stamped build replaces it. And the rig's phones and a
+tester's phones are currently on **different builds from different weeks**,
+which is exactly the debugging problem the next paragraph exists to prevent.
+
 ### Doing the re-upload
 
 Both apps go together, because a rig running two builds from different weeks is
