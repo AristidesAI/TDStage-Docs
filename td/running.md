@@ -211,7 +211,7 @@ ceiling.
 Eight phones sending depth, confidence and colour is about 49,000 packets per
 second **at 256×192**, the grid the simulator uses and the grid TDStage AR
 sends, and about 76,300 at the 320×240 the parked AVFoundation app takes on an
-iPhone 17 Pro. Both are arithmetic from the frame size; the second was also run
+LiDAR iPhone. Both are arithmetic from the frame size; the second was also run
 on loopback (eight colour sims at 320×240, 76,300 packets per second, none
 lost), so even that one is inside what the bridge was measured to carry.
 

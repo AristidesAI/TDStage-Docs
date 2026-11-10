@@ -218,7 +218,7 @@ this app knowing that the extra 18 Mbit/s a phone buys a validity mask.
 Wire cost per phone, **calculated from the wire format** at 30 fps. The left
 figures are **256×192, which is what TDStage AR sends on every LiDAR iPhone**
 and so what the rig costs. The right ones are the 320×240 the parked
-AVFoundation app takes on a 17 Pro, which is a fallback and is not what Stroud
+AVFoundation app takes on any LiDAR iPhone, a fallback and not what Stroud
 runs.
 
 | Plane set | Bytes per frame | **Per phone, 256×192** | **Eight phones** | Per phone, 320×240 | Eight phones |
@@ -282,7 +282,7 @@ A build from before that date still shows the picker, and it did nothing there
 either. TestFlight 1.1 (4) does not have it.
 
 What you get instead is the smallest float depth format the camera offers,
-which is **320×240 on an iPhone 17 Pro**. On this app it is not 256×192 by
+which is **320×240 on every LiDAR iPhone from the 12 Pro on**. On this app it is not 256×192 by
 rule, and a mixed rig of models can send more than one grid. On TDStage AR it
 **is** 256×192 by rule, on every model, because ARKit's scene depth is that
 size and the camera format does not enter into it. Every frame carries its own
@@ -426,7 +426,7 @@ and over a cable in Finder.
 ### Disk cost
 
 A take is the wire frame, so its grid is the capture grid: **256×192 for
-TDStage AR**, the app the rig deploys, and 320×240 on an iPhone 17 Pro for the
+TDStage AR**, the app the rig deploys, and 320×240 on any LiDAR iPhone for the
 parked AVFoundation app. There is no separate recording resolution to set.
 
 Write rate at 256×192 and 30 fps, **calculated from the wire format**:

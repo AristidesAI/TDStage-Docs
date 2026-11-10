@@ -52,6 +52,32 @@ yaw that give the most two-view coverage of a named area, and writes the tape
 marks with it. [Where a plan like that comes
 from](operations/get-in.html#where-a-plan-like-that-comes-from) describes it.
 
+### Does a mixed rig of phone generations work?
+
+**For the merge, yes.** ARKit gives 256×192 on every LiDAR iPhone and every
+frame carries its own intrinsics, so a 12 Pro and an 18 Pro fuse without
+anything special.
+
+**For range and noise, nobody knows.** The LiDAR hardware changed with the
+15 Pro, so whether an older phone sees as far or as cleanly is **unmeasured**,
+and it is the kind of difference that shows up as one phone's corner of the
+stage being worse than the others.
+
+`Tools/model_check.py` answers it from one recorded take per phone, offline,
+with no console and no phone attached. Per model it reports valid cells, the
+high-confidence share, temporal depth noise in millimetres and edge share by
+half-metre band, and the farthest band that is still at least half
+high-confidence.
+
+```bash
+python3 Tools/model_check.py take-a.tdp4rec take-b.tdp4rec
+```
+
+The one take measured so far, an iPhone 18 Pro, gave **2 to 3 mm of temporal
+noise from 1.5 to 4.5 m, all of it high confidence**, through the phone's own
+smoothing. Record every phone with the same app settings, or the comparison
+measures the settings rather than the hardware.
+
 ## What about aerial performers working up to 7 or 8 m?
 
 **A floor-level rig does not reach them.** A phone on a 2.25 m stand, pitched
@@ -82,11 +108,13 @@ builds nothing on it.
 
 {: .note }
 > **Two range figures appear in our material and they measure different
-> things.** Ranging, meaning whether the sensor returns a depth at all, is taken
-> as trustworthy to about 5 to 6 m. The 4.5 m used above is the *usable body*
-> figure the coverage model plans on. It is the stricter of the two and the one
-> to place phones by, and as said there, neither has been measured on a person
-> at distance.
+> things, and neither is ours.** **Apple's figure for the sensor is "up to
+> 5 metres"**, from the iPad Pro launch in March 2020. The 5 to 6 m sometimes
+> quoted is **the client's own measurement** of depth holding on a person in a
+> studio on 6 November 2026, not a specification. The 4.5 m used above is the
+> *usable body* figure this project's coverage model plans on, the strictest of
+> the three and the one to place phones by. **We have measured none of them
+> ourselves at distance.**
 
 ## Can the array cope when performers cluster?
 

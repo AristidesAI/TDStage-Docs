@@ -437,7 +437,8 @@ Then check, in order:
   TDStage AR's **256×192**, eight phones at depth+conf is about 300 Mbit/s and
   about 600 Mbit/s with colour on every one, which is 60 per cent of a gigabit
   link and inside the 70 per cent guideline. At the parked AVFoundation app's
-  320×240 on an iPhone 17 Pro the same two are about 469 and 937 Mbit/s, and
+  320×240, which it sends on any LiDAR iPhone, the same two are about 469 and
+  937 Mbit/s, and
   the second is 94 per cent of a gigabit link with no headroom. **The 2.5G
   uplink was decided on the 320×240 figures**; on ARKit it is not needed for
   bandwidth ([what the move to ARKit does to that
@@ -498,9 +499,12 @@ cross it the obvious way.
 > logs an ERROR only when the GPU merge path is on and its link is up.
 
 Use a remote tool that **shares the physical console session** and can reach
-the sign-in screen. None has been chosen or tested yet. If an RDP session has
-already been opened as the show account, hand the session back to the physical
-console with `tscon` as Administrator before using the machine.
+the sign-in screen. The current advice is **Chrome Remote Desktop**, on a
+dedicated Google account with 2-step verification and a PIN, or its one-time
+Remote Support codes for a single supervised session. Neither has been tested
+on the show machine yet. If an RDP session has already been opened as the show
+account, hand the session back to the physical console with `tscon` as
+Administrator before using the machine.
 
 After every relaunch of TouchDesigner, turn **UDP Active** and **Console Link
 Active** back on, since the saved tox has both off, and check three things:

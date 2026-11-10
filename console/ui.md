@@ -641,7 +641,8 @@ caption that reads `aim phone at marker #N` or `● seeing marker #N`.
 | **Stage pos (m)** | x, y, z. |
 | **Plan aim (°)** | yaw, pitch, roll. Yaw turns the live phone; pitch and roll only draw the planned frustum. |
 | **Tilt (°)** | pitch, roll: a correction about the camera, plus or minus 30, for a phone whose own levelling is off. Moves the live cloud here and in TouchDesigner. |
-| **FOV (°)** | h and v, used for the frustum and the simulated returns. |
+| **FOV (°)** | h and v, used for the frustum and the simulated returns. A new device defaults to **71.0 × 56.0**, which is ARKit's 256×192 intrinsics rather than the 58 × 43.5 it used before 10 November 2026. An existing device keeps whatever is stored for it, so a roster made earlier still holds the old pair and is worth checking. |
+| | The placement helper reads the first phone's **live intrinsics** when it is streaming, falls back to its configured FOV, then to 71 × 56. Its usable range is **5.0 m**, Apple's own figure for the sensor, where it used to search 0.3 to 6.6 m. |
 | **Mount orientation** | Auto, Left up, Right up. Sets `stage.mountedge` remotely and flips the 3D arrow immediately. The phone's IMU report overwrites it when it arrives. |
 
 Position, yaw and tilt place the live phone here **and** stream live to

@@ -113,7 +113,8 @@ and 287 Mbit/s for eight devices. **That default is the rig's grid**: TDStage
 AR captures through ARKit, whose scene depth is 256x192 on every LiDAR iPhone,
 so a show-rig load test at the default is already modelling the real load.
 
-The parked AVFoundation app is the one that sends 320x240 on an iPhone 17 Pro.
+The parked AVFoundation app is the one that sends 320x240, on every LiDAR
+iPhone from the 12 Pro on.
 At that grid the same planes are 230,520 bytes in 159 packets, 56.1 Mbit/s per
 device, 449 Mbit/s for eight and 897 Mbit/s for sixteen, a factor of 1.56 over
 the default. Pass `--grid 320x240` to model that app

@@ -169,7 +169,8 @@ What the phone sends depends on which app it runs. **TDStage AR, the app the
 rig deploys, sends 256×192 on every LiDAR iPhone**, because that is ARKit's
 scene-depth grid and it does not vary by model. This app, the AVFoundation one,
 takes the first video format that offers depth and the smallest float depth
-grid inside it, which is **320×240 on an iPhone 17 Pro**. Either way, read the
+grid inside it, which is **320×240 on every LiDAR iPhone from the 12 Pro on**.
+Either way, read the
 grid on the LIVE page's stream line or in the frame header rather than from
 this key. The bandwidth and disk figures on
 [Wire and disk cost](record.html#disk-cost) give both grids.
