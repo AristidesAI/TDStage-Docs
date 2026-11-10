@@ -224,6 +224,16 @@ tracker publishes at all rather than how well it holds people.
 > Measure it the way that test did: replay one take at each value, and include
 > thirty seconds of empty stage at each.
 
+{: .warning }
+> **Maturity is being redefined, and the figures above are measured against the
+> old rule.** With `sys/integ-c`, landing 12 November 2026, maturity becomes the
+> learned share of the scenery actually in view, and a view with nothing static
+> to learn counts as mature on its own. The change came out of the stage cut: a
+> hard cut leaves so little scenery that the old background-over-all-voxels
+> ratio fell to 0.018 and `/track` went silent. Two settle-gate changes ride
+> with it, and the set is **under review**, so treat this section as the
+> behaviour before that lands rather than a value to carry across it.
+
 The F1 presence channel is a useful cross-check here, because it does not pass
 through this gate. On that same take, presence reported two people in about 70
 to 85 per cent of messages while `/track` was silent, which is how the test

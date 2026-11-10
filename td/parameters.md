@@ -110,7 +110,7 @@ has a picture of the page and the procedure for setting it.
 |---|---|---|---|---|---|---|
 | `Wallcut` | Backdrop Wall Cut | Toggle | False | Get-in | both | Removes everything past a vertical backdrop plane, at every height. Off by default, and with it off the tox behaves as v87 did |
 | `Wallyaw` | Wall Yaw (deg) | Float | 0.0 | Get-in | both | Which way the wall faces in plan. 0 is upstage, square to the stage at +z; positive turns its normal toward +x; range -180 to 180 |
-| `Walldist` | Wall Distance (m) | Float | 6.0 | Get-in | both | Distance from stage centre to the plane along that normal. Range 0.5 to 20 |
+| `Walldist` | Wall Distance (m) | Float | 6.0 | Get-in | both | Distance from the stage origin to the plane along that normal, **negative when the origin sits behind the wall** (v92, after a room was found with the origin 0.55 m behind the back wall). Range -20 to 20 |
 | `Floorviz` | Show Floor Plane | Toggle | False, on in the working tox | Get-in | preview | **Display only.** The green floor grid at Ground Cutoff Height, sized and centred to the stage box, 0.5 m cells. Moved from the View page in v90 |
 | `Wallviz` | Show Wall Plane | Toggle | False | Get-in | preview | **Display only.** A pink grid on the wall plane, from the ground cutoff to the ceiling and 2 m wider than the box. Draws with the cut on or off, so the plane can be placed before anything is removed. New in v90 |
 

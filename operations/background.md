@@ -198,6 +198,96 @@ The upstage edge is the one that earns its keep at a venue: a back wall past
 `stageZhi` never reaches the engine, so it cannot be learned, mistaken for a
 performer, or counted in the maturity ratio.
 
+### The console's own cut
+
+{: .note }
+> **Lands 12 November 2026** as `sys/integ-c`, with tox v92 on the other side.
+> Every figure here is **simulated**: a sandboxed scratch console, the merge
+> simulator, six ring phones, a wall at yaw 15 and 4.0 m. None of it has run on
+> a rig.
+
+The console has the same two cuts, in its Live view under **Stage cut**, and
+they are **the same arithmetic as the tox's**. The plan normal is
+`(sin yaw, cos yaw)`, a point is cut when `sin(yaw) × x + cos(yaw) × z`
+exceeds the distance, yaw 0 faces upstage at +z, 90 faces +x, and the distance
+is measured from the stage origin. **A number you line the pink plane up with
+in TouchDesigner can be typed into the console, and the other way round.**
+
+| Setting | Default | Range |
+|---|---|---|
+| `stageYlo` Floor cut height | -0.6 m, which keeps the floor | -1.0 to +0.5 |
+| `wallOn` Wall cut | off | |
+| `wallYaw` Wall yaw | 0 | -180 to 180 |
+| `wallDist` Wall distance | 6.0 m | -20 to 20 |
+| `stageX` Stage half-width | 9 m | the box is symmetric, `|x| < stageX` |
+| `stageZlo`, `stageZhi` | -9 m, 9 m | |
+| `stageYhi` Stage ceiling | 3.6 m | |
+
+**Setting it in the Live view**, with the phones aligned and the cut off:
+
+1. **Drag Floor cut height to +0.05 or +0.10.** A green 1 m grid follows the
+   value and the floor points go. The engine takes the new value about 150 ms
+   after the drag.
+2. **Tick Wall cut and set Wall yaw** so the pink plane lies along the
+   backdrop.
+3. **Press Fit wall to cloud**, which needs People only off. It proposes a
+   distance 0.15 m in front of the farthest dense band between 0.5 and 2.5 m
+   high, and says what it found: *"starts at 3.95 m ... proposed 3.80 m"*.
+   Apply turns the wall on there. Dragging Wall distance by hand does the same
+   job.
+4. **Show cut points (dimmed)** draws what is being removed, and the status
+   line gives the engine's kept points, its voxels and the learned share.
+
+The colours are the tox's: green for the floor, pink for the wall.
+
+{: .warning }
+> **Fit wall's 0.15 m margin was not enough in simulation.** It left 300 to 600
+> wall points behind, and 0.3 m cleared them. The guidance on both sides is the
+> same: stop 0.2 to 0.3 m in front of the backdrop, so treat the proposal as a
+> starting point and push it back.
+
+**Where it sits is the part that makes it worth doing.** The cut runs before
+everything that learns. A point outside it never becomes an engine voxel, so
+it is never background, never foreground, never counted towards maturity and
+never offered to `/track`. One test, `segment.in_stage`, serves the engine, the
+GPU engine, ingest's person selection and both of `/track`'s background and
+mask paths, which is deliberate: a consumer testing a wider volume than the
+engine ingested would promote a point the background cannot contain to a
+person, permanently.
+
+In simulation the engine kept 39,300 of 274,900 points, an 86 per cent cut, and
+`/track` went from 18.3 to 28.9 frames per second with a median of three
+performers, which is what the simulator had. On an empty stage with the cut on
+it matured in 3.3 seconds and reported nobody across 1,376 frames.
+
+{: .warning }
+> **It fails closed, and silently.** A cut that removes every point leaves the
+> engine seeing nothing, which counts as mature, so `/track` keeps sending at
+> full rate with zero performers. The Live view does warn in amber when the cut
+> removes everything, but a cut that is merely *too tight* produces no warning
+> at all: it just publishes fewer people than are standing there.
+>
+> Voxels the cut removes are not deleted either. They decay and prune over
+> about three minutes, so the voxel count falls slowly after a change rather
+> than dropping at once.
+
+### Where the two cuts differ
+
+They are the same arithmetic with different edges, and these are the
+differences that will catch somebody who sets one from the other.
+
+| | TouchDesigner | The console |
+|---|---|---|
+| **Feet** | Keeps an 8 cm band below the cut, so feet survive | **No band. A foot below the floor cut is gone** |
+| Floor default | `Floorcut` 0.06, so the floor is already cut | `stageYlo` -0.6, so the floor is kept until you raise it |
+| The box in x | `Cropmin` and `Cropmax`, a corner each | `stageX`, a half-width, so it is symmetric about the origin |
+| Who it feeds | The visuals | `/track`, the field stream, NDI, the Live view |
+
+**Nothing is pushed between them.** Setting one does not set the other, which
+is the two-pipeline split again, and with two wall planes now drawable it is
+the easiest mistake on this page to make: line the pink plane up in
+TouchDesigner, see the backdrop go, and leave the console cutting nothing.
+
 ## The learned background: sharper, and it needs an empty stage
 
 A learned background records what the room looks like with nobody in it and
