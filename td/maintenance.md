@@ -177,15 +177,9 @@ collision naming. With two phones sharing an id, the console would have warned
 and TouchDesigner would have said nothing, and nobody would have known why the
 two disagreed.
 
-Loading the repository file and saving produced v77 and then v78, and the same
-command now reads:
-
-```
-TD/TDStageConductor.tox: 33 DATs with a repo copy identical, 0 differ,
-                         0 DATs with text and no repo copy
-```
-
-That is what a clean result looks like.
+Loading the repository file and saving produced v77 and then v78, after which
+the same command read 33 DATs identical, 0 differing and 0 in the tox only,
+which is the result to aim for.
 
 ### Where it stands today
 
