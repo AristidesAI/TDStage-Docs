@@ -249,12 +249,11 @@ in TouchDesigner can be typed into the console, and the other way round.**
 2. **Tick Wall cut and set Wall yaw** so the pink plane lies along the
    backdrop.
 3. **Set Wall yaw to face the backdrop, then press Fit wall to cloud**, which
-   needs People only off. It proposes a distance 0.15 m in front of the
-   farthest dense band between 0.5 and 2.5 m high, and says what it found:
-   *"starts at 3.95 m ... proposed 3.80 m"*. **It refuses the same two cases
-   the tox refuses**, a band too narrow or too gappy to be a backdrop and a yaw
-   facing away. Apply turns the wall on there. Dragging Wall distance by hand
-   does the same job.
+   needs People only off. It proposes a distance 0.25 m in front of the
+   farthest dense band between 0.5 and 2.5 m high and says what it found.
+   **It refuses the same two cases the tox refuses**, a band too narrow or too
+   gappy to be a backdrop and a yaw facing away. Apply turns the wall on there.
+   Dragging Wall distance by hand does the same job.
 4. **Show cut points (dimmed)** draws what is being removed, and the status
    line gives the engine's kept points, its voxels and the learned share.
 
@@ -278,12 +277,10 @@ The bright figures are what `/track` sees; everything dim is what the cut
 removed. A performer who has gone dim is the failure this view exists to
 catch.*
 
-{: .warning }
-> **The two Fit buttons do not propose the same distance.** The console leaves
-> **0.15 m** in front of the band and the tox leaves **0.25 m**, and the tox's
-> figure was chosen because the console's left 300 to 600 wall points behind in
-> simulation, where 0.3 m cleared them. So the console's proposal is the one to
-> push back by hand; 0.2 to 0.3 m is the target on both sides.
+Both Fit buttons leave the same **0.25 m** in front of the band. The console
+used 0.15 m until 10 November, which left 300 to 600 backdrop points inside the
+cut in simulation, so it moved to the tox's figure rather than the other way
+round.
 
 **Where it sits is the part that makes it worth doing.** The cut runs before
 everything that learns. A point outside it never becomes an engine voxel, so
@@ -321,6 +318,7 @@ differences that will catch somebody who sets one from the other.
 | Floor default | `Floorcut` 0.06, so the floor is already cut | `stageYlo` -0.6, so the floor is kept until you raise it |
 | The box in x | `Cropmin` and `Cropmax`, a corner each | `stageX`, a half-width, so it is symmetric about the origin |
 | Who it feeds | The visuals | `/track`, the field stream, NDI, the Live view |
+| **Fit with the cut already on** | **Refuses** and changes nothing, logging *"turn Backdrop Wall Cut off first: the cut hides the wall it fits to"* | **Fits anyway**, and correctly: the view keeps every point of the frame whether the cut took it or not, so the backdrop is still there to find and pressing it again gives the same answer rather than walking the plane inward |
 
 **Nothing is pushed between them.** Setting one does not set the other, which
 is the two-pipeline split again, and with two wall planes now drawable it is
