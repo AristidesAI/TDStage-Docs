@@ -33,6 +33,7 @@ flowchart TD
 |---|---|
 | [Preparing a phone](phone-preparation.html) | Everything that must happen before a phone reaches a venue, and why it cannot wait. |
 | [Rig get-in](get-in.html) | Building the rig in the order that avoids rework. |
+| [Getting the room out of the cloud](background.html) | The floor, the walls and the truss, and the two separate sets of controls that remove them. |
 | [Stroud: the plan](stroud.html) | The November venue's own numbers: where each phone and marker goes, and how to set it out with a tape. |
 | [When something fails](failure.html) | What recovers by itself, what you do, and what has no fallback. Start at the triage tree. |
 | [Evidence and claims](evidence.html) | How to produce a number you can defend, and what not to claim. |
