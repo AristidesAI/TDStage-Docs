@@ -484,3 +484,25 @@ the tox's code.
 Run `python WebConsole/doctor.py` before believing any machine is ready. It
 checks the worker interpreter rather than the one you are standing in, which is
 the distinction that catches most of this.
+
+---
+
+## Third-party code this project carries
+
+Most of what the system depends on is installed rather than copied, and the
+tables above name those packages. One piece is **carried in the repository**,
+and that one needs its attribution stated rather than implied.
+
+| What | Whose | Licence | Where |
+|---|---|---|---|
+| The Open3D registration worker, FPFH and RANSAC global registration run repeatedly with a medoid taken across runs | Darien Brito's [TDXDepthCamMerger](https://github.com/DarienBrito/TDXDepthCamMerger) | MIT, Copyright (c) 2021 Darien | `TD/newtox/o3d_worker.py`, kept unchanged, with the licence beside it as `o3d_LICENSE_TDXDepthCamMerger.md` |
+
+The method is used as published. The files around it, the alignment solvers
+and the pose conversion, are this project's own and follow that project's
+principles rather than its code: [aligning from the
+clouds](../operations/get-in.html#aligning-from-the-clouds-instead) explains
+what each does.
+
+The rest of the stack is used through its normal distribution: Open3D,
+ultralytics, MediaPipe, PyTorch, NumPy and the others in the tables above, each
+under its own licence, none of them vendored here.
