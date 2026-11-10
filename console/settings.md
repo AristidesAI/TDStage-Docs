@@ -192,6 +192,43 @@ window in the `tracking` group. Both deliberately publish zero performers
 rather than the raw room until the background is mature and has settled. Read
 the tracking side from `GET /api/settings`, not from this page.
 
+### `matureFrac` in a room the stage does not fill
+
+The default of 0.15 assumes the learned background eventually covers a decent
+share of the voxels in the stage box. **In a room where the playing area is a
+small part of the volume, it may never comfortably clear that line**, and then
+the gate flickers: the tracker publishes performers while the ratio is above
+0.15 and goes silent whenever it dips, with people plainly in view.
+
+Reported from a studio test on 2026-11-06, two phones, one take with two people
+replayed six times on a test copy of the console after two settling passes:
+
+| `matureFrac` | Frames with no track | Frames with two | Polls mature |
+|---|---|---|---|
+| 0.15, the default | 63 to 66 % | 10 to 11 % | about 42 % |
+| 0.05 | about 1 % | 53 to 57 % | about 99 % |
+
+The learned ratio in that room sat between about 0.13 and 0.20, which is why
+the default landed on the line rather than above or below it. Identity losses
+were about the same at both values, one or two a run, so this moves whether the
+tracker publishes at all rather than how well it holds people.
+
+{: .warning }
+> **Lowering it has not been tested for false bodies on an empty stage**, which
+> is the failure it protects against: a less mature background means more of
+> the raw room can be read as a performer. The same runs showed `/track` rows
+> arriving about 15 per cent slower at 0.05, around 23 a second against 27,
+> which is also unexplained.
+>
+> So treat a lower value as a room-by-room measurement, not a better default.
+> Measure it the way that test did: replay one take at each value, and include
+> thirty seconds of empty stage at each.
+
+The F1 presence channel is a useful cross-check here, because it does not pass
+through this gate. On that same take, presence reported two people in about 70
+to 85 per cent of messages while `/track` was silent, which is how the test
+established that the silence was specific to `/track`.
+
 ## vision (18 keys)
 
 The person segmentation backends. YOLO is primary when it is available; Apple
