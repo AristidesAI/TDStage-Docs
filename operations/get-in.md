@@ -584,6 +584,11 @@ Write down what the rig is as built, rather than as planned:
 - The addressing scheme used.
 - The printed marker size.
 - Anything that differs from the plan, and why.
+- **On Windows, the show PC's display language**, and the raw output of
+  `arp -a -N <adapter IP>` with a phone plugged into the cable. The cable
+  detection reads that table, has never run against a phone on Windows, and
+  has already been found wrong once on a non-English installation
+  ([the dependency list](../reference/dependencies.html#2-usb-and-wired-transmission)).
 
 The next person at this venue is possibly you, six weeks later, with no
 memory of any of it.

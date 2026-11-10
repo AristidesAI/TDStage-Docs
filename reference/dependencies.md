@@ -264,7 +264,27 @@ daemon and no tunnelling software anywhere in the path.
 | Both ends | A self-assigned `169.254.x.x` link-local address, because there is no DHCP server on a two-device cable. | Normal IPv4 link-local autoconfiguration. |
 | iOS app | Chooses which interface the stream leaves on, and pins it. | `TDStage/Net/WiredLink.swift`, used by `PointCloudUDPStreamer.swift` and `OSCClient.swift` |
 | Console | Finds the cable by looking for an interface with a link-local address that has a link-local neighbour in the ARP table. | `WebConsole/server.py` `usb_link()` on macOS, `WebConsole/xplat.py` `usb_link()` elsewhere |
+| | **Windows, see the warning below** | |
 | PoE rig | A PoE adapter into the phone's USB-C port, powering the phone and giving it Ethernet from the switch. | Hardware. Not software at all. |
+
+{: .warning }
+> **On a show PC that is not in English, the Windows side could not find a
+> cable phone at all**, and nothing said so: the phone simply never appeared on
+> a cable. The ARP table was filtered on its type column reading the literal
+> word `dynamic`, and Windows translates it, to `dynamisch` on a German
+> installation and `dynamique` on a French one.
+>
+> Fixed on the branch `test/xplat-usb`, landing with the batch on 12 November
+> 2026: the type column is no longer read at all, and the two entries that
+> have to be excluded are excluded by what they are instead, the adapter's own
+> broadcast by its `.255` address and `ff-ff-ff-ff-ff-ff` MAC, and an
+> unanswered entry by its all-zero MAC. The cross-platform self-test now drives
+> the Windows path with a faked ARP table, including a German one, and the
+> Windows CI job runs it.
+>
+> **The Windows cable path has still never run against a real phone**, in
+> English or any other language. The fix removes a defect that was found by
+> reading; it does not constitute evidence that the path works.
 
 ### What is explicitly not needed
 
