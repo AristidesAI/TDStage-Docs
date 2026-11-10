@@ -249,7 +249,7 @@ Pre-roll applies to the next start, and the restart toggle to the next stop.
 ## PLAYBACK NETWORK
 
 A replay goes down the same socket, over UDP, to the same destination as the
-live stream. That identity is the whole point of replaying from the phone
+live stream. That identity is why a replay goes out from the phone
 rather than from a computer. This panel exists so you can see it is true, and
 override it deliberately without touching the live configuration a show depends
 on.

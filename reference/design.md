@@ -54,9 +54,9 @@ frame with a missing packet, and let the next frame fix it.** The phone
 splits each frame into numbered packets and the receiver reassembles them by
 frame id. If any packet is missing, the receiver discards the whole frame.
 
-A depth-and-confidence frame is around 150 KB at the simulator's 256×192 grid
-and around 230 KB at the 320×240 a real phone sends, and a safe datagram is
-1472 bytes, so a frame is 100 to 160 packets. The app has to split frames itself
+A depth-and-confidence frame is around 150 KB at the 256×192 grid the rig
+sends and around 230 KB at the 320×240 the parked AVFoundation app takes on a
+17 Pro, and a safe datagram is 1472 bytes, so a frame is 100 to 160 packets. The app has to split frames itself
 (application-layer fragmentation), which is what video-over-IP protocols do too.
 
 **There is therefore no TCP mode and no TCP fallback.** Any TCP you find in
@@ -98,19 +98,20 @@ Its figures are **arithmetic from the transport spec** (cell count times bytes
 times frame rate), not measurements. The measured transport numbers are at the
 bottom of this page.
 
-| What is sent | Bytes per cell | Eight phones at 256×192 | **Eight phones at 320×240** | On the wire, framed | Share |
+| What is sent | Bytes per cell | **Eight phones at 256×192, the rig's grid** | Eight at 320×240 | That column on the wire, framed | Share of a gigabit link |
 |---|---:|---:|---:|---:|---:|
-| Coordinates and colour, unprojected on the phone | 15 | 1,416 Mbit/s | **2,212 Mbit/s** | Not applicable | 235 per cent. Does not fit. |
-| Depth, confidence and colour as a grid | 6 | 566 Mbit/s | **885 Mbit/s** | **937 Mbit/s** | 94 per cent of a gigabit link, 37 per cent of the 2.5 Gbit/s the show uses |
-| **Depth and confidence as a grid (the show setting)** | 3 | 283 Mbit/s | **442 Mbit/s** | 469 Mbit/s | 47 per cent |
-| Depth alone as a grid | 2 | 189 Mbit/s | **295 Mbit/s** | 313 Mbit/s | 31 per cent |
+| Coordinates and colour, unprojected on the phone | 15 | **1,416 Mbit/s** | 2,212 Mbit/s | Not applicable | 151 per cent at 256×192. Does not fit either way |
+| **Depth, confidence and colour as a grid** | 6 | **566 Mbit/s** | 885 Mbit/s | 937 Mbit/s at 320×240, about 600 at 256×192 | **60 per cent at the rig's grid**, 94 per cent at 320×240 |
+| Depth and confidence as a grid | 3 | **283 Mbit/s** | 442 Mbit/s | 469 Mbit/s at 320×240 | 30 per cent at the rig's grid |
+| Depth alone as a grid | 2 | **189 Mbit/s** | 295 Mbit/s | 313 Mbit/s at 320×240 | 20 per cent at the rig's grid |
 
-The **Eight phones at 320×240** column and the **On the wire, framed** column are two **bases**, and saying which one a figure uses
-avoids an argument later. The 320×240 column is payload at the IP layer: cells × bytes ×
-frame rate, compared against the roughly 940 Mbit/s a gigabit link carries once
-its own overhead is taken out. The framed column adds what Ethernet charges per
-packet (38 bytes of preamble, header, checksum and inter-frame gap, plus the
-UDP, IP and TDP4 headers) and compares against the full 1,000 Mbit/s line rate.
+The grid columns and the framed column are two **bases**, and saying which one
+a figure uses avoids an argument later. A grid column is payload at the IP
+layer: cells × bytes × frame rate, compared against the roughly 940 Mbit/s a
+gigabit link carries once its own overhead is taken out. The framed column adds
+what Ethernet charges per packet (38 bytes of preamble, header, checksum and
+inter-frame gap, plus the UDP, IP and TDP4 headers) and compares against the
+full 1,000 Mbit/s line rate.
 
 They agree to within half a percentage point, which is the useful part: the
 conclusion does not depend on which basis you pick. For a claim about whether
@@ -120,11 +121,12 @@ what the cable carries.
 The first row does not fit on a gigabit network at all, which is the argument
 for sending a grid. The chosen row fits twice over.
 
-The second row is the one that changed character when the grid did. At
-256×192, colour on a full rig looked like a 60 per cent load, which is a
-decision about taste. At 320×240 it is 937 Mbit/s of framed traffic on a
-1,000 Mbit/s line, which is not a decision anyone should take during a show. **Colour is for three
-phones and for measurement, not for eight phones live.**
+The second row is the one that changes character with the grid, and the grid
+changed twice. At 320×240 it is 937 Mbit/s of framed traffic on a 1,000 Mbit/s
+line, which is not a load to carry into a show, and that is the figure the
+2.5 GbE decision was taken on. At the 256×192 the rig now sends it is about
+600 Mbit/s, a 60 per cent load, and **colour from all eight phones fits a
+gigabit link**. Stroud runs ARKit on every phone, decided 10 November.
 
 Two ceilings could bind, the receiving software or the link, and it is now
 settled that the link does. A load test on 2026-10-27 took the receiving

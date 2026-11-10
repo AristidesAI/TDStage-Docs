@@ -68,7 +68,7 @@ decision was taken to live with that rather than move to the App Store or
 Apple Business Manager: the apps stay on TestFlight, **re-uploaded about every
 80 days**, through to the premiere in April 2027 ([#16](https://github.com/AristidesAI/TDStage/issues/16)).
 
-Eighty rather than ninety is the whole point of the decision. It leaves ten
+Eighty rather than ninety is where the decision earns its keep. It leaves ten
 days of margin, so a build that fails review, an expired certificate or a week
 when nobody is free does not land on a show date.
 

@@ -14,7 +14,7 @@ phone that needs an App Store sign-in, a software update or a permission tap
 at a get-in is a phone that is not in the show. Several of the steps below
 cannot be done remotely at all.
 
-## The split that is the whole point of this page
+## The split this page is built around
 
 You can only do some of this where there is internet and a person holding
 the phone. The rest you can do at a venue, from the console, with the phone

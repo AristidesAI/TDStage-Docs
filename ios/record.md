@@ -169,7 +169,7 @@ step runs behind them because the queue is FIFO. The take therefore ends
 exactly where the operator ended it, rather than one frame short.
 
 Only a hard stop, the disk floor or a write error, clears the second flag as
-well, because there the whole point is to stop touching the disk now.
+well, because there the aim is to stop touching the disk now.
 
 ---
 
@@ -230,15 +230,20 @@ Those are payload at the IP layer. Adding what Ethernet charges per packet
 makes them 313, 469 and 937 Mbit/s against a 1,000 Mbit/s line, which is the
 basis to use for a claim about fitting on a cable.
 
-Either way: eight phones on `depth+conf` is about 47 per cent of a gigabit
-link, and eight on `+conf+rgb` is 94 per cent of one.
+At this grid, eight phones on `depth+conf` is about 47 per cent of a gigabit
+link and eight on `+conf+rgb` is 94 per cent of one.
 
-**That is why the show is not planned on a gigabit link.** The decision of
-2026-10-30 ([#42](https://github.com/AristidesAI/TDStage/issues/42)) is a 2.5 gigabit link (a switch with a 2.5G uplink
-and a 2.5G card in the show machine) with **colour from every phone**. The
-hardware is still on the order list and the receive test through a real card
-is open; rehearsals on the gigabit switch meanwhile run colour on three phones.
-The same 937 Mbit/s is 37 per cent of a 2.5 gigabit link, which is headroom.
+**That is the arithmetic the 2.5 gigabit decision was taken on**, on
+2026-10-30 ([#42](https://github.com/AristidesAI/TDStage/issues/42)): a switch
+with a 2.5G uplink and a 2.5G card in the show machine, with **colour from
+every phone**, where the same 937 Mbit/s is 37 per cent and comfortable.
+
+**It reads differently at the grid the rig now sends.** TDStage AR captures at
+256×192, where eight colour phones are about 600 Mbit/s, 60 per cent of a
+gigabit link, and Stroud was decided on 10 November to run ARKit on every
+phone. So colour on all eight fits a gigabit link, and the 2.5G hardware is not
+needed for bandwidth at that grid. It is still needed if the show ever runs the
+AVFoundation path, ARKit at 60 fps, or more than about nine colour phones.
 
 The receiving software was never the constraint: the bridge has been measured
 to 114,500 packets per second and eight colour phones offer 76,300 (**measured,

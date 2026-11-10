@@ -293,7 +293,7 @@ the script and the tools it runs at that console (`f1_probe` still reads
 ```
 python3 WebConsole/server.py --http 9480 --listen 9490 --tdp4-port 9493 \
     --sim-port 9494 --f1-port 0 --config /tmp/x/config.json   # {"td": {"enabled": false}}
-python3 TD/newtox/tdp4_sim.py 127.0.0.1 9493 900 --devices 3 --first-id 1 --grid 320x240
+python3 TD/newtox/tdp4_sim.py 127.0.0.1 9493 900 --devices 3 --first-id 1 --grid 256x192
 curl -X POST -d '{"push":true}' localhost:9480/api/td            # check the seed poses
 yes '' | TDSTAGE_CONSOLE=http://127.0.0.1:9480 python3 Tools/phone_session.py --out /tmp/x/s
 ```
