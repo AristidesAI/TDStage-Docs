@@ -105,11 +105,13 @@ ceiling.** Keep the difference in mind, because a number quoted as a limit tends
 to become one in people's planning.
 
 {: .note }
-**The link was the limit, so the link changed.** Eight
-phones with colour is 937 Mbit/s of framed traffic, which is 94 per cent of a
-gigabit line and 37 per cent of the 2.5 Gbit/s the show now runs: a switch with
-a 2.5G uplink and a 2.5G card in the show machine, decided 2026-10-30
-([#42](https://github.com/AristidesAI/TDStage/issues/42)). Every phone sends colour.
+**At the parked app's 320×240, the link was the limit.** Eight phones with
+colour is 937 Mbit/s of framed traffic there, 94 per cent of a gigabit line,
+which is what the 2.5 GbE decision of 2026-10-30 was taken on
+([#42](https://github.com/AristidesAI/TDStage/issues/42)). **The rig runs
+ARKit at 256×192 and is gigabit.** Eight colour phones are about 600 Mbit/s,
+60 per cent of the line, and the switch named for Stroud has no 2.5G port, so
+no faster link is coming.
 
 The bridge figures were measured over loopback, which skips a real network
 card's receive path and the switch. The software half is proven; the

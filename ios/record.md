@@ -215,23 +215,26 @@ plane does not already carry as NaN. The ARKit sibling supplies a real per-cell
 confidence, and there the plane means what its name says. Cost `depth+conf` on
 this app knowing that the extra 18 Mbit/s a phone buys a validity mask.
 
-Wire cost per phone, **calculated from the wire format** at 30 fps and the
-**320×240** grid this app takes on an iPhone 17 Pro. TDStage AR, the app the
-rig deploys, sends 256×192 and so costs about a third less; its figures are in
-the note below.
+Wire cost per phone, **calculated from the wire format** at 30 fps. The left
+figures are **256×192, which is what TDStage AR sends on every LiDAR iPhone**
+and so what the rig costs. The right ones are the 320×240 the parked
+AVFoundation app takes on a 17 Pro, which is a fallback and is not what Stroud
+runs.
 
-| Plane set | Bytes per frame | Per phone | Eight phones |
-|---|---|---|---|
-| depth | 153 720 | 36.9 Mbit/s | 295 Mbit/s |
-| depth+conf | 230 520 | 55.3 Mbit/s | 442 Mbit/s |
-| depth+conf+rgb | 460 920 | 110.6 Mbit/s | 885 Mbit/s |
+| Plane set | Bytes per frame | **Per phone, 256×192** | **Eight phones** | Per phone, 320×240 | Eight phones |
+|---|---|---|---|---|---|
+| depth | 98 424 at 256×192 | **23.6 Mbit/s** | **189 Mbit/s** | 36.9 Mbit/s | 295 Mbit/s |
+| depth+conf | 147 576 | **35.4 Mbit/s** | **283 Mbit/s** | 55.3 Mbit/s | 442 Mbit/s |
+| depth+conf+rgb | 295 032 | **70.8 Mbit/s** | **566 Mbit/s** | 110.6 Mbit/s | 885 Mbit/s |
 
 Those are payload at the IP layer. Adding what Ethernet charges per packet
-makes them 313, 469 and 937 Mbit/s against a 1,000 Mbit/s line, which is the
-basis to use for a claim about fitting on a cable.
+makes the eight-phone figures about 200, 300 and 600 Mbit/s at the rig's grid,
+and 313, 469 and 937 at the other, against a 1,000 Mbit/s line. The framed
+number is the one to use for a claim about fitting on a cable.
 
-At this grid, eight phones on `depth+conf` is about 47 per cent of a gigabit
-link and eight on `+conf+rgb` is 94 per cent of one.
+**So at the grid the rig sends, eight phones with colour are about 60 per cent
+of a gigabit link**, and eight on depth and confidence about 30 per cent. At
+320×240 the same two are 94 and 47 per cent.
 
 **That is the arithmetic the 2.5 gigabit decision was taken on**, on
 2026-10-30 ([#42](https://github.com/AristidesAI/TDStage/issues/42)): a switch
@@ -267,13 +270,16 @@ are the figures to plan with, and this page's 320×240 column applies only to
 the parked AVFoundation app.
 
 {: .note }
-**There is no longer a Depth grid picker.** It was removed on 2026-10-27,
-because the format selector in the capture code accepted the target and
-deliberately ignored it: the phone captures and sends whatever its own camera
-format gives, whatever the picker said. A control that does nothing is worse
-than no control, because it gets planned against. The key still exists, is
-reported in telemetry and rides in a profile, but it is not a bandwidth or
-thermal lever.
+**There is no longer a Depth grid picker.** It sat on this page, the RECORD
+page, and was removed on 2026-10-27, because the format selector in the capture
+code accepted the target and deliberately ignored it on **both** capture paths:
+the phone captured and sent whatever its own path gave, whatever the picker
+said. A control that does nothing is worse than no control, because it gets
+planned against. The key still exists, is reported in telemetry and rides in a
+profile, but it is not a bandwidth or thermal lever.
+
+A build from before that date still shows the picker, and it did nothing there
+either. TestFlight 1.1 (4) does not have it.
 
 What you get instead is the smallest float depth format the camera offers,
 which is **320×240 on an iPhone 17 Pro**. On this app it is not 256×192 by

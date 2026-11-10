@@ -95,14 +95,22 @@ Archive) reports no date and never warns.
 
 ### What is on TestFlight now, and what testers actually have
 
-| | TDStage AR |
-|---|---|
-| On TestFlight | **1.1 (4)**, uploaded 2026-11-03 08:35Z |
-| Stops launching | about **2027-02-01** |
-| Built by | an Xcode Organizer archive, not `Support/testflight.sh` |
-| Build stamps | **empty**, so the console's expiry warning cannot fire for it ([#56](https://github.com/AristidesAI/TDStage/issues/56)) |
-| Contains | the [#49](https://github.com/AristidesAI/TDStage/issues/49) relaunch fix's code, read from the uploaded archive's dSYM |
-| What the rig's own phones run | a **Debug 1.2 (5)**, installed directly with `devicectl` on 2026-11-07, never through TestFlight |
+| Build | Uploaded | Stops launching | Who has it |
+|---|---|---|---|
+| **1.0 (3)** | 2026-10-27 | about **2027-01-25** | The testers' phones. This is what is installed at the client today |
+| **1.1 (4)** | 2026-11-03 08:35Z | about **2027-02-01** | Nobody yet. Submitted to the testers' group for beta review on 10 November |
+| **1.2 (5)**, Debug | not uploaded | n/a | The rig's own phones, installed directly with `devicectl` on 2026-11-07 |
+
+**Apple's 90 days run per build, from that build's upload**, so each one has
+its own clock and a newer build does not extend an older one. 1.0 (3) expires
+inside the Stockholm rehearsals, which is the date to work back from.
+
+Two things about 1.1 (4) worth carrying: it was built by an Xcode Organizer
+archive rather than `Support/testflight.sh`, so its **build stamps are empty**
+and the console's expiry warning cannot fire for it
+([#56](https://github.com/AristidesAI/TDStage/issues/56)); and its dSYM shows
+it does contain the [#49](https://github.com/AristidesAI/TDStage/issues/49)
+relaunch fix. A stamped build is expected on 12 November.
 
 {: .warning }
 > **An uploaded build is not a build anybody has.** A build appears in App

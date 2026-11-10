@@ -140,14 +140,19 @@ So the constraint is 937 Mbit/s of framed traffic on a 1,000 Mbit/s line, with
 nothing left for a burst. That is a cabling decision rather than a software
 one, and on 2026-10-30 it was taken.
 
-### The decision: a faster link, not less colour
+### The decision of 30 October, and where it stands
 
-**The show is to run 2.5 gigabit** (a switch with a 2.5G uplink and a 2.5G card in
-the show machine) and **every phone sends colour** ([#42](https://github.com/AristidesAI/TDStage/issues/42)).
-The hardware is not in yet: the switch named for Stroud on 2026-11-03 (a GS316EPP)
-has gigabit ports and no 2.5G port, so six colour phones fit on it at about 70 per
-cent and eight do not. Until the 2.5G link exists, rehearsals on a gigabit switch
-run colour on three phones.
+On 2026-10-30 the answer was **a faster link rather than less colour**: a
+switch with a 2.5G uplink and a 2.5G card in the show machine, with every
+phone sending colour ([#42](https://github.com/AristidesAI/TDStage/issues/42)).
+
+{: .warning }
+> **The rig is gigabit, and is expected to stay gigabit.** The switch named for
+> Stroud, a Netgear GS316EPP, has gigabit ports and **no 2.5G port at all**, so
+> the show machine's link is 1 GbE whatever card is in it, and no 2.5G hardware
+> has been bought. Two things make that workable rather than a compromise: the
+> rig runs ARKit, where eight colour phones are about 600 Mbit/s, and the
+> figures below that make 2.5G look necessary are the parked app's grid.
 
 Eight colour phones on a 2.5 Gbit/s link is 937 of 2,500 Mbit/s: **37 per
 cent**, which is headroom rather than a tightrope. Every alternative bought the

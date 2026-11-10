@@ -119,8 +119,22 @@ a cell jumps by far more than that and goes out on time.
 **The model wants an upright person.** That is a property of Apple's
 segmentation, not of this app, and it is why `persononly` is off by default.
 For an act with an inverted or sideways performer, a cyr wheel among them,
-leave it off and let the receiver do the isolation from geometry, where being
-upside down costs nothing.
+leave it off, so the phone streams the body whatever its orientation.
+
+{: .warning }
+> **Leaving it off does not make the rest of the system orientation-blind.**
+> It takes the phone out of the argument, and no further. Downstream, the
+> depth path does not care which way up a body is: TouchDesigner's cloud and
+> the geometric half of `/track` work from shape alone. Anything that reads
+> the **person model** still misses an inverted body. A rotation proxy run by
+> the client's team found about **22 per cent** of the upright detection rate
+> at 180 degrees and about 4 per cent at 90, and F1 presence drops those
+> bodies with it.
+>
+> So an act with an inverted performer wants the geometry path to carry the
+> tracking, and should not plan on the model, the hands or presence for those
+> moments. More phones do not fix it, because the failure is the body rather
+> than the view.
 
 Feeding the segmenter a rotated frame is possible on the AVFoundation path,
 which carries the rotation explicitly, but only two rotations exist there:
