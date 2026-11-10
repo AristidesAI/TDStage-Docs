@@ -215,7 +215,7 @@ that would be lost.
 Loading those five and saving the next numbered tox is what clears it. Until
 then, a result of 5 differ is the expected one and does not mean something has
 gone wrong. But the Windows fix in `clib` is only in the tox once that is
-done, which matters for the show machine.
+done, and the show machine is where that one counts.
 
 ### Hot-swapping a module DAT in a running tox
 

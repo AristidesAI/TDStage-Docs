@@ -176,8 +176,8 @@ dead hub port shows up.
 one app and recovers to that app after a reboot. An unsupervised phone needs
 a person to walk to the stand and tap the screen.
 
-This matters more than it sounds. A powered Ethernet switch can cut power to
-a phone, but **it cannot reboot a phone back into the app**. Without
+A powered Ethernet switch can cut power to a phone, but **it cannot reboot a
+phone back into the app**. Without
 supervision, any phone that restarts is out of the show until someone
 physically reaches it, which during a performance may be never.
 

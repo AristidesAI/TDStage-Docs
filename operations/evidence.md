@@ -260,9 +260,8 @@ sweeps.
 
 A measurement session is where good intentions turn into a notebook nobody
 can read three weeks later, so the session is scripted end to end. The
-scripting matters more than it sounds, because **the script reads the numbers
-out of the console rather than leaving whoever is holding the phone to type
-them in.**
+scripting buys one specific thing: **the script reads the numbers out of the
+console rather than leaving whoever is holding the phone to type them in.**
 
 ```mermaid
 flowchart LR

@@ -40,8 +40,8 @@ say what shape the data takes.
 
 Read the last two rows twice. A video stream of the cloud is an image and is
 only ever an image. A video codec throws away detail the eye will not miss,
-and a depth value is not a pixel. The reasons are in
-[Ports and topology](ports.html) under what must never carry depth. The point
+and a depth value is not a pixel. [Ports and topology](ports.html) sets this
+out under what must never carry depth. The point
 values that can be had from outside are the console's merged points, on the
 two opt-in channels in the table; TouchDesigner's own cloud is not exposed.
 

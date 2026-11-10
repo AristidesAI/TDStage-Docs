@@ -452,7 +452,7 @@ is a decision rather than a fix, and it is not needed at these numbers.
 on the Motion background engine row comes from the live engine, so a console
 started before this change still reports the old cost until it is restarted.
 
-That matters when choosing `segTick`, because the engine period is the dominant
+Take that into account when choosing `segTick`: the engine period is the dominant
 server side latency lever: `/track` does not re-segment, it filters the
 **current** cloud against the foreground set the engine published on its **last**
 tick. A period shorter than the work takes makes the engine late every tick,

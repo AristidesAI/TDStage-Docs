@@ -41,11 +41,10 @@ is smaller but deeper, so the two shapes need a similar count for different
 reasons. At three phones, the same plan leaves most of that area seen by one
 phone or by none.
 
-{: .warning }
-> **The range is the weak number here.** The project plans on 4.5 m of usable
-> body range and **has not measured it on a person**. The range walk is the
-> scenario that measures it. If the real figure is shorter, the footprints
-> above shrink and the count goes up.
+Every one of those footprints rests on a range of 4.5 m that the project plans
+on and **has not measured on a person**. The range walk is the scenario that
+measures it, and if the real figure comes in shorter, the footprints shrink and
+the count goes up.
 
 The honest way to answer this for a real venue is to run the search on its
 actual plan. `Tools/room_plan.py` looks for the positions, heights, pitch and
@@ -83,11 +82,11 @@ builds nothing on it.
 
 {: .note }
 > **Two range figures appear in our material and they measure different
-> things.** Ranging, meaning whether the sensor returns a depth at all, is taken as
-> trustworthy to about 5 to 6 m. The 4.5 m above is the *usable body* figure
-> the coverage model plans on, which is the stricter of the two and the right
-> one for deciding where a phone stands. Neither has been measured on a person
-> at distance yet.
+> things.** Ranging, meaning whether the sensor returns a depth at all, is taken
+> as trustworthy to about 5 to 6 m. The 4.5 m used above is the *usable body*
+> figure the coverage model plans on. It is the stricter of the two and the one
+> to place phones by, and as said there, neither has been measured on a person
+> at distance.
 
 ## Can the array cope when performers cluster?
 

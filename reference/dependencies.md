@@ -401,8 +401,8 @@ with the system `pip`, or into the console's virtualenv, is not importable from
 a DAT. Probed on this machine, the bundled interpreter has `numpy` and `cv2` and
 does **not** have `lz4`, `mcap` or `scipy`.
 
-That matters for two things in particular. Reading a version 1 take needs
-`lz4`, and exporting to MCAP needs `mcap`. Neither runs inside TouchDesigner.
+Two things in particular depend on it. Reading a version 1 take needs `lz4`,
+and exporting to MCAP needs `mcap`. Neither runs inside TouchDesigner.
 Both are host-side tools under `TD/newtox/`, run from the console's
 interpreter, which is why those packages sit in the console's requirements file
 rather than being a TouchDesigner concern.

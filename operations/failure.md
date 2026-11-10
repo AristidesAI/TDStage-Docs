@@ -154,7 +154,7 @@ those builds, after any relaunch during a show, press **Blackout all** again,
 or the audience sees the phone before you do. Which build a phone actually has
 is on the [install page](../ios/install.html).
 
-That qualifier matters. Auto-recover is off on a fresh console (a restart
+Read that qualifier. Auto-recover is off on a fresh console (a restart
 restores whatever state was saved), and **Start all does not arm it**. Only Start show arms it, and Standby and Stop
 disarm it again. A rig started with Start all has no safety net, which is a
 reasonable choice and a bad surprise.

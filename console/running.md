@@ -325,7 +325,7 @@ console started for a measurement moved phones 1 to 6 in the live tox. The same
 argument covers the client bus. A copy of the show's configuration should not
 start publishing tracking data over the top of the show.
 
-The port half matters more than it looks. A worktree started the usual way
+The port half does the real work here. A worktree started the usual way
 beside the show console cannot have 9080, because the show console already
 holds it, so it is marked as a test instance without anyone remembering a flag.
 
