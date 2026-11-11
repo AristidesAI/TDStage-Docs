@@ -316,7 +316,7 @@ to remember and one firewall rule per direction.
 | `--sim-port PORT` | `9013` | A second TDP4 listener the console always owns. The built in simulator is aimed at it. A real phone can be pointed here when TD is not in the loop. | Rarely. Change it only to avoid a clash, and then set the fan out's second target to match. |
 | `--f1-port PORT` | `9001` | The F1 0.4 draft WebSocket (SMSF, SMSP, SMSS). **TCP**, so it coexists with a UDP `--listen 9001`. `0` turns it off. | `0` when no client machine is consuming it. |
 | `--f1-hz RATE` | not set | Pins the rate of the F1 field for this run. Left alone, the setting `f1.rateHz` holds the rate instead, 15 Hz, and can be changed while the console runs; the flag wins over it when given. | Only if the client asks for a different rate and you want it pinned past a settings change. |
-| `--priority below` | `normal` | Runs the console and the YOLO worker it starts at a lower CPU priority, so TouchDesigner on the same machine wins when the two compete. `TDSTAGE_PRIORITY=below` in the environment does the same, which is how `show.bat` can set it. | On a laptop running the console beside TouchDesigner. Not on the show PC, where the console has the machine to itself. |
+| `--priority below` | `normal`, or `TDSTAGE_PRIORITY` | Runs the console at a lower CPU priority so TouchDesigner wins when the two compete; the keypoint worker it starts inherits it. `TDSTAGE_PRIORITY=below` set before `run.bat` does the same (`run.bat` holds the default, and `show.bat` calls it). The console prints which it got, including **`could not be lowered (no psutil on Windows?)`** - on Windows the lower priority needs psutil, and without it nothing happens except that line. | On a laptop running the console beside TouchDesigner. Not on the show PC, where the console has the machine to itself. |
 | `--config PATH` | `config.json` beside `server.py` | The config file to load and save. Phone profiles move with it, into a `profiles` folder beside it. **Also marks this a test instance**, so the TouchDesigner link and the client outputs start off. | Always, when you run a second instance for a test or a measurement. |
 | `--td-link` | off for a test instance, on otherwise | Lets a test instance drive TouchDesigner: push poses, own the registration table. | Only when a second instance is deliberately taking over TD from the show console. |
 | `--client-out` | off for a test instance, on otherwise | Lets a test instance send `/track` and publish NDI. | Only when a second instance is deliberately taking over the client bus. |
@@ -400,8 +400,9 @@ phones and 7.5 each at eight, and lite's 30 is 10 each at three and under 4 at
 eight. On a big rig lite is a much deeper cut than it looks.
 
 **`/track` stays at 30 Hz in every mode**, with the same performer counts.
-What lite costs is the hand messages, the field rate, and 5 to 14 ms of
-`/track` latency from the slower engine tick. It also doubles the Live view's
+What lite costs is the hand messages, the field rate, and **7.5 to 14 ms of
+`/track` latency at the median** from the slower engine tick - 14 ms of it at
+three phones, 7.5 at eight, where there was more latency to begin with. It also doubles the Live view's
 admit debounce to 0.2 s, because that is counted in engine ticks. Background
 learning is in seconds and does not change.
 
@@ -433,8 +434,8 @@ buttons, which reports the console's CPU, the keypoint worker's, and the
 milliseconds each part is taking. Step down a mode if the console sits above
 about two cores, or if the keypoint worker starts restarting on a loaded GPU.
 
-**The single biggest cost is a field-stream client**, about half a core at
-eight phones. If the system on the other end only needs presence rather than
+**The single biggest cost is a field-stream client**: about 40 to 60 per cent
+of a core at eight phones, around 45 ms of work a tick. If the system on the other end only needs presence rather than
 the occupied-space field, it should connect asking for presence only: while
 every connected client has asked for that, the field is not built at all. One
 ordinary client alongside it and the saving goes away, because the field still
@@ -457,8 +458,10 @@ has to be built for them. See
 >
 > One run of balanced at three phones showed a fourth performer in 23 per cent
 > of bundles, with three walkers on the stage. It was **seen once, not
-> reproduced** - a repeat gave 1 bundle in 1,160, and the eight-phone run gave
-> none - and **the cause was not found**. The keypoint budget never engaged on
+> reproduced** - a repeat of the same mode gave 1 bundle in 1,160, with the
+> console at 76 per cent of a core and `/track` at 28.5 ms p50, and the
+> eight-phone run gave none - and **the cause was not found**. Somebody is
+> still trying to reproduce it. The keypoint budget never engaged on
 > that machine, so the preset has no obvious mechanism for it, which is an
 > argument and not an explanation. If you see a performer who is not there in
 > balanced, that is a known unexplained observation, not a new fault: say so,

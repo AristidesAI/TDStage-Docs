@@ -416,6 +416,35 @@ The status line reports the vision mask ages and coverage per phone, the motion
 engine's foreground voxels, clusters and background size, and in consensus mode
 the voters, how many candidate voxels were kept, and how many were seen through.
 
+Below the mode buttons sit the one-step presets.
+
+**Cyr wheel (arm B)** is the inverted-performer preset, described with its
+seven settings on [Settings reference](settings.html#the-cyr-preset).
+
+**Full / Balanced / Lite** are the performance presets, in their own row with
+a status line under them. Balanced and Lite each ask before applying and say
+what they set; Full asks too, and puts every setting the applied preset changed
+back to the value it had before. The button for the mode in force is disabled,
+and an applied preset's button is highlighted. Hovering a button lists the
+exact settings it moves. The seven keys each one moves, and what they cost on a
+Mac with simulated phones, are on
+[Settings reference](settings.html#the-performance-presets) and
+[Running the console](running.html#performance-modes).
+
+**The load line** under the buttons has the shape `Mode lite: console 53 %
+CPU, YOLO worker 49 %, YOLO 12 ms a frame, engine 20 ms, F1 42 ms at 10 Hz
+(% of one core, 18 cores)` (the shape is from the code; the values here are
+illustrative, not a measurement). Console and worker CPU are per cent of one
+core, so 200 is two cores busy; they are deltas since the previous read, at
+most one new sample a second. The worker figure needs psutil on the console
+machine. The F1 part appears only while an F1 client is connected. Behind it,
+`/api/live` carries a `load` object with more than the line shows: `cpu`,
+`workerCpu`, `cores`, `mode` (`full` or the applied preset), `parts` (engine ms
+a tick; F1 ms a tick, rate and client count; YOLO ms a frame round trip and in
+the worker, keypoint ms, hand ms, YOLO frames a second), and `threads`, per
+thread CPU where psutil's thread ids match Python's (Linux; expected on
+Windows, not yet run there; not macOS).
+
 ### Tuning
 
 Generated from `GET /api/settings`, so it always matches the running server.

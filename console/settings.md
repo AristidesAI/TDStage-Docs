@@ -290,6 +290,7 @@ Vision stays loaded as a hot standby.
 | `yoloRateHz` | 30.0 Hz | 1 to 30 | safe | Per device inference cap for the YOLO worker |
 | `yoloPose` | off | | safe | Second pass for multi person wrists, which is what feeds `/track/performer/hand`. Costs about +10 ms per frame, so leave it on at three phones or fewer and off for a full rig |
 | `yoloDevice` | `auto` | `auto`, `cuda`, `mps`, `cpu` | **restart** | `auto` means cuda if available, else mps, else cpu. Pick `cpu` to keep the GPU entirely for TouchDesigner |
+| `yoloTotalHz` | 0 inf/s (no cap) | 0 to 240 | safe | **Total** YOLO frames per second across all phones, 0 = no total cap, so each phone runs up to `yoloRateHz` and eight phones ask for 240 a second between them. On a machine shared with TouchDesigner this is the knob for the YOLO worker's share of the GPU: each phone then gets about this divided by the phone count, round robin, freshest frame first. Every frame costs the segmentation pass plus keypoints and hand landmarks when those are on. Lower means older person masks on `/track` and F1 presence: a phone at 5 a second labels its points with a mask up to 0.2 s old. The performance presets set it (60 balanced, 30 lite). **On the Mac it was measured on the cap never engaged**, because the worker there serves only about 25 to 30 frames a second anyway; on a faster GPU it is expected to be the lever, and that is **not measured** |
 | `obsTotalHz` | 70.0 inf/s | 5 to 240 | safe | **Total** inferences per second across all phones. Each phone runs at the lesser of its own rate and this divided by the phone count, so two phones get the full rate while eight degrade evenly instead of starving the rest of the console. One inference is about 11 ms on a Mac |
 | `standbyHz` | 3.0 Hz | 0.5 to 30 | safe | Rate for the secondary backend, kept warm so it can answer immediately if the primary goes quiet |
 | `rateHz` | 30.0 Hz | 1 to 60 | safe | Per device inference cap for the person observer, round robin across devices |
@@ -448,6 +449,14 @@ a person-model vote loses that body.
 
 Two settings answer it, and they can be used separately.
 
+The group has two keys. The first sets the pace of the whole F1 producer:
+
+| Key | Default | Range | Live | What moves |
+|---|---|---|---|---|
+| `rateHz` | 15.0 Hz | 2 to 30 | safe | Ticks per second of the F1 producer: `SMSF` field and `SMSP` presence every tick, `SMSS` poses about once a second. Each tick with a client connected votes every phone's points for presence, which makes an F1 client the single largest console cost: about 40 to 60 per cent of a core at eight phones, about 45 ms a tick at 15 Hz, measured with simulated phones on a Mac. A `--f1-hz` on the command line wins over this setting. The lite preset sets 10 |
+
+The second, `presenceSource`, is the inverted-performer setting below.
+
 ### Where F1 presence comes from
 
 | Key | Default | What it does |
@@ -511,6 +520,63 @@ every setting equalled its value before the apply.
 > at the defaults. Most of that is the Motion filter and clustering every point
 > with the mask off. **This has not been measured on the show PC**, which is the
 > machine the number has to hold on.
+
+### The performance presets
+
+{: .note }
+> **Landing with `sys/integ-c`** (fill in the date from the merge). The client's
+> London test laptop, an RTX 4060 running TouchDesigner beside the console,
+> found the console too heavy. Two presets answer it. What they cost and save,
+> and which to run where, is on
+> [Running the console](running.html#performance-modes); every figure there was
+> **measured on one Mac with simulated phones**, nothing on Windows, an RTX
+> GPU, or real phones.
+
+Three buttons below the cyr preset in the Live view's People only section,
+**Full**, **Balanced** and **Lite**, or `POST /api/preset` with `{"name":
+"lite", "action": "apply"}`. Balanced and lite form a group: applying one first
+reverses the other, so a reverse always lands on what ran before either. Full
+is not a preset; it is the state with neither applied, and the Full button is
+the reverse. What each one moves, and nothing else moves:
+
+| Setting | full (default) | balanced | lite |
+|---|---|---|---|
+| `vision.yoloTotalHz` (YOLO frames a second, all phones) | 0, no cap | 60 | 30 |
+| `vision.obsTotalHz` (Apple Vision budget, Mac only) | 70 | 40 | 20 |
+| `vision.standbyHz` (fallback observer) | 3 | 2 | 1 |
+| `latency.rgbHz` (browser camera view) | 30 | 15 | 10 |
+| `latency.rgbFill` | 4 | 4 | 2 |
+| `latency.segTick` (motion engine) | 0.05 s, 20 Hz | 0.05 s | 0.1 s, 10 Hz |
+| `hands.enabled` (`/track/performer/hand`) | on | on | **off** |
+| `tracking.bodyPoints` | off | off | off |
+| `f1.rateHz` | 15 | 15 | 10 |
+
+`output.emitRate` is not touched, so `/track` stays at 30 Hz under all three.
+Both presets set `tracking.bodyPoints` off, because turning body points on
+forces the YOLO keypoint pass the budget is trying to bound; a hand edit after
+the apply can turn it back on, and then shows in the preset's `changed` list.
+
+Two things about lite's hands-off depend on the machine. Where Apple Vision is
+absent (Windows, or `TDSTAGE_VISION=portable` on a Mac) the auto rule keeps the
+YOLO keypoint pass on in every mode when a pose model file is beside the
+segmentation model, because the keypoints are the only source of wrists; that
+is the code's rule, exercised on the Mac in portable mode, not on Windows. On a
+Mac with YOLO as the primary observer, lite's hands off also drops the keypoint
+pass.
+
+**Reverse works as for the cyr preset.** The values the apply replaced are
+stored in the configuration, so Full puts back exactly what ran before, not
+the defaults, also after a console restart, and also for a key edited by hand
+after the apply. A second apply while applied keeps the first apply's stored
+values, so a double click can never make a preset its own "before".
+
+{: .warning }
+> **One balanced run is unexplained.** Of two 3-phone runs under balanced, one
+> reported a fourth performer in 23 per cent of bundles for three walkers; the
+> repeat did not, and nor did the 8-phone run. Seen once, not reproduced, cause
+> not found at the time of writing. Lite's 10 Hz engine also doubles the Live
+> view's admit debounce to about 0.2 s; background learning is in seconds and
+> unchanged.
 
 ## Three things about this schema that will trip you up
 
