@@ -183,6 +183,62 @@ different values depending on how it was produced:
 Real-phone evidence is currently one phone. Every multi-phone figure is
 simulation.
 
+## Work that is waiting on a branch
+
+A page may describe behaviour that is on a branch in the system repository and
+not yet on its trunk. Those sentences name the branch, and
+`tools/check_pending.py` reads the names back off the pages and asks both
+repositories two questions: does that branch still exist, and has it been
+merged into trunk. A merged branch fails the build, naming the pages to
+rewrite, because the site only names a branch while its work is pending.
+
+The documentation for an unlanded feature lives on a branch of its own here,
+with its pins, so the landing is a merge rather than a scramble. The sequence
+on landing day:
+
+1. `git fetch` in the system repository and confirm the feature's commit is on
+   its trunk, not just on an integration branch. `check_pending.py` asks this
+   question too, so a merged branch still named on a page turns the build red.
+2. `git rebase master` the documentation branch, then
+   `python3 tools/check_all.py --repo ../TDStage`. The pins that could not
+   compare while the source file was absent now compare, and any that do not
+   are named with the constant and the value.
+3. Rewrite the "lands with" sentences as behaviour and delete the branch names.
+4. Regenerate: `gen_status.py`, `gen_troubleshooting.py`, `gen_api.py`.
+5. Merge, re-run `check_all.py`, push.
+
+Before the landing it is worth dry-running the pins against the branch, so the
+day is not spent on regular expressions:
+
+```bash
+git -C ../TDStage show <branch>:WebConsole/<file>.py > /tmp/src.py
+```
+
+and comparing each pinned constant against the page's wording by hand, or with
+a throwaway script. Two pins broke this way on 11 November: `--f1-hz` stopped
+carrying its own default, which moved the number into the settings schema while
+two pages still printed it from the flag.
+
+## Committing in a shared checkout
+
+Several sessions edit this repository at once, through one working tree and one
+index. **A path-scoped `git add` does not make a path-scoped commit**: `git
+commit` writes the whole index, including whatever another session has staged.
+On 11 November a commit in the system repository carried four unrelated files'
+reverted content that way, one of them a privacy regression.
+
+So commit through `tools/safe_commit.sh`, which builds a private index from
+HEAD, commits exactly the paths named, and refuses if the branch moved under
+it:
+
+```bash
+tools/safe_commit.sh -m "subject" path/one.md path/two.md
+```
+
+Then read the stat it prints before pushing. Never `git reset`, `git checkout
+<path>` or `git stash` in the shared tree: each of those discards work that is
+not yours.
+
 ## What does not belong here
 
 This repository is public. Commercial terms, client correspondence, pricing,
