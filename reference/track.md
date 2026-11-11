@@ -372,8 +372,10 @@ velocity means a prediction rather than a measurement, applied to counting.
 
 In simulation this is rare and not negligible: three phones and three walkers
 over sixty seconds gave one episode of about ten seconds and one of a quarter
-second across three runs at the balanced preset, and twelve bundles in one run
-of three at the default settings. A fix is in progress
+second across three runs with the person model rate-capped, and twelve bundles
+in one run of three at the default settings. (The rate cap is a setting that
+arrives with the next release; the default-settings run is today's behaviour,
+and the figure to read if you are on a current build.) A fix is in progress
 ([#68](https://github.com/AristidesAI/TDStage/issues/68)): a rider would take
 back a fragment that splits off near its host before a new id can be born.
 
