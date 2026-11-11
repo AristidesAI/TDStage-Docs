@@ -231,14 +231,6 @@ never sent. You will not see flicker ids for noise, and in exchange a real
 performer walking on stage appears on the fifth sighting, about 130 ms late
 at a 30 Hz cloud.
 
-{: .note }
-**Short-lived ids appear at load.** In an eight-phone simulation 3.4 to 3.6 per
-cent of bundles carried a stray id that lived briefly and went. They pass the
-five-sighting gate, so they are not noise in the usual sense, and they are
-being looked into. A receiver that creates something per id - a voice, a light,
-a particle emitter - should be able to lose one a few seconds later without
-leaving anything behind.
-
 **Three seconds of reservation.** When a performer is lost, the id is held and
 not reused for three seconds. So an id that disappears and comes back inside
 three seconds is the same person. After that the id is retired: the counter
