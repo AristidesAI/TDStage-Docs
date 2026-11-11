@@ -431,18 +431,24 @@ but read the next paragraph before expecting balanced to buy you anything else.
 
 **The show machine**: full. Watch the load line under the preset buttons, which
 reports the console's CPU, the keypoint worker's, and the milliseconds each part
-is taking. **If it is overloaded, go straight to lite.** At eight phones,
-switching to balanced moved the console by ten points of one core, 216 to 206,
-in the run that compared them; the soak's own figures put full at 219 per cent
-and lite at 119. Those are two separate runs and the ten points are the
-comparable number: balanced buys nothing worth having at that load, lite halves
-it.
+is taking. **If it is overloaded, go straight to lite.** One run stepped
+through all three at eight phones and measured the console at **216 per cent of
+a core on full, 206 on balanced, 119 on lite** - and 212 on full again at the
+end, which is the useful part: full measured twice in the same run differs by
+four points, so balanced's ten are barely outside the wobble while lite's
+ninety-seven are not in doubt. `/track` held 30 Hz in every phase.
 
 The reason is worth knowing, because it says when balanced will matter. The
 keypoint worker already caps itself near 30 requests a second in total, about
 3.8 a phone at eight phones, so balanced's budget of 60 never binds and the
 only thing it changes at that load is the browser's camera view. Balanced is a
 middle setting for its other effects, not a middle setting for CPU.
+
+Lite's saving is visible in what stops rather than in a budget: the keypoint
+pass goes to zero, the model's own time per frame halves from 33 ms to 17, the
+field stream drops to 10 Hz and hands go off. **On a faster GPU the budget may
+well bind** - the show PC is exactly that machine - but that is reasoning from
+the mechanism, not a measurement, and nobody has run it.
 
 **The single biggest cost is a field-stream client**: about 40 to 60 per cent
 of a core at eight phones, around 45 ms of work a tick. If the system on the other end only needs presence rather than
