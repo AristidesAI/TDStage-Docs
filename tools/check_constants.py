@@ -141,9 +141,15 @@ def source_state(repo: pathlib.Path, rel: str, working_tree=False):
     a documentation check.
     """
     if working_tree:
-        return (repo / rel).read_text(encoding="utf-8")
-    return subprocess.run(["git", "-C", str(repo), "show", f"HEAD:{rel}"],
-                          capture_output=True, text=True, check=True).stdout
+        path = repo / rel
+        return path.read_text(encoding="utf-8") if path.exists() else None
+    r = subprocess.run(["git", "-C", str(repo), "show", f"HEAD:{rel}"],
+                       capture_output=True, text=True)
+    # A page may pin a constant in a file that is not on trunk yet: the pins for
+    # a feature land in the same commit as the page describing it, and the
+    # feature's own file arrives with its branch. That is a thing to report, not
+    # a traceback - the check used to die here with a CalledProcessError.
+    return r.stdout if r.returncode == 0 else None
 
 
 def constant(src: str, name: str):
@@ -218,6 +224,12 @@ def main():
         text = (ROOT / page).read_text(encoding="utf-8")
         if rel not in sources:
             sources[rel] = source_state(repo, rel, a.working_tree)
+        if sources[rel] is None:
+            problems.append(f"{page}: {rel} is not in the repository's trunk, so "
+                            f"{name} cannot be compared - if the feature has not "
+                            f"landed, the page and this pin belong on the same "
+                            f"branch as it")
+            continue
         want = constant(sources[rel], name)
         if want is None:
             problems.append(f"{page}: constant {name} not found in {rel} "
