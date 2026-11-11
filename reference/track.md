@@ -219,24 +219,28 @@ show-grade**, and the reason has moved: it is no longer mostly wrong-side
 joints, it is that the planned rig does not see enough of a body from more than
 one phone.
 
-**Use only joints with `confidence` above 0.5, or `views` of 2 or more.** That
-is the rule to build in, and it is not advice about tidiness: a joint seen by
-one phone is more than 30 cm out **18 to 19 per cent of the time** on the show
-rig, against about 3 per cent for a joint two or more phones agree on, and a
-single-view joint's confidence is capped so that the test catches it.
+**For anything that has to be right, use only joints with `views` of 2 or
+more.** That is the test, not a confidence threshold: a confidence above 0.5
+implies two or more views, but not the other way round, so `views` is the field
+to read. On the show layout a single-view joint is still more than 30 cm out
+**12 to 15 per cent of the time**, where the joints that survive the filter are
+out that far 0.4 to 6.2 per cent of the time.
 
 The catch is in the same sentence. **On the show layout most joints come from
-one phone** - 1.2 to 1.4 views on average - so applying the rule leaves you
-with a sparse body rather than a filtered one. That is the honest state of it:
-the filter works, and on this rig it filters out most of what arrives.
+one phone**, so the filter keeps only **19 to 40 per cent of limb joints**: it
+leaves you a sparse body rather than a filtered one. On a ring of phones around
+the stage the same filter keeps 58 to 96 per cent, at 3 to 8 per cent over
+30 cm - the difference is the layout, not the software. That is the honest state
+of it, and it is why this is not show-grade on the rig as planned.
 
 Two more things to design around:
 
-- **Two phones at 90° still put joints on the wrong side.** Mirrored
-  left/right relabelling needs three or more views to vote; with two views that
-  disagree the joint is withheld instead, but 5 to 17 of 30 test poses still
-  carried a limb on the wrong side. A two-phone rig should not use the sides at
-  all.
+- **Two phones at 90° are the weakest case for left and right.** Relabelling
+  votes across views, so with two views that disagree the joint used to be
+  withheld outright; the triangulated nose now resolves about half of those
+  conflicts, and the rest are still withheld. Nothing new came out on the wrong
+  side in the red team's own case, but a two-phone rig remains the arrangement
+  to distrust on sides.
 - **A clustered performer gets no body**, as they get no hands. A duet in
   contact is two performers with positions and no joints. Wrong-person views
   are now rejected by matching on each phone's lifted torso centre, so a close
@@ -289,6 +293,12 @@ outside the gate and is dropped rather than averaged into a smear.
 > | 8 in a ring, 1 person | 52 mm | 253 mm | 4.3 % |
 > | 3 in a ring, 1 person | 75 mm | 336 mm | 6.3 % |
 >
+> A second pass then went after the single-view joints specifically, measured
+> on its own run of the show layout with six phones and three people: the share
+> of limb joints more than 30 cm out fell from 11.8 to 9.1 per cent, and the
+> share published from 82.8 to 76.0. Those two numbers are that run's, not this
+> table's, and the two sets are not directly comparable.
+>
 > The two rows that matter are the first two, because that is the layout the
 > show is planned on, and they are the two that improved least. A ring of
 > phones around a body is a much easier problem than a row of phones down each
@@ -298,15 +308,19 @@ outside the gate and is dropped rather than averaged into a smear.
 > with three people the median went from 97 to 64 mm and the share over 30 cm
 > from 20.3 to 9.1 per cent - and the time alignment changed the lag
 > specifically: a walking hip went from 93 to 135 mm of median error down to 23
-> to 44 mm. One thing got worse: a body standing still reads 39 mm rather than
-> 21 mm, because the published position is now blended toward the depth
-> readings, which helps on real keypoints and hurts on synthetic noise.
+> to 44 mm. A body standing still briefly read worse - 39 mm against 21 - when
+> the position began to be blended toward the depth readings; a second pass put
+> that back to 22 mm, with 11 mm of tick-to-tick movement on a still body.
 >
-> **Fewer joints are reported now, deliberately.** At three phones in a ring
-> the share of joints published fell from 99 to 76 per cent: a joint the fusion
-> cannot confirm is sent with confidence 0 rather than guessed. A body with
-> holes in it is the correct output when the phones cannot agree, and it is why
-> the confidence test above is worth applying rather than reading every joint.
+> **Fewer joints are reported now, deliberately.** On the show layout the share
+> published fell from 83 to 76 per cent, and at three phones in a ring from 99
+> to 76: a joint the fusion cannot confirm is sent with confidence 0 rather than
+> guessed, and single-view joints are checked against the performer's own
+> learned bone lengths and dropped when they do not fit. **38 to 52 per cent of
+> the joints that check newly withheld were more than 30 cm out**, which is the
+> point of it. A body with holes in it is the correct output when the phones
+> cannot agree, and it is why the `views` test above is worth applying rather
+> than reading every joint.
 
 {: .note }
 > Earlier figures from a synthetic harness - 21 mm median at eight phones - are
