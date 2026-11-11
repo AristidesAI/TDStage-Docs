@@ -224,7 +224,7 @@ more.** That is the test, not a confidence threshold: a confidence above 0.5
 implies two or more views, but not the other way round, so `views` is the field
 to read. On the show layout a single-view joint is more than 30 cm out
 **10 to 21 per cent of the time**, where the joints that survive the filter are
-out that far 3 to 5 per cent of the time.
+out that far 2.8 to 5.3 per cent of the time.
 
 The catch is in the same sentence. **On the show layout most joints come from
 one phone**, so the filter keeps only **18 to 34 per cent of limb joints**: it
@@ -282,46 +282,57 @@ outside the gate and is dropped rather than averaged into a smear.
 {: .warning }
 > **Not accurate enough to switch on for a show, on the layout the show uses.**
 > Measured through the real keypoint model on rendered people from simulated
-> phones, scored against the simulation's own joints. Limb joints, hybrid
-> fusion, median and 95th percentile error, and the share of joints published
-> at all:
+> phones, scored against the simulation's own joints, on the corrected
+> simulator. Limb joints, hybrid fusion: median and 95th percentile error, how
+> often an emitted joint is more than 30 cm out, and the share of joints
+> published at all.
 >
-> | Rig | Median | p95 | Published |
-> |---|---|---|---|
-> | Stroud layout, 6 phones, 3 people | 100 mm | 540 mm | 74 % |
-> | 8 phones in a ring, 3 people | 65 mm | 378 mm | 95 % |
-> | 3 phones in a ring, 1 person | 90 mm | 507 mm | 74 % |
+> | Rig | Median | p95 | Over 30 cm | Published |
+> |---|---|---|---|---|
+> | Stroud layout, 6 phones, 3 people | 101 mm | 539 mm | 13.4 % | 74 % |
+> | Stroud layout, 8 phones, 1 person | 91 mm | 431 mm | 8.3 % | 67 % |
+> | Stroud layout, 3 phones, 1 person | 103 mm | 596 mm | 16.1 % | 79 % |
+> | 8 phones in a ring, 3 people | 60 mm | 300 mm | 5.0 % | 96 % |
+> | 8 phones in a ring, 1 person | 55 mm | 224 mm | 2.7 % | 97 % |
+> | 3 phones in a ring, 1 person | 83 mm | 382 mm | 8.8 % | 73 % |
 >
-> With the `views >= 2` filter applied, a ring rig keeps 52 to 97 per cent of
-> its limb joints and 2 to 6 per cent of those are more than 30 cm out. **The
-> show layout keeps 18 to 34 per cent, at 3 to 5 per cent over 30 cm.** The
-> joints that survive are good on either rig; on the side-row layout there are
-> far fewer of them.
+> About 10 cm in the middle and 0.4 to 0.6 m at the 95th percentile on the show
+> layout. The second row was held out of the tuning, which is why it is the one
+> to trust most.
 >
-> **The remaining error is mostly not fixable by better logic.** On the new
-> simulation the causes break down as left/right swaps 59 per cent, the depth
-> lift 18, the wrong person 15, two-dimensional outliers 8 - and on the show
-> layout the swaps are per-joint, on side-on single views, which a facing cue
-> cannot reach. A perfect whole-body left/right oracle would only take the
-> emitted share over 30 cm from 8.53 to 7.55 per cent. More phones, or phones
-> at more angles, is the lever; cleverer fusion is not.
+> **The layout is the difference, not the software.** The show rig sees most
+> performers from one phone - 1.2 to 1.5 views on average - and its single-view
+> joints are more than 30 cm out **10 to 21 per cent** of the time against
+> **2.8 to 5.3 per cent** for its multi-view joints. Applying `views >= 2`
+> leaves you 18 to 34 per cent of the limb joints on that layout; on a ring it
+> leaves 52 to 97 per cent.
+>
+> **The remaining error is mostly not reachable by better logic.** It breaks
+> down as left/right swaps 59 per cent, the depth lift 18, the wrong person 15,
+> two-dimensional outliers 8 - and on the show layout the swaps are per-joint,
+> on side-on single views, where a facing cue has nothing to work with. A
+> perfect whole-body left/right oracle would only take the emitted share over
+> 30 cm from 8.53 to 7.55 per cent. **More phones, or phones at more angles, is
+> the lever; cleverer fusion is not.**
 
 {: .note }
-> **Every earlier figure for this feature was measured on a broken
-> simulation.** Until 11 November the simulated walkers did not face their
-> direction of travel - they crab-walked - so each phone saw a body at the
-> wrong angle, and the numbers were quietly optimistic for a ring and
-> pessimistic in places. The simulator is fixed and everything above is
-> re-measured on it. Two consequences worth knowing: in aggregate the error
-> barely moved (7.26 to 7.20 per cent of joints over 30 cm) but the
-> **single-view** share got worse, 14.6 to 18.1 per cent, which is exactly the
-> case the show layout is full of. And the facing cues were tuned on
-> crab-walking people, so they are due a re-tune after London.
+> **Every figure published for this feature before 11 November was measured on
+> a broken simulation.** The simulated walkers did not face their direction of
+> travel, so each phone saw a body at the wrong angle. The simulator is fixed
+> and the table above is re-measured on it. In aggregate the error barely moved
+> - 7.26 to 7.20 per cent of joints over 30 cm - but the **single-view** share
+> got worse, 14.6 to 18.1 per cent, which is the case the side-row layout is
+> full of. The facing cues were tuned on crab-walking people and are due a
+> re-tune on rig data after London.
 >
-> Figures from different harnesses on this page are not directly comparable
-> with each other, and nothing here has been measured on a real body or a real
-> rig. The cost is measured and small: 1.54 ms a tick at eight phones and three
-> performers, after the frame has gone out.
+> One harness is explicitly not to be quoted, and the source says so: the
+> synthetic comparison with two pixels of Gaussian keypoint noise is not
+> representative of real keypoints, and it reverses which fusion mode wins.
+> Everything in the table comes from the real keypoint model.
+>
+> Nothing here has been measured on a real body or a real rig. The cost is
+> measured and small: about 1.6 ms a tick at eight phones and three performers,
+> 1.0 ms when the keypoints have not changed, all after the frame has gone out.
 >
 > What has run with a real phone in it is one take, replayed before all of this:
 > 1,625 body messages against 1,762 performer messages, every one well formed,
