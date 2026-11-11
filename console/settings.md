@@ -321,7 +321,11 @@ preset changes this group, so read what it does before pressing it.
 and self-contained: the body points keys. `bodyPoints` turns on
 `/track/performer/body`, 17 COCO joints per confirmed performer that is neither coasting nor
 clustered, as stage points with a confidence and a view count each, no bones or
-rotations. How a point is made, and the numbers behind it, are on
+rotations. It ships **switched off and is not for a show**: a red-team review on 11
+November passed it to land off, with two faults to fix first - a joint can come
+out on the wrong side of the body when one view swaps left and right, and the
+phones are not time-aligned, so a body lags its own performer during movement.
+How a point is made, and the numbers behind it, are on
 [Why it is built this way](../reference/design.html#sparse-body-points-17-joints-per-performer-from-several-phones-with-the-depth-as-referee).
 Turning it on also turns on the YOLO keypoint pass when YOLO is the primary
 observer and `/track` hands are off, at about 10 to 15 ms per YOLO frame (a

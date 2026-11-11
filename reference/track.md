@@ -161,7 +161,8 @@ fitting.
 
 The format is worth building against. **The accuracy is not there yet**, and
 the numbers are below rather than buried: as measured on 11 November the points
-are not good enough to switch on for a show.
+are not good enough to switch on for a show, and a red-team review the same day
+named two faults that have to be fixed first. It ships switched off.
 
 | # | Type | Name | Meaning |
 |---|---|---|---|
@@ -209,6 +210,51 @@ pass on. Where Apple's body pose is the primary observer, or the automatic
 choice is disabled, the setting changes nothing by itself and the keypoints
 have to be switched on as well. The console's own settings page names which
 rule is in force.
+
+#### What is wrong with it today
+
+A red-team review on 11 November cleared the feature to **ship switched off** -
+off is no behaviour change at all, and the frame's own bundle is byte-identical
+with it off - and found two things that have to be fixed before any show uses
+it. Both are the kind a receiver would misread as its own bug.
+
+**A joint can come out on the wrong side of the body.** The keypoint model
+sometimes swaps left and right on a view from behind or from the side. With
+tripods at one height almost any two views agree inside the eight-pixel gate,
+so a single swapped view that happens to be a little more confident can win the
+pair search, and `hybrid` will then publish a triangulated point that no
+phone's depth confirms. On synthetic poses with one swapped view the left wrist
+was more than 15 cm out in 23 of 30 poses at three phones, median half a metre;
+through the real model, most errors over 30 cm are this, 41 of 49 at three
+phones in a ring. Six or more phones mask it unless three neighbouring views
+swap together.
+
+**The phones are not time-aligned, and a body therefore lags its own
+performer.** Views up to 0.15 s apart are fused as though simultaneous. Walking
+at 1.5 m/s with a wrist moving at 3 m/s, the hip lands 98 mm out at the median
+and the wrist 270 to 504 mm at the 95th percentile, with tick-to-tick jumps of
+the same order. **`/track/performer` and the body of the same performer will
+not agree during movement**, and the body is the one that is behind. Do not
+derive a position from a joint when the performer's own position is in the same
+bundle.
+
+Three more things to design around:
+
+- **A clustered performer gets no body at all**, as they get no hands. A duet
+  in contact is two performers with positions and no joints.
+- **Switching it on delays the frame it rides with.** The fusion runs on the
+  same thread that sends `/track`, before the send: 0.3 to 2.3 ms normally,
+  12 to 18 ms on a bad tick under contention. That is latency added to the
+  performers and hands, not only to the body.
+- **The wire shape is not confirmed with the client's own bus.** A bundle that
+  holds nothing but a body message has never been through it, and that bus is
+  known to drop a hand it cannot match to a performer in the same frame. It is
+  on the agenda for 17 November, and it is the thing most likely to change the
+  format on this page.
+
+A fix pass is running for the wrong-side joints, the time alignment and the
+frame ordering. Until it lands the numbers below stand, and so does the
+verdict: **land it off, run it as a labelled experiment at best.**
 
 #### How the joints are found, and how good they are
 
