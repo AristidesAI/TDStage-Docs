@@ -277,11 +277,17 @@ claim. Watch for `frameId` going backwards and treat it as "a new session
 started", not as a fault.
 
 **A restart costs more than the pause suggests.** The frames come back about a
-second after the console is up - `frameId` 0, the clock at 0, and a device
-count as soon as the phones are seen - but **the bundles carry no performers
-for about thirty seconds** after that, because the engine has to learn the
-scene again before anybody is published. The same applies when phones come back
-after being away. Measured in simulation; a fix is being looked at.
+second after the console is up, with `frameId` and the clock at 0 - but for
+about thirty seconds after that the bundles carry **no performers, and a device
+count of 0 while every phone is streaming**, because the engine has to learn
+the scene again before anybody is published. The same happens when phones come
+back after an outage. Measured in simulation; a fix is being looked at.
+
+That makes the device count ambiguous for half a minute: **0 can mean "no
+phones" or "relearning"**, and the two look identical on the wire. If you need
+to tell them apart, the console's own health view knows; a receiver does not.
+The honest reading of a 0 is "no performers are coming right now", for either
+reason.
 
 So the shape a receiver should expect across a restart is: frames quickly,
 people slowly, and everyone under a new id. A receiver that treats "frames
