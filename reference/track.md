@@ -536,7 +536,9 @@ floor**.
 That test exists because of a specific failure. A phone reported 675 points
 topping out at five millimetres, 0.6 m from a walker; it was accepted as a body
 lying down, the walker's own id coasted along beside it, and the result was a
-fourth performer for three walkers in 15 to 24 per cent of bundles. The patch
+fourth performer for three walkers in 15 to 24 per cent of bundles - a rate
+measured on the simulator before its walkers were made to face their direction
+of travel, so read it as "often" rather than as a number. The patch
 was the floor beyond the walker, kept because that phone's depth band had
 centred on the floor rather than on the body.
 
