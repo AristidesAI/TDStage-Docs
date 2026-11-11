@@ -456,6 +456,12 @@ Multiply by 1.56 for the AVFoundation app's 320×240.
 > Plan a shoot from the right-hand column, not from the app's figure, and
 > treat the 5× and 6× in the simulated table as what synthetic frames give
 > rather than what a stage gives.
+>
+> **A fix exists and is not on any phone yet.** `recBytesPerSecond` divides by
+> the measured 1.74 with colour and 1.27 without, rather than a flat 2×, on
+> the branch `fix/rec-minutes`. No phone was given a new build before the
+> Sydney stage test, so it rides in the next stamped build. **Until a phone
+> reports a build that has it, the figure on screen is the optimistic one.**
 
 ---
 

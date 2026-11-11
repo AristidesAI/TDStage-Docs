@@ -78,6 +78,11 @@ noise from 1.5 to 4.5 m, all of it high confidence**, through the phone's own
 smoothing. Record every phone with the same app settings, or the comparison
 measures the settings rather than the hardware.
 
+Once those numbers exist they can be fed back into the coverage model, which
+since 10 November takes **a lens and a range per phone** rather than one pair
+for the whole rig. A rig of mixed generations can then be planned as what it
+is, instead of as the worst phone in it.
+
 ## What about aerial performers working up to 7 or 8 m?
 
 **A floor-level rig does not reach them.** A phone on a 2.25 m stand, pitched
