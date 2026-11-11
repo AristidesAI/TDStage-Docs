@@ -268,6 +268,28 @@ move. So the position is a **density core**: find the densest ten-centimetre
 cell in plan view, then average only the points within 45 cm of it. The tail is
 outside that radius and does not vote.
 
+**Each phone finds the body, and the phones are then merged.** The density
+core is computed by every phone that can see the person, in its own view, and
+those readings are combined before the tracker sees them: biggest evidence
+first, and any reading within 0.7 m in plan is folded into it as a running
+mean weighted by how many points each contributed. So a phone with a clear
+view of somebody outweighs one seeing a sliver of them past a neighbour, and
+the published position is one number per body rather than per phone. The
+number of phones that agreed rides in the confidence.
+
+**The position is not smoothed. The velocity is.** What you receive for a
+tracked performer is the detection from that frame as measured, so it carries
+the measurement's own jitter and never lags behind a real move. Velocity is a
+running average because the frame-to-frame difference of two noisy positions is
+much noisier than either. If you need a smooth position, filter it yourself,
+knowing what the filter costs you in lag; the contract deliberately does not
+choose that for you.
+
+`vy` is a special case of that. While the lowest point of a body is on the
+floor there is nothing vertical to measure, so the vertical velocity is fed
+zero and decays toward it rather than snapping. A small `vy` just after
+somebody crouches and stands is the average catching up, not a measurement.
+
 **While two performers are merged, one of the two ids is dead reckoning.** A
 merge gives the tracker one blob where it wants two. The id that matches the
 blob gets the real density-core position. The other id, the swallowed one,
