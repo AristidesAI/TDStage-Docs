@@ -231,6 +231,14 @@ never sent. You will not see flicker ids for noise, and in exchange a real
 performer walking on stage appears on the fifth sighting, about 130 ms late
 at a 30 Hz cloud.
 
+{: .note }
+**Short-lived ids appear at load.** In an eight-phone simulation 3.4 to 3.6 per
+cent of bundles carried a stray id that lived briefly and went. They pass the
+five-sighting gate, so they are not noise in the usual sense, and they are
+being looked into. A receiver that creates something per id - a voice, a light,
+a particle emitter - should be able to lose one a few seconds later without
+leaving anything behind.
+
 **Three seconds of reservation.** When a performer is lost, the id is held and
 not reused for three seconds. So an id that disappears and comes back inside
 three seconds is the same person. After that the id is retired: the counter
@@ -268,10 +276,19 @@ wrong. Both are monotonic **within one run of the console** and that is all they
 claim. Watch for `frameId` going backwards and treat it as "a new session
 started", not as a fault.
 
-Worth rehearsing rather than reading. The Stroud running plan already warns
-the content team that `/track` pauses a few seconds across a console restart
-"and ids start again afterwards", and a get-in with a receiver that cannot
-survive that is where it will be found out.
+**A restart costs more than the pause suggests.** The frames come back about a
+second after the console is up - `frameId` 0, the clock at 0, and a device
+count as soon as the phones are seen - but **the bundles carry no performers
+for about thirty seconds** after that, because the engine has to learn the
+scene again before anybody is published. The same applies when phones come back
+after being away. Measured in simulation; a fix is being looked at.
+
+So the shape a receiver should expect across a restart is: frames quickly,
+people slowly, and everyone under a new id. A receiver that treats "frames
+arriving" as "tracking working" will show an empty stage for half a minute and
+report nothing wrong. The Stroud running plan warns the content team that
+`/track` pauses and that ids start again afterwards; the half minute is the
+part worth rehearsing.
 
 {: .warning }
 `clustered` is the field most likely to be misread. It does not mean "two
