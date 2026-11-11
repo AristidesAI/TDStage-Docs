@@ -271,7 +271,7 @@ through this gate. On that same take, presence reported two people in about 70
 to 85 per cent of messages while `/track` was silent, which is how the test
 established that the silence was specific to `/track`.
 
-## vision (18 keys)
+## vision (21 keys)
 
 The person segmentation backends. YOLO is primary when it is available; Apple
 Vision stays loaded as a hot standby.
@@ -297,6 +297,8 @@ Vision stays loaded as a hot standby.
 | `minJointConf` | 0.4 | 0.0 to 1.0 | safe | Body pose joint confidence floor for a wrist to be used |
 | `erodePx` | 1 px | 0 to 4 | safe | Erosion of each instance mask before points are gathered. Drops the silhouette edge that straddles the background |
 | `depthBandM` | 0.6 m | 0.1 to 2.0 | safe | Points further than this behind an instance's median depth are not that person |
+| `yoloTimeoutS` | 1.5 s | 0.5 to 10 | safe | How long one request to the segmentation worker may take before the console restarts it; Apple Vision covers the masks meanwhile, where it exists. 1.5 s suits an idle machine. **On a loaded show PC - TouchDesigner, segmentation and hands on one GPU - raise it to 3** if the log shows restarts with no answer inside the limit. It applies to the next request, so it takes effect without a restart |
+| `rotateRetry` | off | | safe | For a performer upside down or sideways, which is the cyr wheel case. When the model finds nobody in a phone's upright picture but that phone's depth holds a body-sized blob the learned background does not explain, the picture is tried again rotated. **Simulated only: no real inverted body has been through it** |
 
 ## tracking
 
@@ -338,7 +340,7 @@ for 17 November, not yet agreed.
 | `bodyPoints` | off | | safe | Emit `/track/performer/body` at all. Off: no message and no work beyond one attribute read per tick and one per person per observer frame |
 | `bodyFusion` | `hybrid` | `hybrid`, `combined`, `triangulate`, `depth` | safe | How the phones' views of one joint become one point. `hybrid`: triangulate across phones to choose the views, then position from their depth-lifted points. `combined`: the triangulated position, with the same depth check. `triangulate`: no depth check (a joint one phone sees still gets its depth-lifted point). `depth`: the phones' depth-lifted points voted, no triangulation. Expert |
 | `bodyOutlierM` | 0.25 m | 0.05 to 1.0 | safe | A phone whose depth-lifted joint is this far in front of the triangulated one is looking at an occluder and is dropped. In `depth` mode, views farther apart than this disagree. Expert |
-| `bodyReprojPx` | 8 px | 1 to 30 | safe | A phone whose keypoint lands farther than this from the triangulated joint, in pixels of its own depth grid, is dropped. Expert |
+| `bodyReprojPx` | 8 px | 1 to 30 | safe | A phone whose keypoint lands farther than this from the triangulated joint, in pixels of its own depth grid, is dropped. **The number is the gate at a 256-wide grid and scales with each view's own width**, so it is 8 px at 256 and 10 px at 320 - a phone sending the wider grid is not held to a tighter angle than one sending the narrower. Expert |
 | `bodyMaxAge` | 0.15 s | 0.03 to 1.0 | safe | A phone's keypoints older than this are not a view. The phones are not synchronised, so a longer window fuses a moving limb seen at different times. Expert |
 | `bodySmooth` | 0 | 0.0 to 0.95 | safe | EMA weight of the previous position. 0 is raw; the bus smooths positions itself. Expert |
 | `bodyTimeAlign` | `extrapolate` | `extrapolate`, off | safe | The phones are not synchronised, so each view is moved to the tick's time along the performer's own `/track` velocity before the views are fused. It takes the lag out of a walking body: a hip's median error dropped from 93 to 135 mm down to 23 to 44 mm in the desync simulation. An arm swinging relative to the body still lags up to one observation period, because the correction uses the body's velocity and not the limb's. Expert |

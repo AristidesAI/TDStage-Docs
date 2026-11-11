@@ -458,6 +458,9 @@ by joint, the rays from every phone that reported it are triangulated: a search
 over view pairs picks the pair whose midpoint the most confidence agrees with
 within 8 pixels of reprojection, then a confidence-weighted least-squares
 intersection over every view inside that gate, re-gated and solved once more.
+That 8 px is the gate at a 256-wide grid and scales with each view's own width,
+so a phone sending 320 is gated at 10 px rather than held to a tighter angle
+than its neighbour.
 Two rays closer than 5 degrees apart cannot be the pair that seeds the solve,
 because depth along nearly parallel rays is unconstrained. Two phones at a
 decent angle to each other triangulate perfectly well, which the two-phone row
