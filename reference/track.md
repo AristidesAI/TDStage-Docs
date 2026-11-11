@@ -337,6 +337,19 @@ its view is re-learned. **Every other phone keeps tracking, and performer ids
 survive**. You lose one view's contribution, not the cast list. If you would
 rather not wait, telling the console the stage is empty ends it immediately.
 
+Two details a receiver can see. **`deviceCount` drops while a phone is held**,
+because the count is of the phones actually contributing to that frame, so a
+move reads downstream exactly like a phone falling off the network. Nothing
+distinguishes the two on the wire, and if you alarm on a falling device count
+you will alarm on somebody straightening a stand.
+
+And thirty seconds is the hold, not the whole wait. The hold is 30 s, or
+longer if the background learning window has been lengthened; after it, the
+check that the learned background has stopped moving starts again from
+scratch. So performers come back **about 35 seconds** after the change rather
+than 30, and 37.4 s in simulation. Budget the longer number when you plan a
+get-in around it.
+
 **With the background frozen** (an option for keeping a performer who stands
 still from fading into the scenery): a real move clears the frozen background
 outright, and **nothing is published at all** until somebody tells the console
