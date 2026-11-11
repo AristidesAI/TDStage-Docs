@@ -325,7 +325,10 @@ outside the gate and is dropped rather than averaged into a smear.
 >
 > What has run with a real phone in it is one take, replayed before all of this:
 > 1,625 body messages against 1,762 performer messages, every one well formed,
-> every joint at `views` 1 because there was one phone.
+> every joint at `views` 1 because there was one phone. The 137-message gap has
+> not been broken down, and three things cause it: a performer gets no body
+> while coasting or clustered, when no phone frame younger than 0.15 s carries
+> a person within 0.8 m of them, and when every joint fuses to confidence 0.
 
 ## The coordinate frame
 
