@@ -446,9 +446,13 @@ has to be built for them. See
 > in theory.
 >
 > One run of balanced at three phones showed a fourth performer in 23 per cent
-> of bundles. A repeat did not, nor did the eight-phone run, and the budget
-> never engaged on that machine, so it reads as run-to-run variation rather
-> than the preset. Worth knowing before you see it once and believe it.
+> of bundles, with three walkers on the stage. It was **seen once, not
+> reproduced** - a repeat gave 1 bundle in 1,160, and the eight-phone run gave
+> none - and **the cause was not found**. The keypoint budget never engaged on
+> that machine, so the preset has no obvious mechanism for it, which is an
+> argument and not an explanation. If you see a performer who is not there in
+> balanced, that is a known unexplained observation, not a new fault: say so,
+> and keep the run.
 
 ## Verifying it came up
 
