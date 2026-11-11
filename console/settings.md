@@ -234,6 +234,38 @@ tracker publishes at all rather than how well it holds people.
 > with it, and the set is **under review**, so treat this section as the
 > behaviour before that lands rather than a value to carry across it.
 
+### `settleWindow` and `settleGrowth`, the second gate
+
+Maturity is not the only thing `/track` waits for. The engine calls itself
+mature at a low bar, and while the rest of the static scene is still being
+learned its unlearned remainder clusters into person-shaped junk. So the
+emitter waits for the **background count to stop growing** as well:
+
+- `settleWindow`, 5 seconds by default, is how long the count has to hold.
+- `settleGrowth`, 0.05, is how much it may grow across that window - 5 per
+  cent of where it started.
+
+Both have to be satisfied before anybody is published, so **the earliest
+`/track` can carry a performer is about five seconds after the background is
+learned**, not the moment the panel says mature. A count still climbing resets
+nothing but also never clears the test, which is what a room being learned
+slowly looks like from the outside: mature, settled never, nobody published.
+
+`settleWindow` set to 0 turns the gate off: the emitter then publishes as soon
+as the engine is mature, with the junk that the gate exists to keep out. It is
+a diagnostic, not a show setting - if `/track` is silent and you want to know
+whether this gate is the reason, 0 answers that in one step and should go back
+afterwards.
+
+{: .note }
+The plateau also restarts from nothing after a phone's placement changes,
+which is why the wait after moving a stand is about 35 seconds rather than the
+30 of the hold itself: see [What a placement change does to
+you](../reference/track.html#what-a-placement-change-does-to-you). And one of
+the two settle-gate changes riding with `sys/integ-c` is here: a floor of a
+couple of hundred voxels added to the 5 per cent, so that a stage cut back to
+almost nothing static can still settle. Until that lands this is the behaviour.
+
 The F1 presence channel is a useful cross-check here, because it does not pass
 through this gate. On that same take, presence reported two people in about 70
 to 85 per cent of messages while `/track` was silent, which is how the test
