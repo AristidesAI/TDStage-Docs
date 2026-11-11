@@ -463,9 +463,11 @@ has to be built for them. See
 > 0.6 m from a walker, as a body lying down, and the walker's own id coasted
 > along beside it. A low observation must now also have at least a quarter of
 > its points more than 5 cm off the floor, which a body lying down does and a
-> floor patch does not, and that fix lands with the rest of this. A bar on the
-> patch's height or its span would not have done it: the same patch with a few
-> leg points tops out at 0.136 m and clears both.
+> floor patch does not, and that fix lands with the rest of this. The two
+> obvious bars were both tried and both failed, in opposite directions: a span
+> bar would have dropped 6 to 17 per cent of slim lying-body views out of
+> `/track`, and a top-height bar let the patch through once it had a few leg
+> points in it.
 >
 > **Why balanced brought it out far more often than full is still not
 > established.** The likely reason is that the bad view survives more tracker

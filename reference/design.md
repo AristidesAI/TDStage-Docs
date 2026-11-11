@@ -421,13 +421,18 @@ information.
 > is to be agreed with Default Ltd on 17 November. **It is not good enough to
 > switch on for a show yet** (#66, 11 November): through the real keypoint
 > model on rendered people the fused limb error is about 7 to 10 cm median
-> with tails of 40 to 70 cm, and a red-team review the same day found two
-> high findings (below). The verdict: it lands **off** with no behaviour
-> change; it may be switched on at the 18 November dry run only as a labelled
-> experiment, and only after the client confirms their bus accepts a bundle
-> holding only a body message; **not for Stroud** until the two high findings
-> are fixed. Its cost is **measured on synthetic scenes**, and it has **not run
-> on a multi-phone rig**. Off, it sends nothing and costs one attribute read.
+> with tails of 40 to 70 cm. A red-team review the same day found two high
+> findings, and a fix pass merged the same evening (below). After it, on the
+> show layout, the limb error is still about 9 cm median with a 95th
+> percentile over half a metre, because that layout sees most joints from one
+> phone and a single-view joint cannot be cross-checked. **Still not
+> show-grade.** The verdict: it lands **off** with no behaviour change; it may
+> be switched on at the 18 November dry run only as a labelled experiment, and
+> only after the client confirms their bus accepts a bundle holding only a body
+> message. Receivers that want cross-checked joints keep confidence above 0.5
+> or views of 2 or more, which on this rig leaves a sparse body rather than a
+> filtered one. Every figure is **simulated**; it has **not run on a
+> multi-phone rig**. Off, it sends nothing and costs one attribute read.
 
 The same reasoning that puts performer separation on the receiver puts body
 points there. One phone sees a body from one side, in two dimensions, and
@@ -452,43 +457,51 @@ function the hand tracking uses for the wrists. That gives a 3D point per joint
 per phone, but a poor one on its own: a keypoint model guesses through
 occluders, and a guessed pixel lifts to the depth of whatever is in front.
 
-**Across phones**, each phone's person is assigned to the nearest eligible
-performer in plan within 0.8 m, one person per phone per performer. Then, joint
-by joint, the rays from every phone that reported it are triangulated: a search
-over view pairs picks the pair whose midpoint the most confidence agrees with
-within 8 pixels of reprojection, then a confidence-weighted least-squares
+**Across phones**, each phone's person is matched to a performer on its
+depth-lifted torso centre, within 0.8 m in plan; a person that could belong to
+two performers is not used. Because the phones are not synchronised, each view
+is first moved to the tick time along the performer's own `/track` velocity
+(`tracking.bodyTimeAlign`, `extrapolate` by default), so a walking body no
+longer trails its performer; a limb swinging relative to the body is not
+aligned and still lags by up to one observation period. With three or more
+views, each view's left and right labels are tested against their mirror,
+because a keypoint model seeing a back imagines a face and swaps the sides; the
+labelling the other views' depth-lifted limbs agree with wins, with the
+triangulated nose in front of the shoulder centre deciding which way the body
+faces. Two views whose limbs agree better mirrored are a conflict nothing can
+settle, so neither view's sided joints are used. Then, joint by joint, the rays
+from every phone that reported it are triangulated: a search over view pairs
+picks the pair the most views reproject onto within 8 pixels (10 at a 320-wide
+grid; confidence breaks ties), then a confidence-weighted least-squares
 intersection over every view inside that gate, re-gated and solved once more.
-That 8 px is the gate at a 256-wide grid and scales with each view's own width,
-so a phone sending 320 is gated at 10 px rather than held to a tighter angle
-than its neighbour.
-Two rays closer than 5 degrees apart cannot be the pair that seeds the solve,
-because depth along nearly parallel rays is unconstrained. Two phones at a
-decent angle to each other triangulate perfectly well, which the two-phone row
-of the table below is; two phones looking from almost the same direction do
-not, and neither does a joint only one phone reported. Both of those fall back
-to the depth points.
+Two phones at a decent angle triangulate; two looking from almost the same
+direction (rays within 5 degrees) do not, because depth along nearly parallel
+rays is unconstrained, and nor does a joint only one phone reported. Both fall
+back to the depth points.
 
-**The depth is the referee, and then the measurer.** A view whose lifted point
-lies more than 0.25 m in front of the triangulated joint is an occluder: the
-keypoint was placed on something standing between the phone and the performer.
-That view is dropped and the joint re-solved. In the default `hybrid` mode the
-triangulation then mainly chooses which views to trust; the position reported is
-the confidence-weighted median of the surviving views' depth-lifted points
-within 0.12 m of the triangulated joint. That 0.12 m is a fixed radius in the
-code, not a setting, and it is distinct from the 0.25 m occluder gate: 0.25 m
-decides which views are lying, 0.12 m decides which depth points become the
-published position. If none confirms, the depth consensus of the surviving
-views is used when it lies within 0.25 m of the triangulation, otherwise the
-triangulated point itself. At 256 x 192, one pixel of keypoint
-noise is about 2 cm at 4 m, and the LiDAR is better than that, so the
-triangulation referees and the depth measures.
+**The depth is the referee.** A view whose lifted point lies more than 0.25 m
+in front of the triangulated joint is looking at an occluder, and one more than
+0.25 m behind it is a ghost floating where that phone sees empty space; neither
+is an agreeing view. In the default `hybrid` mode a joint is **sent only if an
+agreeing view's depth-lifted point lies within 0.12 m of the triangulated
+joint** (or the agreeing views' depth consensus within 0.25 m); otherwise it
+goes out with confidence 0, never as an unconfirmed triangulation. That 0.12 m
+is a fixed radius in the code, not a setting, and distinct from the 0.25 m
+gate: 0.25 m decides which views agree, 0.12 m decides whether the joint is
+confirmed at all. The position is the triangulated point blended 30 per cent
+toward the confirming lifts, because the lifts read the skin, 5 to 10 cm short
+of the joint. A joint only one phone gave is sent with its confidence halved,
+so a receiver can keep only cross-checked joints by taking confidence above
+0.5 or views of 2 or more.
 
 Three other modes exist for comparison and diagnosis: `combined` reports the
-triangulated position after the same occluder check, `triangulate` skips the depth checks, so a triangulated joint comes from the
-rays alone while a joint only one phone sees still gets that phone's
-depth-lifted point, `depth` has the phones vote with no triangulation: the view whose lifted
-point has the most confidence within 0.25 m of it wins, and its group's
-confidence-weighted median is the position.
+triangulated position after the same two-sided depth check, dropping failing
+views rather than withholding the joint; `triangulate` skips the depth checks,
+so a triangulated joint comes from the rays alone while a joint only one phone
+sees still gets that phone's depth-lifted point; `depth` has the phones vote
+with no triangulation: the view whose lifted point has the most confidence
+within 0.25 m of it wins, and its group's confidence-weighted median is the
+position.
 
 **What a joint's numbers mean.** `confidence` is the mean keypoint confidence
 of the views used, scaled by their share of the confidence of every view that
@@ -555,112 +568,114 @@ the phone and would stop the LiDAR stream.
 
 #### The numbers, and what kind each one is
 
-**Accuracy, simulated** (`python3 WebConsole/body_points.py --compare`: 150
-poses per rig, joints rendered as spheres of 5 cm radius so the lift reads skin, 2 px of
-2D noise, 10 % of views with an occluder in front, 5 % of keypoints 10 to 40 px
-off, phones at 4 m). Median / 95th percentile joint error in mm, and the share
-of joints more than 10 cm off:
+**Accuracy through the real keypoint model, measured on rendered people,
+before and after the red-team fixes (11 November).** The harness renders
+human_sim4's textured people as each simulated phone would see them, runs the
+real YOLO pose model on those frames, lifts and fuses exactly as the console
+does, and scores limb joints against the simulator's true joints (90 frames per
+rig at 0.5 s steps). YOLO does recognise the rendered people: detection 61 to
+98 per cent depending on the layout, 2D keypoints a median 2.7 to 4.5 px from
+the true joint. The fused 3D result, `hybrid`, before the fixes and after, in
+mm, with the share of emitted joints more than 30 cm off and the share of
+joints reported at all. The show layouts come first, because they are what
+Stroud is planned on and they improved least:
 
-| Rig | `hybrid` (default) | `triangulate` only | `depth` only |
-|---|---|---|---|
-| 2 phones, 90 degrees apart | 40 / 148, 8.7 % | 63 / 199, 18 % | 41 / 825, 21 % |
-| 3 phones, ring | 29 / 102, 5.4 % | 54 / 125, 9.8 % | 29 / 238, 9.2 % |
-| 8 phones, ring | 21 / 49, 0.1 % | 32 / 59, 0.1 % | 23 / 58, 0.7 % |
+| Rig | median | p95 | more than 30 cm off | joints reported |
+|---|---|---|---|---|
+| 6 phones, show layout, 3 people | 101 to 92 | 527 to 519 | 16.1 to 14.2 % | 91 to 83 % |
+| 8 phones, show layout, 1 person | 100 to 86 | 548 to 531 | 14.5 to 12.9 % | 93 to 85 % |
+| 3 phones, ring, 1 person | 90 to 75 | 503 to 336 | 12.7 to 6.3 % | 99 to 76 % |
+| 8 phones, ring, 1 person | 64 to 52 | 392 to 253 | 7.2 to 4.3 % | 100 to 98 % |
+| 8 phones, ring, 3 people | 97 to 64 | 661 to 434 | 20.3 to 9.1 % | 99 to 95 % |
 
-The medians are mostly the lift's skin offset, which no fusion removes. The
-tails are where the modes differ: depth alone has no way to reject an
-occluder, triangulation alone keeps an occluded view in the solve and reports
-the ray intersection rather than the depth.
-None of these figures has been checked against a real body on a real rig.
+Why the show rows barely moved: that layout sees most joints from one phone
+(1.2 to 1.4 views on average), and a single-view joint, mirrored or occluded,
+has nothing to cross-check it. Single-view joints are more than 30 cm off 18 to
+19 per cent of the time; multi-view joints about 3 per cent. Two things in the
+table read like regressions and are not: joints reported fell, most visibly from
+99 to 76 per cent at three phones, because an unconfirmable joint now goes out
+as confidence 0 instead of a guess; and a performer standing still got worse
+(hip median 21 to 39 mm) because the position is now the triangulated point
+blended toward the depth lifts, which is better on real keypoints and worse on
+synthetic noise. With time alignment on, a walking performer's hip median fell
+from 93 to 135 mm to 23 to 44 mm; a swinging wrist's 95th percentile only from
+242 to 413 mm to 204 to 372 mm, since a limb's motion relative to the body is
+not aligned.
 
-**Cost, measured on synthetic scenes** (`--bench`, one Mac): fusion 0.38 ms
-per `/track` tick at 3 phones and 3 performers (95th percentile 0.46 ms),
-0.65 ms at 8 phones and 3 performers, one vectorised call per tick. The depth
-lift is 0.35 ms per person per phone frame and runs on the observer thread,
-not the tick. Off: one attribute read per `/track` tick and one per person per observer
-frame, nothing else.
+**The synthetic `--compare` table that preceded this is not quoted here.** It
+assumed each keypoint is the true joint plus 2 px of Gaussian noise, on which
+the depth lifts beat triangulation; on real keypoints the reverse holds. It
+overstated the accuracy by two to four times and is kept in the code only for
+comparing the modes against each other.
+
+**Cost, measured on synthetic scenes** (`--bench`, one Mac), per `/track` tick
+with new keypoints every tick: about 0.9 ms at 3 phones and 3 performers,
+1.5 ms at 8 and 3, 3.5 ms at 8 and 8, all **after the frame's bundle has been
+sent**, so switching body points on adds no latency to the performers and
+hands. The depth lift is 0.35 ms per person per phone frame on the observer
+thread. Off: one attribute read per `/track` tick and one per person per
+observer frame, nothing else.
 
 **End to end, one real phone, once:** take T1 replayed into a sandboxed scratch
 console produced 1,625 body messages against 1,762 performer messages, every
-argument well formed (id plus 17 x 5), `views` = 1 throughout (a one-phone take),
-largest bundle 740 bytes (bodies were still inside the frame's bundle in that
-run), no errors. The 137 performer messages with no body were not broken down: coasting and
-clustered performers get none by rule, and a performer with no phone frame
-younger than 0.15 s carrying a person within 0.8 m of it gets none either. That run predates the
-own-bundle change, which has since been covered by self-tests only. There has
-been no multi-phone run.
+argument well formed (id plus 17 x 5), `views` = 1 throughout (a one-phone
+take), largest bundle 740 bytes (bodies were still inside the frame's bundle in
+that run), no errors. The 137 performer messages with no body were not broken
+down: coasting and clustered performers get none by rule, and a performer with
+no phone frame younger than 0.15 s carrying a person within 0.8 m of it gets
+none either. There has been no multi-phone run, and a 25-minute soak (one take
+as two identical phones, depth path only) held memory flat at `/track` 30 Hz
+with 61,281 body messages and nothing non-finite on the wire.
 
-#### What the red-team review found (11 November)
+#### What the red-team review found, and what the fix pass did (11 November)
 
 A review against the code and the real-model harness, summarised in #66 (the
-full report is kept outside the repository). Two findings are high, and they
-are why the feature is not for Stroud as it stands:
+full report is kept outside the repository), found two high and four medium
+findings. A fix pass for five of them merged the same evening (integ-c
+48352ed); the numbers above are from after it.
 
-- **Wrong-side and ghost joints.** With every tripod at one height, almost any
-  two views agree inside the 8 px reprojection gate. So a single view in which
-  the keypoint model has swapped left and right (a back or side view does
-  this), if it is slightly more confident, wins the pair search, and `hybrid`
-  emits a triangulated point that no depth confirms. Synthetic, one swapped
-  view: the left wrist more than 15 cm off in 23 of 30 poses at 3 phones
-  (median 503 mm), 28 of 30 with 2 phones at 90 degrees, none at 6 to 8 phones
-  unless three adjacent views swap. On the real-model harness most errors over
-  30 cm are swapped views: 41 of 49 on a 3-phone ring; 137 of 191 at 8 phones
-  with three people, plus 44 from the wrong person. `hybrid` was the best mode
-  in none of these rigs.
-- **Lag and jitter from unsynchronised phones.** Views up to 0.15 s apart are
-  fused as if simultaneous. Walking at 1.5 m/s with a wrist moving at 3 m/s:
-  hip median 98 mm, wrist 95th percentile 270 to 504 mm, wrist tick-to-tick
-  jumps 156 to 500 mm at the 95th percentile, and the body trails its own
-  `/track/performer`. The receiver rule that follows: do not derive a
-  performer's position from a joint while the performer's own position is in
-  the same bundle, because during movement they disagree and the body is the
-  one behind. The scope that makes it useful rather than only prohibitive:
-  until time alignment lands, take where the performer is from
-  `/track/performer` and use the body only for the layout of the limbs relative
-  to it. A gesture keyed to an arm's direction is
-  reasonable; a cue keyed to where that arm is in the room is not.
+- **Wrong-side and ghost joints** (high, mitigated). With every tripod at one
+  height, almost any two views agreed inside the reprojection gate, so a
+  single view in which the model had swapped left and right, if slightly more
+  confident, won the pair search and `hybrid` emitted a triangulated point no
+  depth confirmed; on the real-model harness most errors over 30 cm were
+  swapped views (41 of 49 on a 3-phone ring, 137 of 191 at 8 phones with
+  three people). Now: left/right relabelling at three or more views, two
+  disagreeing views withheld, the pair search ranked by agreeing views, a
+  two-sided depth gate, no unconfirmed triangulation sent, and a single-view
+  joint's confidence halved. With two phones at 90 degrees, mirror conflicts
+  are withheld but 5 to 17 of 30 wrists still go out on the wrong side.
+- **Lag and jitter from unsynchronised phones** (high, relaxed). Views up to
+  0.15 s apart were fused as simultaneous and the body trailed its own
+  `/track/performer`. Now each view is moved to the tick time along the
+  performer's velocity; a limb swinging relative to the body still lags up to
+  one observation period. The receiver rule stands: take the performer's
+  position from `/track/performer`, not from a joint.
+- **Latency on the frame** (medium, gone). The fusion ran on the `/track`
+  thread before the frame was sent, 0.3 to 2.3 ms and 12 to 18 ms on a bad
+  tick; the frame bundle now goes first, tested.
+- **Wrong person** (medium, mitigated). A phone's person is matched on its
+  lifted torso centre, and an ambiguous person is not used. A clustered pair
+  (a duet in contact) still gets no body at all, by rule.
+- **The gate at other grids** (low, fixed). The 8 px reprojection gate now
+  scales with the grid width (10 px at 320).
+- **Still open.** The one-bundle-per-body wire shape has never been through
+  the client's bus, which is known to drop a hand it cannot match to a
+  performer in the same frame; that is on the 17 November agenda and is the
+  thing most likely to change the format. And the keypoint model's frame rate
+  on the show machine's GPU, which bounds how fresh every view is, has not been
+  measured.
 
-Three medium findings belong here too. As it behaves today, the fusion runs on
-the `/track` thread before the frame is sent, 0.3 to 2.3 ms on the bench and 12 to 18 ms on a bad
-tick under contention, so switching body points on delays the existing
-performers and hands as well. Views from the wrong person are taken when
-performers are close, and a clustered pair (a duet) gets no body at all. And
-the one-bundle-per-body wire shape has never been through the client's bus,
-which is known to drop a hand it cannot match to a performer in the same
-frame; that is on the 17 November agenda and is the thing most likely to
-change the format.
+Two passes from the review stand: garbage or NaN keypoints, bad cameras and a
+dead or slow worker raise no exception and put nothing non-finite on the wire,
+with performers and hands continuing; and the 25-minute soak above.
 
-Two passes worth having when robustness is the question: garbage or NaN
-keypoints, bad cameras and a dead or slow worker raise no exception and put
-nothing non-finite on the wire, with performers and hands continuing; and a
-25-minute soak (one take replayed as two identical phones, depth path only)
-held memory flat, `/track` at 30 Hz, no errors, no restarts, 61,281 body
-messages, none non-finite.
-
-A fix pass for the two high findings and three of the others (swap hypothesis
-and ranking by agreeing views, a two-sided depth gate, no unconfirmed
-triangulation, time alignment as the hands do it, frame sent first) was
-running when this was written, measured before and after on the real-model
-harness. If it lands before the integ-c merge these figures move; if not, the
-page carries them as the published limits.
-
-**Known gaps** (#66): no half-pixel correction between YOLO pixel coordinates
-and cell centres (at most 0.5 px of bias); no time alignment between
-unsynchronised phones: views up to 0.15 s apart are fused as they are, so a
-limb that moved between them reprojects outside the 8 px gate and is dropped
-rather than averaged, and older observations are not views at all; the lift is not yet vectorised; inverted performers are
-expected to be missed by COCO keypoint models as they are by the person model
-(not measured for keypoints), so #62's rotate-and-retry would apply. The toggle is in the generated Tuning panel, not in
-the hand-written Live view, and body points reach neither TD's consensus view
-nor F1.
-
-**Known gaps** (#66): no half-pixel correction between YOLO pixel coordinates
-and cell centres (at most 0.5 px of bias); no time alignment between
-unsynchronised phones: views up to 0.15 s apart are fused as they are, so a
-limb that moved between them reprojects outside the 8 px gate and is dropped
-rather than averaged, and older observations are not views at all; the lift is not yet vectorised; inverted performers are
-expected to be missed by COCO keypoint models as they are by the person model
-(not measured for keypoints), so #62's rotate-and-retry would apply. The toggle is in the generated Tuning panel, not in
+**Known gaps** (#66): about 1 px of half-pixel bias between YOLO pixel
+coordinates and cell centres; a limb's motion relative to the body is not
+time-aligned, and observations older than 0.15 s are not views at all; the lift
+is not yet vectorised; inverted performers are expected to be missed by COCO
+keypoint models as they are by the person model (not measured for keypoints),
+so #62's rotate-and-retry would apply. The toggle is in the generated Tuning panel, not in
 the hand-written Live view, and body points reach neither TD's consensus view
 nor F1.
 

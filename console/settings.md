@@ -319,39 +319,39 @@ them: `detSource`, `maskGate`, `footMax`, `spanMin` and `maxPerformers`, in
 [f1, and the inverted performer](#f1-and-the-inverted-performer). Applying that
 preset changes this group, so read what it does before pressing it.
 
-**Six more have a documented meaning**, because they are new, off by default,
+**Seven more have a documented meaning**, because they are new, off by default,
 and self-contained: the body points keys. `bodyPoints` turns on
 `/track/performer/body`, 17 COCO joints per confirmed performer that is neither coasting nor
 clustered, as stage points with a confidence and a view count each, no bones or
-rotations. It ships **switched off and is not for a show**: a red-team review on 11
-November passed it to land off, with two faults to fix first - a joint can come
-out on the wrong side of the body when one view swaps left and right, and the
-phones are not time-aligned, so a body lags its own performer during movement.
-How a point is made, and the numbers behind it, are on
+rotations. How a point is made, and the numbers behind it, are on
 [Why it is built this way](../reference/design.html#sparse-body-points-17-joints-per-performer-from-several-phones-with-the-depth-as-referee).
 Turning it on also turns on the YOLO keypoint pass when YOLO is the primary
 observer and `/track` hands are off, at about 10 to 15 ms per YOLO frame (a
 figure from a comment in the code, not re-measured for this feature). The toggle is in the Tuning panel, not in
 the Live view's hand-written controls. The message is proposed to Default Ltd
-for 17 November, not yet agreed.
+for 17 November, not yet agreed, and as of 11 November the feature is **not
+good enough to switch on for a show** (limb error about 7 to 10 cm median,
+40 to 70 cm tails, through the real keypoint model on rendered people; see the
+design page).
 
 | Key | Default | Range | Live | What moves |
 |---|---|---|---|---|
 | `bodyPoints` | off | | safe | Emit `/track/performer/body` at all. Off: no message and no work beyond one attribute read per tick and one per person per observer frame |
 | `bodyFusion` | `hybrid` | `hybrid`, `combined`, `triangulate`, `depth` | safe | How the phones' views of one joint become one point. `hybrid`: triangulate across phones to choose the views, then position from their depth-lifted points. `combined`: the triangulated position, with the same depth check. `triangulate`: no depth check (a joint one phone sees still gets its depth-lifted point). `depth`: the phones' depth-lifted points voted, no triangulation. Expert |
 | `bodyOutlierM` | 0.25 m | 0.05 to 1.0 | safe | A phone whose depth-lifted joint is this far in front of the triangulated one is looking at an occluder and is dropped. In `depth` mode, views farther apart than this disagree. Expert |
-| `bodyReprojPx` | 8 px | 1 to 30 | safe | A phone whose keypoint lands farther than this from the triangulated joint, in pixels of its own depth grid, is dropped. **The number is the gate at a 256-wide grid and scales with each view's own width**, so it is 8 px at 256 and 10 px at 320 - a phone sending the wider grid is not held to a tighter angle than one sending the narrower. Expert |
+| `bodyReprojPx` | 8 px | 1 to 30 | safe | A phone whose keypoint lands farther than this from the triangulated joint, in pixels of a 256-wide depth grid (scaled with the grid: 10 px at 320), is dropped. Expert |
 | `bodyMaxAge` | 0.15 s | 0.03 to 1.0 | safe | A phone's keypoints older than this are not a view. The phones are not synchronised, so a longer window fuses a moving limb seen at different times. Expert |
 | `bodySmooth` | 0 | 0.0 to 0.95 | safe | EMA weight of the previous position. 0 is raw; the bus smooths positions itself. Expert |
-| `bodyTimeAlign` | `extrapolate` | `extrapolate`, off | safe | The phones are not synchronised, so each view is moved to the tick's time along the performer's own `/track` velocity before the views are fused. It takes the lag out of a walking body: a hip's median error dropped from 93 to 135 mm down to 23 to 44 mm in the desync simulation. An arm swinging relative to the body still lags up to one observation period, because the correction uses the body's velocity and not the limb's. Expert |
+| `bodyTimeAlign` | `extrapolate` | `extrapolate`, `off` | safe | The phones are not synchronised: `extrapolate` moves each phone's keypoints to the tick time along the performer's own `/track` velocity, so a walking body no longer trails its performer; a limb's swing relative to the body is not aligned. `off` fuses the views as they arrive. Expert |
 
 Not settings, but fixed in the code and worth knowing: a phone's person is
 matched to a performer within 0.8 m in plan (the hands' own distance); rays
-closer than 5 degrees apart cannot seed a triangulation; in `hybrid` a depth point
-confirms the triangulated joint when it is within 0.12 m of it; a performer
-with no body for 0.5 s restarts their smoothing, and a joint that drops out
-comes back raw; a lift found only in the wider search ring counts 0.3x in
-every depth median.
+closer than 5 degrees apart cannot seed a triangulation; in `hybrid` a joint is
+sent only when an agreeing depth point lies within 0.12 m of it, and its
+position is the triangulated point blended 0.3 toward those lifts; a joint one
+phone gave has its confidence halved; left/right relabelling needs three
+views; a performer with no body for 0.5 s restarts their smoothing, and a joint
+that drops out comes back raw.
 
 Two of its behaviours look like faults and are not:
 

@@ -525,12 +525,20 @@ fourth performer for three walkers in 15 to 24 per cent of bundles. The patch
 was the floor beyond the walker, kept because that phone's depth band had
 centred on the floor rather than on the body.
 
-The shape of the test is worth knowing, because the obvious ones do not work.
-A bar on the patch's height, and a bar on its vertical span, were both tried
-and both let it through: the same patch with a few leg points in it tops out at
-0.136 m and spans 0.142 m, which clears either bar, and 17 bundles came back.
-What separates them is how much of the body is off the floor rather than how
-tall it is.
+The shape of the test is worth knowing, because the obvious ones fail in both
+directions. A bar on the observation's vertical span was tried first and would
+have **cost real floor work**: checked against simulated lying bodies, a slim
+body on its back spans as little as 0.092 m, and 6 to 17 per cent of slim views
+fell under a 0.12 m bar and would have dropped out of `/track` - a performer on
+the floor flickering out of the tracking is worse than a patch flickering in.
+A bar on the patch's top height kept every lying view but let the patch
+through, because the same patch with a few leg points in it tops out at
+0.136 m, and seventeen bundles with a fourth performer came back.
+
+What separates a body from a patch is how much of it is off the floor rather
+than how tall or how thick it is. A lying body keeps a third of its points
+above 5 cm even with its mask bled eight pixels onto the floor; a floor patch
+has almost none.
 
 {: .warning }
 **No real lying body has been measured against this.** The quarter comes from
