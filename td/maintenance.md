@@ -69,8 +69,28 @@ working copy is re-saved.**
 TD/TDStageConductor.tox         <- the working copy, always the latest
 TD/TDStageConductor_v01.tox     <- history
 ...
-TD/TDStageConductor_v87.tox     <- the highest number at the time of writing
+TD/TDStageConductor_v87.tox     <- the highest number IN THE REPOSITORY
+TD/TDStageConductor_v93.tox     <- the highest on the development Mac, untracked
 ```
+
+{: .warning }
+> **The tox that has the stage cut is not in the repository.** Checked on
+> 11 November 2026: `TDStageConductor_v88` to `v93` exist only in the
+> development checkout, untracked, and the committed working copy
+> `TDStageConductor.tox` is byte-identical to **v87** on every branch -
+> `main`, `sys/integ-c` and the stage-cut branch itself. The working copy on
+> that Mac is byte-identical to v93.
+>
+> So **a clone gets v87**: no backdrop wall cut, no `Fitwall`, no `Wallviz`,
+> whatever the branch. The stage cut's Python lives on a branch and travels;
+> the tox is a binary and has not been committed since v87. Anyone setting up
+> a show machine from git gets a hub without the parameters this site
+> documents.
+>
+> Two ways out and both need doing by a person: commit the tox, or copy the
+> file onto the show machine by hand and record which version it is. Until one
+> of them happens, **do not plan a get-in around a parameter that only exists
+> in one checkout.**
 
 List the directory before picking a number:
 
