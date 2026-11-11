@@ -207,6 +207,14 @@ on landing day:
 4. Regenerate: `gen_status.py`, `gen_troubleshooting.py`, `gen_api.py`.
 5. Merge, re-run `check_all.py`, push.
 
+If the landing includes a tox save, check that the **binary** came with it:
+`git ls-tree <trunk> -- TD/ | grep TDStageConductor_v | tail -1` and compare
+`git rev-parse <trunk>:TD/TDStageConductor.tox` against
+`git hash-object TD/TDStageConductor_<newest>.tox`. On 11 November every branch
+carried a tox six versions behind its own Python, because a save is not a
+tracked edit until somebody commits it, and the pages describing the newer
+parameters would have shipped against a hub that did not have them.
+
 Before the landing it is worth dry-running the pins against the branch, so the
 day is not spent on regular expressions:
 
