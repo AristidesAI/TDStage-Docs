@@ -152,6 +152,94 @@ send position unsmoothed and velocity fitted: smoothing twice would add lag,
 and a frame-to-frame velocity at 30 Hz amplifies position noise about forty
 times, which is enough to fire gestures out of a still hand.
 
+### `/track/performer/body`
+
+Seventeen points on the body, off by default, and a **proposal rather than a
+settled contract** - the shape below is what we will put to Default Ltd on 17
+November. Points and confidences only: no bones, no rotations, no skeleton
+fitting.
+
+| # | Type | Name | Meaning |
+|---|---|---|---|
+| 1 | `i` | id | The performer, as in every other message. |
+| 2 onward | `f f f f i` × 17 | x, y, z, confidence, views | One group per joint, in a fixed order. 86 arguments after the id, 87 in all. |
+
+The order is COCO-17 and never varies, so a receiver indexes it rather than
+parsing names: nose, left eye, right eye, left ear, right ear, left shoulder,
+right shoulder, left elbow, right elbow, left wrist, right wrist, left hip,
+right hip, left knee, right knee, left ankle, right ankle. **Left is the
+performer's own left**, as with hands.
+
+Positions are stage metres in the same frame as everything else, and `z`
+follows the `zFlip` switch like every other position here.
+
+Two fields need reading before the coordinates:
+
+- **`confidence` 0 means the joint is missing.** No phone supplied it, and its
+  x, y and z are sent as zeros. They are not a position at the origin. They are
+  never NaN, deliberately: a NaN would poison the bus's filter permanently.
+- **`views` is how many phones agreed on that joint.** 1 means a single phone
+  lifted it through its own depth with nothing to check it against, which is
+  the weakest a published joint gets. The arm of a performer side-on to the rig
+  will sit at 1 while their shoulders sit at 3 or 4.
+
+**One message per performer, each in its own bundle**, sent immediately after
+the frame's bundle, for every confirmed performer who is neither coasting nor
+clustered - the hands' rule, for the hands' reason. The separate bundles are a
+packet-size decision: a body is about 470 bytes, and three of them inside the
+frame's bundle would push it past a single 1500-byte datagram. **Match a body
+to its performer by the id, not by which bundle it arrived in.**
+
+With `tracking.bodyPoints` off, which is the default, no body message is sent
+and nothing else about the output changes. Turning it on also turns on the
+keypoint pass the joints come from.
+
+#### How the joints are found, and how good they are
+
+Each phone's model reports the seventeen joints as pixels; each pixel is lifted
+through that phone's own depth. Across phones the joint is **triangulated from
+every phone's two-dimensional keypoints**, using each frame's own camera matrix
+rather than a nominal one, and a view whose keypoint lands more than eight
+pixels from the result is dropped. Depth is then the check that a camera-only
+system cannot make: a view whose lifted point sits more than 0.25 m **in front
+of** the triangulated joint was looking at an occluder, and is dropped too. The
+published position is the agreeing views' depth, refereed by the triangulation,
+because at this grid one pixel of keypoint error is about two centimetres at
+four metres and the LiDAR is better than that. Three other fusion modes exist
+for comparison; [how a body point is made](design.html) has them and the rest
+of the mechanism.
+
+There is no temporal model and the phones are not synchronised. Views more than
+0.15 s apart are not fused, and a limb seen at different moments reprojects
+outside the gate and is dropped rather than averaged into a smear.
+
+{: .warning }
+> **The accuracy figures are simulated.** Synthetic scenes with 2 px of
+> keypoint noise, an occluder in front of one view in ten, 5 per cent outliers
+> and phones at 4 m, median and 95th percentile error:
+>
+> | Phones | Median | p95 |
+> |---|---|---|
+> | 2, 90° apart | 40 mm | 148 mm |
+> | 3, ringed | 29 mm | 102 mm |
+> | 8, ringed | 21 mm | 49 mm |
+>
+> Most of the median is the lift landing on skin rather than bone, which no
+> amount of fusion removes, and the eight-phone row is the rig nobody has
+> built yet. **Nothing here has been measured on a multi-phone rig.**
+>
+> What has run end to end is one phone: take T1 replayed into a scratch
+> console carried **1,625 body messages against 1,762 performer messages**,
+> every one well formed at 87 arguments, every joint at `views` 1 because
+> there was one phone, and the largest bundle 740 bytes. The gap between those
+> two counts is the coasting and clustered performers who get no body, which is
+> the rule working.
+>
+> The cost is measured, on synthetic data: 0.38 ms per tick at three phones and
+> three performers, 0.65 ms at eight phones and three performers, plus 0.35 ms
+> per person per frame for the lift, which runs on the observer's thread rather
+> than the tick's.
+
 ## The coordinate frame
 
 Metres. **Y is up.** The origin is the centre of the stage floor.
