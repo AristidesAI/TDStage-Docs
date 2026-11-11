@@ -426,13 +426,18 @@ curl -X POST http://localhost:9080/api/preset -d '{"name":"lite","action":"apply
 
 **A laptop that also runs TouchDesigner**: lite, with
 `TDSTAGE_PRIORITY=below` set before the launcher. That is the London dry-run
-shape, three phones. If the content side needs hands, use balanced instead -
-hands stay on there.
+shape, three phones. If the content side needs hands, balanced keeps them -
+but read the next paragraph before expecting balanced to buy you anything else.
 
-**The show machine**: full, or balanced. Watch the load line under the preset
-buttons, which reports the console's CPU, the keypoint worker's, and the
-milliseconds each part is taking. Step down a mode if the console sits above
-about two cores, or if the keypoint worker starts restarting on a loaded GPU.
+**The show machine**: full. Watch the load line under the preset buttons, which
+reports the console's CPU, the keypoint worker's, and the milliseconds each part
+is taking. **If it is overloaded, go straight to lite**: at eight phones
+balanced took the console from 216 to 206 per cent of a core, which is nothing,
+while lite took it to 119. The reason is that the keypoint worker already caps
+itself near 30 requests a second in total - about 3.8 a phone at eight phones -
+so balanced's budget of 60 never binds, and the only thing balanced changes at
+that load is the browser's camera view. Balanced is a middle setting for its
+other effects, not a middle setting for CPU.
 
 **The single biggest cost is a field-stream client**: about 40 to 60 per cent
 of a core at eight phones, around 45 ms of work a tick. If the system on the other end only needs presence rather than
@@ -441,6 +446,16 @@ every connected client has asked for that, the field is not built at all. One
 ordinary client alongside it and the saving goes away, because the field still
 has to be built for them. See
 [the field stream](../reference/field.html#connecting).
+
+{: .note }
+> **Restart the console once a day at a multi-day show.** Under eight-phone
+> load it grows by about 0.6 MB a minute after warm-up, and the keypoint worker
+> by 0.3 - roughly 1.7 GB over 48 hours if it stays linear, which nobody has
+> run long enough to confirm. Idle it is flat, and twelve hours with no phones
+> moved it by a megabyte. Do it after Standby, between sessions, and know what
+> it costs: the frames come back in about a second but **no performers for
+> about thirty seconds** while the scene is learned again, and every performer
+> gets a new id. That is a between-sessions action, never a mid-show one.
 
 {: .warning }
 > **Every number here was measured on one Mac with simulated phones.** Nothing

@@ -519,6 +519,22 @@ not exist.
 
 ---
 
+{: .note }
+> **What a soak of the current build actually survived** (12 November,
+> simulated phones on one Mac, so a code-path result rather than a rig one).
+> The keypoint worker killed outright came back in under three seconds with the
+> reason in the log, and `/track` held 28 to 30 Hz through it. A console restart
+> by signal, and by kill, kept the applied preset and every setting. The
+> performance presets reversed to exactly the values that preceded them. A
+> field-stream client reconnected after every drop. Phones stopped: the device
+> count went from eight to zero in 0.65 s. Twelve hours with no phones at all
+> left `/track` at 30 Hz and memory flat.
+>
+> Two things it also found, both now documented where they bite: the console
+> grows about 0.6 MB a minute under eight-phone load, so a multi-day show wants
+> a daily restart; and after a restart or phones returning, `/track` carries no
+> performers for about thirty seconds.
+
 ## 6. The hot path never blocks
 
 ### No locks in the inner loop
