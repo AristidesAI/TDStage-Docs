@@ -26,6 +26,7 @@ CHECKS = [
     ("check_tables.py", False, "every table is fenced by blank lines (kramdown)"),
     ("check_constants.py", True, "numbers in prose match the constants they came from"),
     ("check_contracts.py", True, "the /ctl verb table matches the app"),
+    ("check_pending.py", True, "nothing described as coming has already landed"),
     ("check_tox_version.py", True, "the docs are current with the saved project"),
     ("gen_troubleshooting.py --check", True, "the generated troubleshooting page is current"),
     ("gen_status.py --check", True, "the proof-level page matches the system README"),
