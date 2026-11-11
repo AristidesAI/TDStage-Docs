@@ -315,7 +315,8 @@ to remember and one firewall rule per direction.
 | `--tdp4-port PORT` | `9003` | A direct TDP4 UDP listener on the phone facing port. It is bound only while nothing else claims it, and the console gives it up while the TouchDesigner link is up and TD's status message (`/tdstage/td/status`) reports that `Udpport`, or an older tox reports none. `0` disables it. | `0` on the show machine, where TouchDesigner must be able to bind 9003 the instant it launches and the console reads the bridge file instead. Another number to run a measurement instance beside TD. |
 | `--sim-port PORT` | `9013` | A second TDP4 listener the console always owns. The built in simulator is aimed at it. A real phone can be pointed here when TD is not in the loop. | Rarely. Change it only to avoid a clash, and then set the fan out's second target to match. |
 | `--f1-port PORT` | `9001` | The F1 0.4 draft WebSocket (SMSF, SMSP, SMSS). **TCP**, so it coexists with a UDP `--listen 9001`. `0` turns it off. | `0` when no client machine is consuming it. |
-| `--f1-hz RATE` | `15.0` | Rate of the F1 field. | Only if the client asks for a different rate. |
+| `--f1-hz RATE` | `15.0` | Rate of the F1 field, fixed. Leave it unset and the setting `f1.rateHz` holds the rate instead, which can be changed while the console runs. | Only if the client asks for a different rate and you want it pinned past a settings change. |
+| `--priority below` | `normal` | Runs the console and the YOLO worker it starts at a lower CPU priority, so TouchDesigner on the same machine wins when the two compete. `TDSTAGE_PRIORITY=below` in the environment does the same, which is how `show.bat` can set it. | On a laptop running the console beside TouchDesigner. Not on the show PC, where the console has the machine to itself. |
 | `--config PATH` | `config.json` beside `server.py` | The config file to load and save. Phone profiles move with it, into a `profiles` folder beside it. **Also marks this a test instance**, so the TouchDesigner link and the client outputs start off. | Always, when you run a second instance for a test or a measurement. |
 | `--td-link` | off for a test instance, on otherwise | Lets a test instance drive TouchDesigner: push poses, own the registration table. | Only when a second instance is deliberately taking over TD from the show console. |
 | `--client-out` | off for a test instance, on otherwise | Lets a test instance send `/track` and publish NDI. | Only when a second instance is deliberately taking over the client bus. |
@@ -377,6 +378,77 @@ If the file named by `--config` does not exist yet, the console starts with the
 TouchDesigner link **off**. A new test instance would otherwise seed TD's
 registration table with its own default poses and move the real phones in TD.
 Turn the link on from the Dashboard if that instance is meant to own TD.
+
+## Performance modes
+
+The console can be asked to do less. Three modes, one at a time, applied from
+the Live view's People only panel or through the API:
+
+| | full (the default) | balanced | lite |
+|---|---|---|---|
+| Keypoint budget across all phones | no cap | 60 frames/s | 30 frames/s |
+| Apple Vision budget (Mac only) | 70 | 40 | 20 |
+| Browser camera view | 30 Hz | 15 Hz | 10 Hz |
+| Motion engine tick | 20 Hz | 20 Hz | **10 Hz** |
+| `/track` hands | on | on | **off** |
+| Field stream rate | 15 Hz | 15 Hz | **10 Hz** |
+| `/track` rate | 30 Hz | 30 Hz | 30 Hz |
+
+**`/track` stays at 30 Hz in every mode**, with the same performer counts.
+What lite costs is the hand messages, the field rate, and 5 to 14 ms of
+`/track` latency from the slower engine tick. It also doubles the Live view's
+admit debounce to 0.2 s, because that is counted in engine ticks. Background
+learning is in seconds and does not change.
+
+Going back is exact rather than approximate: **Full restores the values each
+setting had before the preset was applied**, not the shipped defaults, and it
+survives a console restart. A mode you applied last week is still reversible
+today. No mode turns body points on.
+
+```bash
+curl -X POST http://localhost:9080/api/preset -d '{"name":"lite","action":"apply"}'
+```
+
+`{"action": "reverse"}` with the same name is what the Full button does.
+
+### Which mode to run
+
+**A laptop that also runs TouchDesigner**: lite, with
+`TDSTAGE_PRIORITY=below` set before the launcher. That is the London dry-run
+shape, three phones. If the content side needs hands, use balanced instead -
+hands stay on there.
+
+**The show machine**: full, or balanced. Watch the load line under the preset
+buttons, which reports the console's CPU, the keypoint worker's, and the
+milliseconds each part is taking. Step down a mode if the console sits above
+about two cores, or if the keypoint worker starts restarting on a loaded GPU.
+
+**The single biggest cost is a field-stream client**, about half a core at
+eight phones. If the system on the other end only needs presence rather than
+the occupied-space field, it should connect asking for presence only: while
+every connected client has asked for that, the field is not built at all. One
+ordinary client alongside it and the saving goes away, because the field still
+has to be built for them. See
+[the field stream](../reference/field.html#connecting).
+
+{: .warning }
+> **Every number here was measured on one Mac with simulated phones.** Nothing
+> was measured on Windows, on the laptops the client actually has, or with real
+> phones, and the GPU share of the keypoint model next to TouchDesigner - the
+> thing the budget exists to bound - is unmeasured. The lower priority uses a
+> documented call and has never run on Windows either.
+>
+> On that Mac the keypoint budget never engaged at all: the worker there serves
+> about 25 to 30 frames a second anyway, under both caps. So balanced and lite
+> are **demonstrated to cut the console's own CPU by a quarter to a third, and
+> not demonstrated to cut the worker**. On a faster GPU, where an uncapped
+> worker would be asked for eight phones at 30 Hz, the budget is the lever -
+> in theory.
+>
+> One run of balanced at three phones showed a fourth performer in 23 per cent
+> of bundles. A repeat did not, nor did the eight-phone run, and the budget
+> never engaged on that machine, so it reads as run-to-run variation rather
+> than the preset. Worth knowing before you see it once and believe it.
 
 ## Verifying it came up
 

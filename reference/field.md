@@ -52,7 +52,15 @@ off unless asked for:
 |---|---|
 | `ws://host:9001/` | Field, presence and poses. The contract. |
 | `ws://host:9001/?points=1` | The same, plus the merged points themselves as a fourth message type, `TDMP`, which is ours and not part of the draft. One point in four, as `x y z` float32 triples after a 20-byte header. A decoder that rejects unknown magic must not ask for this. |
+| `ws://host:9001/?presence=1` | **Presence and nothing else**: no field, no poses, no description, no points. For a client that only wants to know where the people are, which is what TouchDesigner's consensus view connects for. The presence bytes are byte-identical to the ones a field client receives. |
 | `ws://host:9001/?describe=1` | The same, plus `SMSD`, a description of each sensor behind the source: kind, nominal rate and window, range, field of view, a name. Sent first on connect, again whenever the set of phones changes, and every 10 s as a keep-alive. This is the console's proposal for the draft's open item on a description message; it is opt-in for the same reason as the points. |
+
+Asking for presence only can also save the console the work, not just the
+bytes - **but only while every connected client is presence-only**. One
+ordinary client alongside it and the field is built as usual, for them. The
+other condition is that presence has a people source of its own to come from;
+where presence is derived from the field, the field is built whatever the
+clients asked for.
 
 The console sends nothing while no client is connected, and it also stops
 computing the field, so attaching a client costs the console a few tens of
