@@ -457,23 +457,37 @@ wrong. Both are monotonic **within one run of the console** and that is all they
 claim. Watch for `frameId` going backwards and treat it as "a new session
 started", not as a fault.
 
-**A restart costs more than the pause suggests.** The frames come back about a
-second after the console is up, with `frameId` and the clock at 0 - but for
-about thirty seconds after that the bundles carry **no performers, and a device
-count of 0 while every phone is streaming**, because the engine has to learn
-the scene again before anybody is published. The same happens when phones come
-back after an outage. Measured in simulation; a fix is being looked at.
+**What an interruption costs depends on which interruption it was**, and the
+differences are large enough to plan around. Three cases, measured in
+simulation at eight phones:
 
-That makes the device count ambiguous for half a minute: **0 can mean "no
-phones" or "relearning"**, and the two look identical on the wire. If you need
-to tell them apart, the console's own health view knows; a receiver does not.
-The honest reading of a 0 is "no performers are coming right now", for either
-reason.
+| What happened | Device count back | Performers back |
+|---|---|---|
+| A phone away briefly, under about 36 seconds | 0.2 s | about 1.7 s |
+| The console restarted | at once | about 34 s |
+| A phone away longer, or joining a running show for the first time | 30 s | 30 s |
+
+The number behind "about 36 seconds" is how long a phone's learned view stays
+learned while nobody can see it: an unseen voxel's occupancy decays until it
+falls below the background threshold, which at the defaults takes 36 s. Inside
+that window the view is still there to come back to, so there is nothing to wait
+for; outside it, the view has to be learned again, and that is the thirty
+seconds. A console restart sits in the middle because the engine comes up cold:
+the device count is immediate and the wait is the engine learning an empty stage
+from nothing. **It is also the interruption an operator causes on purpose**, for
+the daily restart, which is why that belongs between sessions and not between
+cues.
+
+The device count is still ambiguous in the third case: **0 can mean "no phones"
+or "a phone's view is being learned"**, and the two look identical on the wire.
+The console's own health view knows which; a receiver does not. The honest
+reading of a 0 is "no performers are coming right now", for either reason.
 
 So the shape a receiver should expect across a restart is: frames quickly,
 people slowly, and everyone under a new id. A receiver that treats "frames
 arriving" as "tracking working" will show an empty stage for half a minute and
-report nothing wrong. The Stroud running plan warns the content team that
+report nothing wrong. A switch blip, by contrast, now costs under two seconds -
+it used to cost the same thirty. The Stroud running plan warns the content team that
 `/track` pauses and that ids start again afterwards; the half minute is the
 part worth rehearsing.
 

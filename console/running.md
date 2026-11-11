@@ -465,8 +465,10 @@ has to be built for them. See
 > run long enough to confirm. Idle it is flat, and twelve hours with no phones
 > moved it by a megabyte. Do it after Standby, between sessions, and know what
 > it costs: the frames come back in about a second but **no performers for
-> about thirty seconds** while the scene is learned again, and every performer
-> gets a new id. That is a between-sessions action, never a mid-show one.
+> about thirty-four seconds** while the engine learns the empty stage from
+> nothing, and every performer gets a new id. The device count comes back at
+> once, so the rig looks healthy throughout - it is the people who are missing.
+> That is a between-sessions action, never a mid-show one.
 
 {: .warning }
 > **Every number here was measured on one Mac with simulated phones.** Nothing

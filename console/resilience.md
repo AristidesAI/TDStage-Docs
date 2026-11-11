@@ -532,8 +532,10 @@ not exist.
 >
 > Two things it also found, both now documented where they bite: the console
 > grows about 0.6 MB a minute under eight-phone load, so a multi-day show wants
-> a daily restart; and after a restart or phones returning, `/track` carries no
-> performers for about thirty seconds.
+> a daily restart; and `/track` carries no performers for about thirty-four
+> seconds after a console restart, while a phone that drops and comes back
+> inside about thirty-six seconds now costs under two (it used to cost the same
+> thirty, which the soak found and a fix in the same release changed).
 
 ## 6. The hot path never blocks
 
