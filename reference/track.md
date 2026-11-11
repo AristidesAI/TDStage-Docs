@@ -222,15 +222,15 @@ one phone.
 **For anything that has to be right, use only joints with `views` of 2 or
 more.** That is the test, not a confidence threshold: a confidence above 0.5
 implies two or more views, but not the other way round, so `views` is the field
-to read. On the show layout a single-view joint is still more than 30 cm out
-**12 to 15 per cent of the time**, where the joints that survive the filter are
-out that far 0.4 to 6.2 per cent of the time.
+to read. On the show layout a single-view joint is more than 30 cm out
+**10 to 21 per cent of the time**, where the joints that survive the filter are
+out that far 3 to 5 per cent of the time.
 
 The catch is in the same sentence. **On the show layout most joints come from
-one phone**, so the filter keeps only **19 to 40 per cent of limb joints**: it
+one phone**, so the filter keeps only **18 to 34 per cent of limb joints**: it
 leaves you a sparse body rather than a filtered one. On a ring of phones around
-the stage the same filter keeps 58 to 96 per cent, at 3 to 8 per cent over
-30 cm - the difference is the layout, not the software. That is the honest state
+the stage the same filter keeps 52 to 97 per cent - the difference is the
+layout, not the software. That is the honest state
 of it, and it is why this is not show-grade on the rig as planned.
 
 Two more things to design around:
@@ -280,65 +280,52 @@ There is no temporal model and the phones are not synchronised. Views more than
 outside the gate and is dropped rather than averaged into a smear.
 
 {: .warning }
-> **Not accurate enough to switch on for a show.** Measured through the real
-> keypoint model on rendered people from simulated phones, scored against the
-> simulation's own joints, after the 11 November fixes. Limb joints, median and
-> 95th percentile error, and how often a joint is more than 30 cm out:
+> **Not accurate enough to switch on for a show, on the layout the show uses.**
+> Measured through the real keypoint model on rendered people from simulated
+> phones, scored against the simulation's own joints. Limb joints, hybrid
+> fusion, median and 95th percentile error, and the share of joints published
+> at all:
 >
-> | Rig | Median | p95 | Over 30 cm |
+> | Rig | Median | p95 | Published |
 > |---|---|---|---|
-> | Stroud layout, 6 phones, 3 people | 92 mm | 519 mm | 14.2 % |
-> | Stroud layout, 8 phones, 1 person | 86 mm | 531 mm | 12.9 % |
-> | 8 in a ring, 3 people | 64 mm | 434 mm | 9.1 % |
-> | 8 in a ring, 1 person | 52 mm | 253 mm | 4.3 % |
-> | 3 in a ring, 1 person | 75 mm | 336 mm | 6.3 % |
+> | Stroud layout, 6 phones, 3 people | 100 mm | 540 mm | 74 % |
+> | 8 phones in a ring, 3 people | 65 mm | 378 mm | 95 % |
+> | 3 phones in a ring, 1 person | 90 mm | 507 mm | 74 % |
 >
-> A second pass then went after the single-view joints specifically, measured
-> on its own run of the show layout with six phones and three people: the share
-> of limb joints more than 30 cm out fell from 11.8 to 9.1 per cent, and the
-> share published from 82.8 to 76.0. Those two numbers are that run's, not this
-> table's, and the two sets are not directly comparable.
+> With the `views >= 2` filter applied, a ring rig keeps 52 to 97 per cent of
+> its limb joints and 2 to 6 per cent of those are more than 30 cm out. **The
+> show layout keeps 18 to 34 per cent, at 3 to 5 per cent over 30 cm.** The
+> joints that survive are good on either rig; on the side-row layout there are
+> far fewer of them.
 >
-> The two rows that matter are the first two, because that is the layout the
-> show is planned on, and they are the two that improved least. A ring of
-> phones around a body is a much easier problem than a row of phones down each
-> side of a stage, and the rig is the second one.
->
-> **The fixes moved every number the right way** - at eight phones in a ring
-> with three people the median went from 97 to 64 mm and the share over 30 cm
-> from 20.3 to 9.1 per cent - and the time alignment changed the lag
-> specifically: a walking hip went from 93 to 135 mm of median error down to 23
-> to 44 mm. A body standing still briefly read worse - 39 mm against 21 - when
-> the position began to be blended toward the depth readings; a second pass put
-> that back to 22 mm, with 11 mm of tick-to-tick movement on a still body.
->
-> **Fewer joints are reported now, deliberately.** On the show layout the share
-> published fell from 83 to 76 per cent, and at three phones in a ring from 99
-> to 76: a joint the fusion cannot confirm is sent with confidence 0 rather than
-> guessed, and single-view joints are checked against the performer's own
-> learned bone lengths and dropped when they do not fit. **38 to 52 per cent of
-> the joints that check newly withheld were more than 30 cm out**, which is the
-> point of it. A body with holes in it is the correct output when the phones
-> cannot agree, and it is why the `views` test above is worth applying rather
-> than reading every joint.
+> **The remaining error is mostly not fixable by better logic.** On the new
+> simulation the causes break down as left/right swaps 59 per cent, the depth
+> lift 18, the wrong person 15, two-dimensional outliers 8 - and on the show
+> layout the swaps are per-joint, on side-on single views, which a facing cue
+> cannot reach. A perfect whole-body left/right oracle would only take the
+> emitted share over 30 cm from 8.53 to 7.55 per cent. More phones, or phones
+> at more angles, is the lever; cleverer fusion is not.
 
 {: .note }
-> Earlier figures from a synthetic harness - 21 mm median at eight phones - are
-> the **fusion's floor, not its accuracy**: that harness assumes the keypoint
-> lands on the true joint plus two pixels of noise. They are useful for
-> comparing the fusion modes against each other and for nothing else.
+> **Every earlier figure for this feature was measured on a broken
+> simulation.** Until 11 November the simulated walkers did not face their
+> direction of travel - they crab-walked - so each phone saw a body at the
+> wrong angle, and the numbers were quietly optimistic for a ring and
+> pessimistic in places. The simulator is fixed and everything above is
+> re-measured on it. Two consequences worth knowing: in aggregate the error
+> barely moved (7.26 to 7.20 per cent of joints over 30 cm) but the
+> **single-view** share got worse, 14.6 to 18.1 per cent, which is exactly the
+> case the show layout is full of. And the facing cues were tuned on
+> crab-walking people, so they are due a re-tune after London.
 >
-> Everything here comes from simulated phones. **Nothing has been measured on
-> a real body or a real rig.** The cost is measured and it is small: 0.97 ms a
-> tick at three phones and three performers, 1.56 ms at eight and three, 3.6 ms
-> at eight and eight - all of it after the frame has gone out.
+> Figures from different harnesses on this page are not directly comparable
+> with each other, and nothing here has been measured on a real body or a real
+> rig. The cost is measured and small: 1.54 ms a tick at eight phones and three
+> performers, after the frame has gone out.
 >
-> What has run with a real phone in it is one take, replayed before these
-> fixes: 1,625 body messages against 1,762 performer messages, every one well
-> formed, every joint at `views` 1 because there was one phone. The gap has not
-> been broken down; a performer gets no body while coasting or clustered, when
-> no phone frame younger than 0.15 s carries a person within 0.8 m of them, and
-> when every joint fuses to confidence 0.
+> What has run with a real phone in it is one take, replayed before all of this:
+> 1,625 body messages against 1,762 performer messages, every one well formed,
+> every joint at `views` 1 because there was one phone.
 
 ## The coordinate frame
 

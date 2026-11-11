@@ -584,6 +584,18 @@ mm, with the share of emitted joints more than 30 cm off and the share of
 joints reported at all. The show layouts come first, because they are what
 Stroud is planned on and they improved least:
 
+{: .warning }
+> **Everything in this subsection was measured before the simulator was fixed,
+> and is kept as the record of the two fix passes rather than as current
+> accuracy.** Until 11 November the simulated walkers did not face their
+> direction of travel, so every figure below describes bodies seen at the wrong
+> angle. The re-measurement on the corrected simulator is on
+> [the tracking output](track.html#trackperformerbody), and the short version
+> is that the aggregate barely moved while the **single-view** share got worse,
+> 14.6 to 18.1 per cent over 30 cm - the case the side-row layout is full of.
+> The before-and-after shape of each pass is still worth reading; the absolute
+> numbers are not the ones to quote.
+
 | Rig | median | p95 | more than 30 cm off | joints reported |
 |---|---|---|---|---|
 | 6 phones, show layout, 3 people | 101 to 92 | 527 to 519 | 16.1 to 14.2 % | 91 to 83 % |
