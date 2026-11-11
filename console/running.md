@@ -36,6 +36,17 @@ the Live view without them.
 
 ## Install on Windows (the show machine)
 
+{: .warning }
+**None of this has run on a real Windows PC.** The installer, `doctor.py` and
+`show.bat` are exercised on every push, on GitHub's Windows runner, which has
+no GPU and no phone attached - so the steps below are green in a place that
+cannot test the four things the show depends on: CUDA, a phone over USB-C, NDI,
+and TouchDesigner reading the bridge's file
+([#26](https://github.com/AristidesAI/TDStage/issues/26)). Two of the runner's
+own checks also fail intermittently, four times in thirteen runs, each passing
+on the next push with nothing changed, and that is undiagnosed. Budget a day
+with the actual machine, not an hour.
+
 1. **Get the repo.** `git clone`, or download the ZIP and unzip. Keep
    `TD\newtox` beside `WebConsole`.
 
