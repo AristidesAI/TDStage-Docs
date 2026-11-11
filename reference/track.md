@@ -167,7 +167,10 @@ rig that has stopped delivering look identical for about half a second, after
 which every track starts coasting and, with no neighbour to ride, leaves the
 bundle: the frames keep coming with no performers and a device count of 0. If
 you need to know whether the measurement is fresh, watch the device count on
-`/track/frame` and the coasting signal, not the frame rate.
+`/track/frame` and the coasting signal, not the frame rate. That count is of
+the phones feeding *that* frame, so it also drops while a phone is being
+re-learned after somebody moved it: see [What a placement change does to
+you](#what-a-placement-change-does-to-you).
 
 ## Identity: what an id promises
 
