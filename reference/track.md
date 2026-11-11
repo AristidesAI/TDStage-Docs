@@ -211,63 +211,48 @@ choice is disabled, the setting changes nothing by itself and the keypoints
 have to be switched on as well. The console's own settings page names which
 rule is in force.
 
-#### What is wrong with it today
+#### What is wrong with it, after the fixes
 
-A red-team review on 11 November cleared the feature to **ship switched off** -
-off is no behaviour change at all, and the frame's own bundle is byte-identical
-with it off - and found two things that have to be fixed before any show uses
-it. Both are the kind a receiver would misread as its own bug.
+A red-team review on 11 November found nine things; five were fixed the same
+day and the fixes are measured. The feature still **ships off and is still not
+show-grade**, and the reason has moved: it is no longer mostly wrong-side
+joints, it is that the planned rig does not see enough of a body from more than
+one phone.
 
-**A joint can come out on the wrong side of the body.** The keypoint model
-sometimes swaps left and right on a view from behind or from the side. With
-tripods at one height almost any two views agree inside the eight-pixel gate,
-so a single swapped view that happens to be a little more confident can win the
-pair search, and `hybrid` will then publish a triangulated point that no
-phone's depth confirms. On synthetic poses with one swapped view the left wrist
-was more than 15 cm out in 23 of 30 poses at three phones, median half a metre;
-through the real model, most errors over 30 cm are this, 41 of 49 at three
-phones in a ring. Six or more phones mask it unless three neighbouring views
-swap together.
+**Use only joints with `confidence` above 0.5, or `views` of 2 or more.** That
+is the rule to build in, and it is not advice about tidiness: a joint seen by
+one phone is more than 30 cm out **18 to 19 per cent of the time** on the show
+rig, against about 3 per cent for a joint two or more phones agree on, and a
+single-view joint's confidence is capped so that the test catches it.
 
-**The phones are not time-aligned, and a body therefore lags its own
-performer.** Views up to 0.15 s apart are fused as though simultaneous. Walking
-at 1.5 m/s with a wrist moving at 3 m/s, the hip lands 98 mm out at the median
-and the wrist 270 to 504 mm at the 95th percentile, with tick-to-tick jumps of
-the same order. **`/track/performer` and the body of the same performer will
-not agree during movement**, and the body is the one that is behind.
+The catch is in the same sentence. **On the show layout most joints come from
+one phone** - 1.2 to 1.4 views on average - so applying the rule leaves you
+with a sparse body rather than a filtered one. That is the honest state of it:
+the filter works, and on this rig it filters out most of what arrives.
 
-So, until time alignment lands: **take where the performer is from
-`/track/performer`, and use the body only for the layout of the limbs relative
-to it.** The shape of a pose survives the lag much better than its position
-does. A gesture keyed to an arm's direction is reasonable; a cue keyed to where
-that arm is in the room is not.
+Two more things to design around:
 
-Three more things to design around:
+- **Two phones at 90° still put joints on the wrong side.** Mirrored
+  left/right relabelling needs three or more views to vote; with two views that
+  disagree the joint is withheld instead, but 5 to 17 of 30 test poses still
+  carried a limb on the wrong side. A two-phone rig should not use the sides at
+  all.
+- **A clustered performer gets no body**, as they get no hands. A duet in
+  contact is two performers with positions and no joints. Wrong-person views
+  are now rejected by matching on each phone's lifted torso centre, so a close
+  pass costs joints rather than giving you someone else's arm.
 
-- **A clustered performer gets no body at all**, as they get no hands. A duet
-  in contact is two performers with positions and no joints.
-- **Switching it on delays the frame it rides with, as it behaves today.** The
-  fusion runs on the same thread that sends `/track`, and currently it runs
-  before the send: 0.3 to 2.3 ms normally, 12 to 18 ms on a bad tick under
-  contention, and that is latency added to the performers and hands, not only to
-  the body. The fix pass sends the frame first, which removes it.
-- **The wire shape is not confirmed with the client's own bus.** A bundle that
-  holds nothing but a body message has never been through it, and that bus is
-  known to drop a hand it cannot match to a performer in the same frame. It is
-  on the agenda for 17 November, and it is the thing most likely to change the
-  format on this page.
+And one limit is **gone**: the fusion used to run before the frame was sent and
+delayed it. The frame bundle now goes first, then the fusion, then one bundle
+per performer, so switching body points on no longer adds latency to the
+performers and hands. Off, the fusion does not run at all.
 
-A fix pass is running for the wrong-side joints, the time alignment and the
-frame ordering. Until it lands the numbers below stand, and so does the
-verdict: **land it off.**
-
-Switching it on anywhere needs two separate yeses. Default Ltd are being asked
-on **17 November** whether their bus will take a bundle that holds only a body
-message - that question is open until the call, not settled - and the fix pass
-has to measure well on the multi-phone harness. With both, it can run at the
-dry run the next day as a **labelled experiment**. Without either, it stays
-off, and it stays off for Stroud regardless until the two faults above are
-fixed.
+Switching it on anywhere still needs two separate yeses. Default Ltd are being
+asked on **17 November** whether their bus will take a bundle that holds only a
+body message - open until the call - and the measurements have to be good
+enough for whoever is depending on them. With both it can run at the dry run
+the next day as a **labelled experiment**. Without either it stays off, and it
+stays off for Stroud.
 
 #### How the joints are found, and how good they are
 
@@ -291,53 +276,55 @@ There is no temporal model and the phones are not synchronised. Views more than
 outside the gate and is dropped rather than averaged into a smear.
 
 {: .warning }
-> **Not accurate enough to switch on for a show, as of 11 November.** Through
-> the real keypoint model, on rendered people seen by simulated phones and
-> scored against the simulation's own joints, the limb error is:
+> **Not accurate enough to switch on for a show.** Measured through the real
+> keypoint model on rendered people from simulated phones, scored against the
+> simulation's own joints, after the 11 November fixes. Limb joints, median and
+> 95th percentile error, and how often a joint is more than 30 cm out:
 >
-> | Rig | Median | p95 |
-> |---|---|---|
-> | 3 phones, ring | 103 mm | 530 mm |
-> | 6 phones, ring | 71 mm | 455 mm |
-> | 8 phones, ring | 66 mm | 370 mm |
-> | 8 phones, 3 people | 96 mm | 730 mm |
-> | Stroud plan, 3 phones | 98 mm | 418 mm |
-> | Stroud plan, 8 phones | 91 mm | 532 mm |
+> | Rig | Median | p95 | Over 30 cm |
+> |---|---|---|---|
+> | Stroud layout, 6 phones, 3 people | 92 mm | 519 mm | 14.2 % |
+> | Stroud layout, 8 phones, 1 person | 86 mm | 531 mm | 12.9 % |
+> | 8 in a ring, 3 people | 64 mm | 434 mm | 9.1 % |
+> | 8 in a ring, 1 person | 52 mm | 253 mm | 4.3 % |
+> | 3 in a ring, 1 person | 75 mm | 336 mm | 6.3 % |
 >
-> So 7 to 10 cm in the middle and tails of 40 to 73 cm. Part of the median is
-> where the model puts a joint on a rendered body against where the simulation
-> says the joint is; **the tails are real failures** - the far-side arm hidden
-> from every phone that could resolve it, and bodies mixed up with three people
-> on stage. The model finds the simulated people 61 to 98 per cent of the time
-> depending on the rig, and places their joints 2.7 to 4.5 pixels from the
-> truth when it does.
+> The two rows that matter are the first two, because that is the layout the
+> show is planned on, and they are the two that improved least. A ring of
+> phones around a body is a much easier problem than a row of phones down each
+> side of a stage, and the rig is the second one.
 >
-> `hybrid` is the default and is **not** the best mode on this data; depth-only
-> or triangulate-only win in most of those configurations. That is being
-> reviewed before anything is recommended.
+> **The fixes moved every number the right way** - at eight phones in a ring
+> with three people the median went from 97 to 64 mm and the share over 30 cm
+> from 20.3 to 9.1 per cent - and the time alignment changed the lag
+> specifically: a walking hip went from 93 to 135 mm of median error down to 23
+> to 44 mm. One thing got worse: a body standing still reads 39 mm rather than
+> 21 mm, because the published position is now blended toward the depth
+> readings, which helps on real keypoints and hurts on synthetic noise.
 >
-> **The message format is what we are asking Default Ltd to agree. The feature
-> stays off.** Build a receiver against it if you want to be ready; do not plan
-> a cue on a joint position yet.
+> **Fewer joints are reported now, deliberately.** At three phones in a ring
+> the share of joints published fell from 99 to 76 per cent: a joint the fusion
+> cannot confirm is sent with confidence 0 rather than guessed. A body with
+> holes in it is the correct output when the phones cannot agree, and it is why
+> the confidence test above is worth applying rather than reading every joint.
 
 {: .note }
-> Earlier figures on a synthetic harness - 21 mm median at eight phones - are
-> the **fusion's floor, not its accuracy**. That harness assumes the keypoint
-> lands on the true joint plus two pixels of noise, which the measured run shows
-> overstates the result by two to four times. They are still useful for
-> comparing the four fusion modes against each other, and for nothing else.
+> Earlier figures from a synthetic harness - 21 mm median at eight phones - are
+> the **fusion's floor, not its accuracy**: that harness assumes the keypoint
+> lands on the true joint plus two pixels of noise. They are useful for
+> comparing the fusion modes against each other and for nothing else.
 >
-> Both sets come from simulated phones. **Nothing here has been measured on a
-> real body or a real rig.** The cost is measured: fusion 0.4 to 1.1 ms per
-> tick, and the keypoint pass about 10 ms per phone frame on this Mac.
+> Everything here comes from simulated phones. **Nothing has been measured on
+> a real body or a real rig.** The cost is measured and it is small: 0.97 ms a
+> tick at three phones and three performers, 1.56 ms at eight and three, 3.6 ms
+> at eight and eight - all of it after the frame has gone out.
 >
-> What has run with a real phone in it is one take, replayed: **1,625 body
-> messages against 1,762 performer messages**, every one well formed, every
-> joint at `views` 1 because there was one phone. The 137-message gap has not
-> been broken down, and three things cause it: a performer who is coasting or
-> clustered gets no body by rule, so does one with no phone frame younger than
-> 0.15 s carrying a person within 0.8 m of them, and so does one whose
-> seventeen joints all fuse to confidence 0. Do not read the gap as one cause.
+> What has run with a real phone in it is one take, replayed before these
+> fixes: 1,625 body messages against 1,762 performer messages, every one well
+> formed, every joint at `views` 1 because there was one phone. The gap has not
+> been broken down; a performer gets no body while coasting or clustered, when
+> no phone frame younger than 0.15 s carries a person within 0.8 m of them, and
+> when every joint fuses to confidence 0.
 
 ## The coordinate frame
 
@@ -525,26 +512,33 @@ floor there is nothing vertical to measure, so the vertical velocity is fed
 zero and decays toward it rather than snapping. A small `vy` just after
 somebody crouches and stands is the average catching up, not a measurement.
 
-**Somebody on the floor is a special case, and it has a threshold.** A
-performer is normally recognised by standing taller than a minimum; a body
-lying down does not, so a low observation is kept as a performer when it has
-enough points behind it **and stands at least 0.12 m off the floor**, measured
-from the 5th to the 95th percentile of its own points. A torso lying down is
-0.2 m thick and clears that. A flat patch of floor is 1 to 6 cm and does not.
+**Somebody on the floor is a special case, and it has a test.** A performer is
+normally recognised by standing taller than a minimum; a body lying down does
+not, so a low observation is kept as a performer when it has enough points
+behind it **and at least a quarter of those points stand more than 5 cm off the
+floor**.
 
-That threshold exists because of a specific failure: a phone reported 675
-points one centimetre thick, 0.6 m from a walker, it was accepted as a body
-lying down, and the walker's own id then coasted along beside it - a fourth
-performer for three walkers in about one bundle in five. The patch was the
-floor beyond the walker, kept because that phone's depth band had centred on
-the floor rather than on the body.
+That test exists because of a specific failure. A phone reported 675 points
+topping out at five millimetres, 0.6 m from a walker; it was accepted as a body
+lying down, the walker's own id coasted along beside it, and the result was a
+fourth performer for three walkers in 15 to 24 per cent of bundles. The patch
+was the floor beyond the walker, kept because that phone's depth band had
+centred on the floor rather than on the body.
+
+The shape of the test is worth knowing, because the obvious ones do not work.
+A bar on the patch's height, and a bar on its vertical span, were both tried
+and both let it through: the same patch with a few leg points in it tops out at
+0.136 m and spans 0.142 m, which clears either bar, and 17 bundles came back.
+What separates them is how much of the body is off the floor rather than how
+tall it is.
 
 {: .warning }
-**No real lying body has been checked against 0.12 m.** The threshold is set
-from what a torso measures and tested against synthetic patches and a synthetic
-body 0.2 m thick. Somebody genuinely flat on the floor - a performer pressed
-into the deck, seen from a shallow angle - is the case to measure on a rig
-before relying on it, and it is on the list for the next stage session.
+**No real lying body has been measured against this.** The quarter comes from
+simulation - lying bodies on tripods between 1.55 and 2.44 m, at 2.5 to 6 m,
+slim and normal, on their back and their side, with the mask exact and bled 4
+to 8 pixels onto the floor, never went below a third of their points above
+5 cm. A performer genuinely pressed flat into the deck, seen from a shallow
+angle, is the case to measure on a rig before relying on it.
 
 **While two performers are merged, one of the two ids is dead reckoning.** A
 merge gives the tracker one blob where it wants two. The id that matches the

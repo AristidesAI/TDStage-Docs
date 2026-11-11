@@ -341,6 +341,7 @@ for 17 November, not yet agreed.
 | `bodyReprojPx` | 8 px | 1 to 30 | safe | A phone whose keypoint lands farther than this from the triangulated joint, in pixels of its own depth grid, is dropped. Expert |
 | `bodyMaxAge` | 0.15 s | 0.03 to 1.0 | safe | A phone's keypoints older than this are not a view. The phones are not synchronised, so a longer window fuses a moving limb seen at different times. Expert |
 | `bodySmooth` | 0 | 0.0 to 0.95 | safe | EMA weight of the previous position. 0 is raw; the bus smooths positions itself. Expert |
+| `bodyTimeAlign` | `extrapolate` | `extrapolate`, off | safe | The phones are not synchronised, so each view is moved to the tick's time along the performer's own `/track` velocity before the views are fused. It takes the lag out of a walking body: a hip's median error dropped from 93 to 135 mm down to 23 to 44 mm in the desync simulation. An arm swinging relative to the body still lags up to one observation period, because the correction uses the body's velocity and not the limb's. Expert |
 
 Not settings, but fixed in the code and worth knowing: a phone's person is
 matched to a performer within 0.8 m in plan (the hands' own distance); rays

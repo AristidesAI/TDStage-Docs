@@ -36,6 +36,8 @@ WORDS = {
     "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11,
     "twelve": 12, "fifteen": 15, "twenty": 20, "thirty": 30, "forty": 40,
     "fifty": 50, "sixty": 60, "ninety": 90,
+    # shares, for a rule a page states as a fraction rather than a figure
+    "quarter": 0.25,
 }
 
 # (page, regex capturing ONE number or number-word, source file, constant)
@@ -116,7 +118,7 @@ CHECKS = [
      "WebConsole/track_emit.py", "REACQ_GROW_MPS"),
     ("reference/track.md", r"to a limit of ([\d.]+) m",
      "WebConsole/track_emit.py", "REACQ_MAX_M"),
-    ("reference/track.md", r"ride lasts at most ([a-z]+) seconds",
+    ("reference/track.md", r"the ride lasts at most ([a-z]+) seconds",
      "WebConsole/track_emit.py", "RIDE_MAX_S"),
     # The hand contract, published 2026-11-11. A receiver times a gesture latch
     # against the hold ladder, so every number in it is pinned: a change in
@@ -143,10 +145,13 @@ CHECKS = [
     # The lying-body threshold: a flat patch of floor was published as a
     # performer until 11 November, so the number a reader would check is the
     # one that stops it happening again.
-    ("reference/track.md", r"stands at least ([\d.]+) m off the floor",
-     "WebConsole/track_emit.py", "LOW_SPAN_MIN"),
-    ("console/running.md", r"must now also stand ([\d.]+) m off the floor",
-     "WebConsole/track_emit.py", "LOW_SPAN_MIN"),
+    # The share of a low observation's points that must be off the floor. The
+    # 5 cm beside it is a literal in person_obs, not a named constant, so the
+    # share is what can be pinned - and it is the number that was tuned.
+    ("reference/track.md", r"at least a (\w+) of those points stand more",
+     "WebConsole/track_emit.py", "LOW_UP_MIN"),
+    ("console/running.md", r"have at least a (\w+) of\n> its points more than 5 cm",
+     "WebConsole/track_emit.py", "LOW_UP_MIN"),
     # Body points, pinned from the day the pages went up. The two radii are the
     # easiest pair on the site to confuse: 0.25 m drops a view that is lying
     # about a joint, 0.12 m decides which depth points become the published
@@ -161,9 +166,9 @@ CHECKS = [
      "WebConsole/body_points.py", "MIN_ANGLE_DEG"),
     ("reference/design.md", r"performer in plan within ([\d.]+) m",
      "WebConsole/body_points.py", "MATCH_M"),
-    ("reference/track.md", r"carrying a person within ([\d.]+) m of them",
+    ("reference/track.md", r"carries a person within ([\d.]+) m of them",
      "WebConsole/body_points.py", "MATCH_M"),
-    ("reference/track.md", r"no phone frame younger than\n> ([\d.]+) s", "WebConsole/body_points.py",
+    ("reference/track.md", r"no phone frame younger than ([\d.]+) s", "WebConsole/body_points.py",
      "MAX_AGE_S"),
     ("console/settings.md", r"counts ([\d.]+)x in\nevery depth median",
      "WebConsole/body_points.py", "FAR_W"),

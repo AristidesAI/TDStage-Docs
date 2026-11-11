@@ -461,9 +461,11 @@ has to be built for them. See
 > bundles. Chasing it reproduced the fault in all three balanced runs, at 19.7
 > to 23.7 per cent: a phone had reported a patch of floor one centimetre thick,
 > 0.6 m from a walker, as a body lying down, and the walker's own id coasted
-> along beside it. A low body must now also stand 0.12 m off the floor, which a
-> torso does and a floor patch does not, and that fix lands with the rest of
-> this.
+> along beside it. A low observation must now also have at least a quarter of
+> its points more than 5 cm off the floor, which a body lying down does and a
+> floor patch does not, and that fix lands with the rest of this. A bar on the
+> patch's height or its span would not have done it: the same patch with a few
+> leg points tops out at 0.136 m and clears both.
 >
 > **Why balanced brought it out far more often than full is still not
 > established.** The likely reason is that the bad view survives more tracker
