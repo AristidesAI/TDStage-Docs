@@ -86,8 +86,8 @@ CHECKS = [
      "WebConsole/server.py", "--sim-port"),
     ("console/running.md", r"\| `--f1-port PORT` \| `(\d+)`",
      "WebConsole/server.py", "--f1-port"),
-    ("console/running.md", r"\| `--f1-hz RATE` \| `([\d.]+)`",
-     "WebConsole/server.py", "--f1-hz"),
+    ("console/running.md", r"the setting `f1\.rateHz` holds the rate instead, (\d+) Hz",
+     "WebConsole/settings.py", "_n.f1.rateHz"),
     ("reference/track.md", r"to a host and port you give it \((\d+) by convention\)",
      "WebConsole/track_emit.py", "CONTROL_PORT"),
 
@@ -102,8 +102,8 @@ CHECKS = [
      "WebConsole/f1_field.py", "PRES_R_MAX"),
     ("reference/field.md", r"\*\*The source id\*\* is (\d+), always",
      "WebConsole/f1_field.py", "SOURCE_ID"),
-    ("reference/field.md", r"Default rate is (\d+) Hz",
-     "WebConsole/server.py", "--f1-hz"),
+    ("reference/field.md", r"The default rate is (\d+) Hz",
+     "WebConsole/settings.py", "_n.f1.rateHz"),
     ("reference/field.md", r"listens on TCP port (\d+) \(`--f1-port`\)",
      "WebConsole/server.py", "--f1-port"),
     ("console/ui.md", r"A disagreement over (\d+) cm names the phone",
@@ -185,8 +185,8 @@ def source_state(repo: pathlib.Path, rel: str, working_tree=False):
 
 
 def constant(src: str, name: str):
-    """The value of a module constant, a dict entry (`DICT.key`), an instance
-    default (`self.attr`), one element of a tuple constant (`NAME[-1]`), or an
+    """The value of a module constant, a dict entry (`DICT.key`), a settings
+    schema default (`_n.key`), an instance default (`self.attr`), one element of a tuple constant (`NAME[-1]`), or an
     argparse default (`--flag`).
 
     Ports live in argparse defaults rather than in named constants, and a port
@@ -209,6 +209,27 @@ def constant(src: str, name: str):
             return None
         parts = [p.strip() for p in m.group(1).split(",") if p.strip()]
         return float(parts[int(idx)])
+    if name.startswith("_n."):
+        # A settings-schema default, group-qualified: `_n.f1.rateHz` reads
+        # `"rateHz": _n("F1 rate", "float", 15.0, ...)` inside `"f1": {`.
+        #
+        # The group is not optional, and the reason is the bug it caused here:
+        # `rateHz` exists twice in the schema, vision's observer rate (30) and
+        # f1's field rate (15), and an unqualified search took the first.
+        #
+        # These pins matter when a CLI flag stops carrying a number. --f1-hz
+        # became `default=None` on sys/integ-c, with the schema holding 15 and
+        # the flag only overriding it, which would have failed two pins the day
+        # it landed.
+        _, grp, key = name.split(".", 2)
+        g = re.search(rf'^\s*"{re.escape(grp)}":\s*\{{', src, re.M)
+        if not g:
+            return None
+        rest = src[g.end():]
+        nxt = re.search(r'^\s{0,8}"[a-zA-Z0-9_]+":\s*\{', rest, re.M)
+        block = rest[:nxt.start()] if nxt else rest
+        m = re.search(rf'"{re.escape(key)}":\s*_n\([^,]*,\s*"[a-z]+",\s*([\d.]+)', block)
+        return float(m.group(1)) if m else None
     if name.startswith("self."):
         # A default that lives on an instance rather than at module level:
         # hands.py keeps holdS and outlierM as `self.hold_s = 0.2`, set once in

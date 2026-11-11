@@ -29,7 +29,7 @@ client is connected, sends three binary message types: a **field** (which
 5 cm voxels of the stage volume are occupied, and how certainly), a
 **presence** list (where the people are, as floor footprints, with no
 identity), and about once a second the **sensor poses** (where each phone is).
-Default rate is 15 Hz (`--f1-hz`). Each of the three starts with the same header
+The default rate is 15 Hz, held by the setting `f1.rateHz` and changeable while the console runs; `--f1-hz` pins it for a run instead. Each of the three starts with the same header
 shape: a four-letter magic, the contract version `0.4.1`, a flags byte, a
 frame id and a timestamp in seconds on the console's clock. Nothing is
 acknowledged. A slow client gets the newest message of each kind, never a

@@ -315,7 +315,7 @@ to remember and one firewall rule per direction.
 | `--tdp4-port PORT` | `9003` | A direct TDP4 UDP listener on the phone facing port. It is bound only while nothing else claims it, and the console gives it up while the TouchDesigner link is up and TD's status message (`/tdstage/td/status`) reports that `Udpport`, or an older tox reports none. `0` disables it. | `0` on the show machine, where TouchDesigner must be able to bind 9003 the instant it launches and the console reads the bridge file instead. Another number to run a measurement instance beside TD. |
 | `--sim-port PORT` | `9013` | A second TDP4 listener the console always owns. The built in simulator is aimed at it. A real phone can be pointed here when TD is not in the loop. | Rarely. Change it only to avoid a clash, and then set the fan out's second target to match. |
 | `--f1-port PORT` | `9001` | The F1 0.4 draft WebSocket (SMSF, SMSP, SMSS). **TCP**, so it coexists with a UDP `--listen 9001`. `0` turns it off. | `0` when no client machine is consuming it. |
-| `--f1-hz RATE` | `15.0` | Rate of the F1 field, fixed. Leave it unset and the setting `f1.rateHz` holds the rate instead, which can be changed while the console runs. | Only if the client asks for a different rate and you want it pinned past a settings change. |
+| `--f1-hz RATE` | not set | Pins the rate of the F1 field for this run. Left alone, the setting `f1.rateHz` holds the rate instead, 15 Hz, and can be changed while the console runs; the flag wins over it when given. | Only if the client asks for a different rate and you want it pinned past a settings change. |
 | `--priority below` | `normal` | Runs the console and the YOLO worker it starts at a lower CPU priority, so TouchDesigner on the same machine wins when the two compete. `TDSTAGE_PRIORITY=below` in the environment does the same, which is how `show.bat` can set it. | On a laptop running the console beside TouchDesigner. Not on the show PC, where the console has the machine to itself. |
 | `--config PATH` | `config.json` beside `server.py` | The config file to load and save. Phone profiles move with it, into a `profiles` folder beside it. **Also marks this a test instance**, so the TouchDesigner link and the client outputs start off. | Always, when you run a second instance for a test or a measurement. |
 | `--td-link` | off for a test instance, on otherwise | Lets a test instance drive TouchDesigner: push poses, own the registration table. | Only when a second instance is deliberately taking over TD from the show console. |
@@ -394,6 +394,11 @@ the Live view's People only panel or through the API:
 | Field stream rate | 15 Hz | 15 Hz | **10 Hz** |
 | `/track` rate | 30 Hz | 30 Hz | 30 Hz |
 
+The keypoint budget is a total **across all phones**, so what each phone gets
+depends on how many there are: balanced's 60 a second is 20 each at three
+phones and 7.5 each at eight, and lite's 30 is 10 each at three and under 4 at
+eight. On a big rig lite is a much deeper cut than it looks.
+
 **`/track` stays at 30 Hz in every mode**, with the same performer counts.
 What lite costs is the hand messages, the field rate, and 5 to 14 ms of
 `/track` latency from the slower engine tick. It also doubles the Live view's
@@ -403,7 +408,12 @@ learning is in seconds and does not change.
 Going back is exact rather than approximate: **Full restores the values each
 setting had before the preset was applied**, not the shipped defaults, and it
 survives a console restart. A mode you applied last week is still reversible
-today. No mode turns body points on.
+today. Going from one mode straight to another is safe for the same reason: the
+one in force is reversed first, so lite after balanced is lite's values over
+the originals rather than lite's over balanced's.
+
+No mode turns body points on, and both of them explicitly hold them off,
+because switching them on would force the keypoint pass back up.
 
 ```bash
 curl -X POST http://localhost:9080/api/preset -d '{"name":"lite","action":"apply"}'
