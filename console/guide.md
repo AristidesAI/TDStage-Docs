@@ -94,6 +94,27 @@ wherever they were told to, which only Send telemetry here or a pushed profile
 changes. It has to match. If it does not, the phones stream perfectly and read
 as dead. See [Troubleshooting](troubleshooting.html).
 
+## Standby, and getting a dark phone back
+
+**Standby stops capture and blacks the screens, and leaves the phones
+reachable.** It sends a stop and a blackout to each phone 150 ms apart, so the
+rig goes quiet in order rather than all at once. Telemetry and `/ctl` keep
+working for as long as the app is open, which is what makes it a break rather
+than a shutdown: the phones cool down and you can still see and command them.
+It also disarms auto-recover, so nothing fights the quiet.
+
+{: .warning }
+> **On a build older than 27 October the phone auto-locks during standby and
+> stops answering.** Those builds need Auto-Lock set to Never on the phone.
+> Newer ones hold the phone awake themselves.
+
+**Start show wakes them**, and it also darkens every screen as part of
+starting, which is the thing that confuses people: a phone with a dark screen
+is usually working. **Wake** and **Wake all** bring a screen back without
+stopping anything, and on the phone itself a **triple tap** does the same.
+Somebody who does not know that reads a dark phone as a dead one and goes to
+the stand.
+
 ## Finding the phone somebody changed
 
 ![The All phones page showing the parity panel, with five controls numbered](../assets/screens/console-all-phones.webp)
@@ -156,6 +177,11 @@ square"; both have since been corrected.
 |---|---|---|
 | A4 at true size | **195 mm** | about 174 mm |
 | A3 at true size | **280 mm** | about 249 mm |
+
+The box takes 50 to 800 mm in steps of 5. **Above 280 mm it warns that the
+size does not fit an A3 sheet with its quiet zone**, which is the one piece of
+feedback the page gives you about a number: it is a paper-size check, not a
+check that you measured the right thing.
 
 **A wrong size does not fail loudly**, and the effect is not the obvious one.
 The declared size does not rescale the stage. It only tells the phone how far away the marker is, so
