@@ -282,10 +282,9 @@ used 0.15 m until 10 November, which left 300 to 600 backdrop points inside the
 cut in simulation, so it moved to the tox's figure rather than the other way
 round.
 
-**Where it sits is the part that makes it worth doing.** The cut runs before
-everything that learns. A point outside it never becomes an engine voxel, so
-it is never background, never foreground, never counted towards maturity and
-never offered to `/track`. One test, `segment.in_stage`, serves the engine, the
+The cut runs before everything that learns, which is what it buys you. A point
+outside it never becomes an engine voxel, so it is never background, never
+foreground, never counted towards maturity and never offered to `/track`. One test, `segment.in_stage`, serves the engine, the
 GPU engine, ingest's person selection and both of `/track`'s background and
 mask paths, which is deliberate: a consumer testing a wider volume than the
 engine ingested would promote a point the background cannot contain to a
