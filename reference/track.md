@@ -420,31 +420,15 @@ never sent. You will not see flicker ids for noise, and in exchange a real
 performer walking on stage appears on the fifth sighting, about 130 ms late
 at a 30 Hz cloud.
 
-{: .warning }
-> **This release can invent a performer on a wall, and whether it still does
-> when you read this depends on one more fix.** At eight phones with three
-> walkers on stage, 4.2 to 5.9 per cent of bundles carried a fourth performer
-> or more, and nine distinct ids were issued over a minute where three people
-> were walking. On the release before it, the same scene gives nought per cent
-> and exactly three ids.
->
-> The cause is ours, not the simulation's. The keypoint pass runs on a Mac
-> whenever `/track` hands are on, and a pose detected with no segmentation mask
-> of its own was being turned into a person built from everything inside the
-> pose's bounding box - a path meant for a different model's instance cap. A
-> pose that fired on the painted flats therefore became a performer on the
-> wall.
->
-> Three things make it go away, and the first two are available today: turning
-> `/track` hands off drops it to 0.1 per cent, and **a backdrop wall cut
-> removes it entirely** by taking the wall out of the cloud before anybody is
-> detected. The third is a one-line fix that makes such a view produce no
-> performer at all; it is written and measured at nought per cent with three
-> ids, and whether it rides with this release is not yet decided.
->
-> Until it does: **a wall cut is the answer on a stage with flats**, and a
-> receiver should treat a performer that appears at the edge of the stage and
-> never moves with the suspicion it deserves.
+{: .note }
+**A performer cannot be invented out of scenery any more.** Until this release
+a keypoint detection with no segmentation mask of its own was turned into a
+person built from everything inside its bounding box, so a pose that fired on
+the painted flats became a performer standing on the wall - nine ids in a
+minute for three walkers, at eight phones. Such a view now produces **no
+performer**, while its wrists still reach the hand tracking, and the same scene
+gives three ids for three walkers. If you saw a motionless extra performer at
+the edge of the stage on an earlier build, that was this.
 
 **Three seconds of reservation.** When a performer is lost, the id is held and
 not reused for three seconds. So an id that disappears and comes back inside
