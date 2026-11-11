@@ -172,6 +172,20 @@ the phones feeding *that* frame, so it also drops while a phone is being
 re-learned after somebody moved it: see [What a placement change does to
 you](#what-a-placement-change-does-to-you).
 
+{: .warning }
+> **On an empty stage, a dead rig does not yet report a device count of 0.**
+> The step that zeroes it runs only while performers are tracked, so if the
+> clouds stop with nobody on stage the last fresh count keeps going out: a
+> receiver watching that count reads "three phones, no performers" from a rig
+> that has been off for an hour. With somebody tracked when it died the count
+> does go to 0, which is why this has not been noticed in a rehearsal.
+>
+> Fixed on the branch `fix/track-stale-devcount`, whose self-test runs the
+> real emit loop against a store that goes silent and reads the count off the
+> wire. Until it lands, treat a steady count as "no phone has dropped out",
+> not as "the rig is alive", and read liveness from the capture timestamps or
+> from the console.
+
 ## Identity: what an id promises
 
 ```mermaid
