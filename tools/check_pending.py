@@ -62,7 +62,17 @@ AR_REPO_NAME = "TDStageARKit"
 # The two repositories do not agree on the name of the trunk: the system one is
 # on `main`, the ARKit one on `master`. Asking the wrong one silently answers
 # "not merged", which is the answer that makes this check pass.
-TRUNKS = ("main", "master")
+#
+# The question is deliberately "is it on TRUNK", not "is it merged anywhere".
+# Feature branches are merged into integration branches days before they reach
+# trunk - fix/track-stale-devcount went into sys/integ-c two days before its
+# landing - and the site describes what is on trunk. Asking the looser question
+# would turn a page red while its warning was still the truth.
+#
+# Both the local trunk and the pushed one count, so a landing shows up here
+# from the push rather than waiting for this checkout to pull it.
+TRUNKS = ("refs/heads/main", "refs/remotes/origin/main",
+          "refs/heads/master", "refs/remotes/origin/master")
 
 
 def git(repo, *args):
@@ -116,23 +126,26 @@ def main():
                             + " or ".join(r.name for r in repos)
                             + " any more - renamed, deleted, or a typo")
             continue
-        trunk = next((n for n in TRUNKS
-                      if git(home, "rev-parse", "--verify", f"refs/heads/{n}").returncode == 0),
-                     None)
-        if trunk is None:
-            problems.append(f"{home.name} has neither "
-                            + " nor ".join(TRUNKS)
+        trunks = [n for n in TRUNKS
+                  if git(home, "rev-parse", "--verify", n).returncode == 0]
+        if not trunks:
+            problems.append(f"{home.name} has no trunk among "
+                            + ", ".join(TRUNKS)
                             + f", so whether `{b}` has landed cannot be answered")
             continue
-        merged = git(home, "merge-base", "--is-ancestor", b, trunk).returncode == 0
-        if merged:
-            problems.append(f"`{b}` is merged into {home.name}'s {trunk}, and "
-                            f"{', '.join(where)} still describes its work as "
-                            f"coming - rewrite those as the behaviour, and drop "
-                            f"the branch name")
+        landed = [n for n in trunks
+                  if git(home, "merge-base", "--is-ancestor", b, n).returncode == 0]
+        if landed:
+            problems.append(f"`{b}` is on {home.name}'s "
+                            + " and ".join(n.split("/")[-2] + "/" + n.split("/")[-1]
+                                           if "remotes" in n else n.split("/")[-1]
+                                           for n in landed)
+                            + f", and {', '.join(where)} still describes its work "
+                            f"as coming - rewrite those as the behaviour, and "
+                            f"drop the branch name")
         else:
-            print(f"`{b}`: not on {home.name}'s {trunk} yet, "
-                  f"{len(where)} place(s) say so")
+            print(f"`{b}`: not on {home.name}'s trunk yet "
+                  f"({len(trunks)} ref(s) checked), {len(where)} place(s) say so")
 
     if dated:
         due = [(d, w) for d, w in dated if _parse(d, today.year) <= today]
@@ -178,6 +191,11 @@ def demo():
     assert DATE_RX.findall("captured on 2026-10-27 at a narrow width") == []
     assert _parse("12 November 2026") == datetime.date(2026, 11, 12)
     assert _parse("12 November", 2026) == datetime.date(2026, 11, 12)
+    # trunk refs only, and the remote one among them: a branch merged into an
+    # integration branch has NOT landed, and a landing that is pushed but not
+    # pulled here HAS
+    assert "refs/remotes/origin/main" in TRUNKS
+    assert not any("integ" in n for n in TRUNKS)
     print("self-check ok")
 
 

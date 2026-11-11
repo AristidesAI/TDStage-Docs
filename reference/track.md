@@ -180,8 +180,7 @@ you](#what-a-placement-change-does-to-you).
 > that has been off for an hour. With somebody tracked when it died the count
 > does go to 0, which is why this has not been noticed in a rehearsal.
 >
-> Fixed on `fix/track-stale-devcount`, now folded into `sys/integ-c` and
-> landing with it. The self-test runs the real emit loop against a store that
+> Fixed, and riding with `sys/integ-c`. The self-test runs the real emit loop against a store that
 > goes silent and reads the count off the wire, rather than asserting on
 > anything internal. Until it reaches trunk, treat a steady count as "no phone
 > has dropped out", not as "the rig is alive", and read liveness from the
