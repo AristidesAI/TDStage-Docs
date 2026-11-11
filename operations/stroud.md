@@ -234,6 +234,34 @@ Two things the plot cannot show:
 > one live reading. That is six degrees narrower horizontally, so a 12 Pro Max
 > standing where the study put a phone sees less than the study gave it, and
 > the 92 per cent on this page is computed from the wider lens. Their figure,
-> not ours: nobody here has read the intrinsics off a 12 Pro Max. If one is in
-> the rig, re-run the coverage study with its own lens before trusting a
-> number on this page for that position.
+> not ours: nobody here has read the intrinsics off a 12 Pro Max. No take from
+> one is on file; the next one they send settles it.
+
+**What a 12 Pro Max costs, as modelled.** The layout was re-run at the narrower
+lens. Simulated, this plan's six positions over the 6 by 8 m area, share of the
+volume unseen by any phone and share seen by two or more:
+
+| Lens, at 5.0 m mounting height | Unseen | Two or more views |
+|---|---|---|
+| All six at 71° | 4 % | 58 % |
+| Three of six at 65.1° | 6 % | 54 % |
+| All six at 65.1° | 9 % | 52 % |
+
+| Lens, at 4.5 m | Unseen | Two or more views |
+|---|---|---|
+| All six at 71° | 4 % | 45 % |
+| Three of six at 65.1° | 6 % | 40 % |
+| All six at 65.1° | 9 % | 36 % |
+
+So a 12 Pro Max costs a few points of two-view share per phone rather than a
+redesign, and height costs more than lens does: dropping from 5.0 m to 4.5 m
+takes more two-view coverage than swapping every phone to the narrower lens.
+**These are not the 92 and 46 per cent above**, which come from a different
+tool and a different definition - read each table against its own column
+headings and do not mix them.
+
+{: .note }
+The layout file carries 70° per phone and overrides the lens given on the
+command line, so an earlier "71°" row of mine was really 70°. It moves the
+two-view share by one point, 58 against 57, which is why the rows above are
+labelled 71° and the difference is not worth re-running.
