@@ -103,6 +103,31 @@ simulation. Simulated phones do not get hot, do
 not drop frames on a congested switch, and do not occlude each other the way
 bodies do.
 
+{: .warning }
+> **A simulation can also be wrong in a way that flatters nothing in
+> particular.** Until 11 November 2026 the simulated walkers did not face their
+> direction of travel: their facing was mirrored across the diagonal, so the
+> median agreement between where a body faced and where it was going was
+> **-0.01 instead of 1.00**. Every phone saw every walker at the wrong angle.
+>
+> That is fixed, and the simulator records which version drew a run - the
+> scenario line of each log says so. What it means for a figure measured before
+> the fix depends on what the figure is of:
+>
+> - **Anything the person model's view of a body feeds** - detection rates,
+>   identity swaps, body-point accuracy, `/track` performer counts, F1 presence
+>   - was measured on bodies at the wrong angle, and is not a number to carry
+>   forward. The body-point accuracy figures were re-measured and the aggregate
+>   barely moved, but the single-view share got worse; that is the only part
+>   that has been re-run so far.
+> - **Throughput and timing** - packets a second, bandwidth, the console's CPU,
+>   `/track` latency - is barely touched by which way a walker faces, so those
+>   figures stand as they are.
+>
+> The general lesson is the one worth keeping: a simulated figure's error bar
+> includes the simulator. Ask what a run was drawn with before quoting it, the
+> same way you would ask how many phones.
+
 ### What two phones in one room cannot evidence
 
 Being specific about this is more useful than a general disclaimer, because
