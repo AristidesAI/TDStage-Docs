@@ -431,6 +431,38 @@ Not yet run on the live rig; the phones were offline when it was measured.
 The choice of solver is therefore still open, and the pair of them disagreeing
 on a real stage would itself be a result.
 
+### What the align refuses, and what it leaves behind
+
+Three refusals and one disappearing warning, all of which an operator meets
+before they meet the maths.
+
+- **An Open3D result that is not OK is never applied.** The console writes a
+  pose from that method only on an OK, after a red-team pass found WARN
+  placements 0.1 to 1.7 m wrong. A WARN is a measurement you can read, not a
+  rig you can use.
+- **An apply-mode align is refused when the anchor's own pose is unchecked**, a
+  seeded or restored position among them, unless a marker-calibrated phone
+  fixes the frame. The solver will not measure the rest of the rig against a
+  position nobody has confirmed.
+- **Open3D needs its own Python** with `open3d` installed, either
+  `WebConsole/.venv-o3d` or whatever `TDSTAGE_O3D_PYTHON` points at. A missing
+  one is an error that says how to install it rather than a silent fallback.
+
+{: .warning }
+> **The Rig health row naming the phones an align left behind lasts one hour.**
+> After that the solve is still incomplete and the row is gone, so a rig
+> checked the morning after an align reads as clean when it is not. Read that
+> row while it is there, or re-run the align to bring it back.
+
+Rig health also raises **"Phones A and B disagree by N mm"** when two placed
+phones' overlapping clouds drift apart, which is what a bumped stand looks
+like from the console. The fix it suggests is a re-run, or walk calibration
+with only the phone that moved.
+
+The controls themselves are **Align to #N** with a Clouds or Open3D selector,
+then **Record walk**, **Stop walk** and **Solve walk**, which pre-lists the
+phones the cloud solve could not place.
+
 ### The two solvers, by name
 
 The cloud solve is `TD/newtox/rig_align.py` and the walk solve is

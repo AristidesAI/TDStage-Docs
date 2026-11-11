@@ -372,14 +372,30 @@ a performer standing still is not absorbed. The protection has a failure mode:
 if a whole view arrives after the engine has started, everything in it is
 motion-born, and it can guard itself and never learn.
 
-The console carries a mechanism for exactly that, called a scenery epoch.
+The console carries a mechanism for most of that, called a scenery epoch.
 Voxels born in the first three seconds after an epoch count as scenery rather
 than as somebody walking in, and an epoch is raised in two ways: `ingest` marks
 one when a phone's stream joins or comes back after an outage, and a tick that
 brings in more than 6,000 new voxels at once raises one too, which covers a
-phone that was re-aimed. A walker adds at most about 550 voxels in a tick, and
-a whole body appearing at once about 3,000, so the bar sits clear of anything a
-person does.
+phone that was re-aimed.
+
+{: .warning }
+> **One case gets through both of those, and the result is permanent.** A phone
+> that joins a running console, with somebody walking about in front of it, has
+> its room revealed a strip at a time: a few hundred voxels a tick, which never
+> reaches the 6,000 bar, and all of it later than the three seconds the join's
+> own epoch covers. So the unlearned room counts as motion-born, forms one wide
+> foreground cluster, earns the footprint guard, and never promotes. `/track`
+> then waits for a background that cannot arrive.
+>
+> **Fixed from 12 November 2026** by refusing the guard to any cluster wider
+> than 2.5 m, on the grounds that no group of performers is. Until that lands,
+> the way out is the same as everywhere else on this page: **Stage is empty
+> now**, on an empty stage.
+>
+> The older self-test did not catch this because it arrives a small late view
+> all at once, which the 6,000 bar handles. The strip case is a separate test,
+> and it learns 0.99 with the new bar against 0.00 without it.
 
 If `/track` still reports nobody with people plainly in view, the two things to
 check are the maturity ratio and the settle window
