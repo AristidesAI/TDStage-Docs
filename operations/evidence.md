@@ -151,6 +151,29 @@ into a number.
    the button reads `Recording · <rows>` while it writes, and the console log
    says where the file went when it starts and how many frames it holds when
    it stops.
+   Three things about that file, because all three change what a score from it
+   means.
+
+   **It is a trace, not a copy of the wire.** Each row carries host time,
+   capture time, the device frames that fed the emission, and each track as
+   id, plan x, plan z, `clustered` and coasting. There is no `y`, no velocity,
+   no confidence and no hands in it. Anything you want to say about those has
+   to come from the client's own capture of the OSC, not from this file.
+
+   **A row is written per emission that had a new point cloud behind it**, not
+   per emitted frame. The emitter re-sends the current state between clouds to
+   hold its rate, and those re-sends leave no row. So the row rate is the rate
+   the phones are delivering at, and **a gap in the file is not a gap in the
+   output**: when the clouds stop entirely the emitter keeps sending, with the
+   performers coasting and then gone, and writes nothing while it does. Read a
+   silence in the file as "nothing was measured", never as "nothing was sent".
+
+   **The tracks in a row are the tracker's, before two things that happen on
+   the way out**: the cap on how many performers may be sent, and the drop of
+   any track with a non-finite number in it. A row can therefore name a
+   performer the receiver never saw. With fewer performers on stage than the
+   cap, which is the normal case, the two are the same list.
+
 2. Score the recording:
 
 ```
