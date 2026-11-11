@@ -116,6 +116,12 @@ needs no change:
 python3 TD/newtox/tdp4_bridge.py --port 9003 --shm-port 9004
 ```
 
+{: .warning }
+> **`--port` defaults to 9004, which is not where the phones send.** Run the
+> bridge bare, without the flags above, and it binds the publish name instead
+> of the phones' port, so nothing arrives and everything looks healthy. Always
+> give it both flags.
+
 Set `Udpport` to whichever name the bridge publishes under. With no
 `--shm-port`, the bridge publishes under its bind port, so a tox on `Udpport`
 9003 and a bridge on `--port 9003` also match.
@@ -192,6 +198,24 @@ on any of them, for a run that wants to assert the opposite.
 > a phone, a network, a full-size grid or Windows. The orderly mode needs
 > SIGINT, so on Windows only `--mode kill` runs. Its ports default to 9561 and
 > 9562; never give it a show port.
+
+### Where the console looks for the bridge file
+
+The console does not read TouchDesigner's parameter. It looks for a bridge
+file in this order: the port TouchDesigner reports over the link, then 9004,
+then 9003, taking the first that exists. `TDSTAGE_BRIDGE_PORT` pins it to one
+port and skips the search.
+
+So a bridge publishing under a name none of those three match is invisible to
+the console while TouchDesigner is perfectly happy, which reads as the console
+having lost the phones.
+
+{: .note }
+> **On Windows a stale file of the wrong size stops the bridge loudly**, with a
+> message saying it has the wrong size and is in use and to close TouchDesigner
+> or delete the file. That is the good case. The file is named for its port and
+> its layout version, so a bridge and a reader built from different versions
+> look for different files rather than silently sharing a mismatched one.
 
 ### The fan-out relay is not in the show path
 
@@ -287,6 +311,19 @@ rows at all means nothing has reached the ingest: check `Udpactive`, then
 
 A row that appears and immediately reads STALE means hellos are arriving but
 frames are not, or frames are arriving incomplete.
+
+### What the `devices` table does on its own
+
+Two behaviours surprise people, and neither is a fault.
+
+- **A phone silent for 30 seconds is removed from the table rather than shown
+  as offline.** The row vanishes. A real phone re-creates it on reconnect and
+  its registration row survives regardless, so a disappearance means "not
+  heard from", not "lost its pose".
+- **A new device id below 1000 registers itself** the first time it appears,
+  with an identity pose. Ids from 1000 up are simulator and fallback rows and
+  are left alone. So a phone that has never been placed still gets a row in
+  `registration`, sitting at the origin until something places it.
 
 ### 2. The log
 

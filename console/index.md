@@ -79,9 +79,8 @@ Four jobs, in the order you meet them at a get in.
 
 ## The console is not downstream of TouchDesigner
 
-This is the single most important thing to believe about the architecture, and
-the moment you need to believe it is while deciding whether to restart the
-console mid performance.
+The moment this matters is while deciding whether to restart the console mid
+performance.
 
 **Both readers are fed from the same source, in parallel.** The phones send TDP4
 to `tdp4_bridge.py`. The bridge assembles whole frames into one memory mapped
