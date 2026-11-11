@@ -487,9 +487,10 @@ has to be built for them. See
 > **The phantom fourth performer is explained and fixed.** One balanced run at
 > three phones had shown a fourth performer for three walkers in 23 per cent of
 > bundles. Chasing it reproduced the fault in all three balanced runs, at 19.7
-> to 23.7 per cent (rates from the simulator as it was before its walkers faced
-> their direction of travel; the mechanism below was read frame by frame and
-> does not depend on that, so the fix is sound while the rate is provisional): a phone had reported a patch of floor one centimetre thick,
+> to 23.7 per cent on the simulator as it then was. Both the fix and a
+> correction to the simulator have landed since, and on the corrected simulator
+> that three-phone rate is **0 to 0.1 per cent**. The mechanism was read frame
+> by frame, so it did not depend on the simulator's error: a phone had reported a patch of floor one centimetre thick,
 > 0.6 m from a walker, as a body lying down, and the walker's own id coasted
 > along beside it. A low observation must now also have at least a quarter of
 > its points more than 5 cm off the floor, which a body lying down does and a
