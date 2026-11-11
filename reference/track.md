@@ -339,6 +339,44 @@ if you read the other fields:
 | confidence | a flat 0.30 |
 | `clustered` | 1 |
 
+**And the ride can outlive the person it stands for.** The offset the swallowed
+id rides at is a guess, and it goes stale. If the rider picks up a fragment of
+the other body for a frame it takes a new offset from it, and the hidden
+performer can then come back out further from where their id is being carried
+than the tracker will reach for them. The reach starts at 0.5 m and grows by
+1 m for every second of coasting, to a limit of 2 m - so it is generous, and it
+is not always enough. When it is not, that performer is published under a
+**new** id after the usual five sightings, and the old id carries on riding as
+a ghost.
+
+For those seconds the bundle holds **one performer more than there are
+people**. The extra one is recognisable, and it is recognisable by the fields
+this page has already told you to read:
+
+| Field | The ghost |
+|---|---|
+| velocity | exactly zero on all three axes |
+| confidence | 0.30 |
+| `clustered` | 1 |
+| position | within 0.7 m of a real performer, moving with it at a fixed offset |
+
+It ends on its own: the ride lasts at most ten seconds from when that id
+started coasting, and it leaves the bundle as soon as it is more than 0.7 m
+from every tracked performer. The person it stood for is the new id, and the
+old one is then retired like any id that has been gone three seconds.
+
+So **for a head count, do not count a performer with zero velocity on all
+three axes, confidence 0.30 and `clustered` 1 while another performer is within
+0.7 m.** That is not a new rule - it is this page's existing one, that zero
+velocity means a prediction rather than a measurement, applied to counting.
+
+In simulation this is rare and not negligible: three phones and three walkers
+over sixty seconds gave one episode of about ten seconds and one of a quarter
+second across three runs at the balanced preset, and twelve bundles in one run
+of three at the default settings. A fix is in progress
+([#68](https://github.com/AristidesAI/TDStage/issues/68)): a rider would take
+back a fragment that splits off near its host before a new id can be born.
+
 So the rule for a receiver is the same one as everywhere else in this
 contract: **take the position, distrust the identity**, and treat zero velocity
 as "this is a prediction". Two performers walking together for ten seconds will
