@@ -137,8 +137,8 @@ one core. Eight colour phones offer 76,300, so the bridge has about half as
 much again in hand. The 61,000 figure in older notes was the highest load
 tested, not a limit.
 
-So the constraint is 937 Mbit/s of framed traffic on a 1,000 Mbit/s line, with
-nothing left for a burst. That is a cabling decision rather than a software
+So at that grid the constraint is 937 Mbit/s of framed traffic on a
+1,000 Mbit/s line, with nothing left for a burst. That is a cabling decision rather than a software
 one, and on 2026-10-30 it was taken.
 
 ### The decision of 30 October, and where it stands

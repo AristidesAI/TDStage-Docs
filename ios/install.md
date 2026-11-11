@@ -102,8 +102,17 @@ Archive) reports no date and never warns.
 | **1.2 (5)**, Debug | not uploaded | n/a | The rig's own phones, installed directly with `devicectl` on 2026-11-07 |
 
 **Apple's 90 days run per build, from that build's upload**, so each one has
-its own clock and a newer build does not extend an older one. 1.0 (3) expires
-inside the Stockholm rehearsals, which is the date to work back from.
+its own clock and a newer build does not extend an older one.
+
+{: .warning }
+> **1.0 (3) expires in the middle of the January rehearsals.** It stops
+> launching around 25 January 2027 and the Stockholm block without the rig runs
+> 18 to 30 January, so phones carrying that build go dark partway through. A
+> build uploaded in late October cannot be stretched; only a new upload moves
+> the date, and the clock on that one starts the day it is uploaded.
+>
+> The second Stockholm block, 20 March to 18 April 2027, is the full rig and
+> runs into the premiere, so it needs its own upload regardless.
 
 Two things about 1.1 (4) worth carrying: it was built by an Xcode Organizer
 archive rather than `Support/testflight.sh`, so its **build stamps are empty**

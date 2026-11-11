@@ -7,7 +7,7 @@ nav_order: 5
 # Stroud: the plan
 
 Where every phone, marker and tape line goes at Brunel's Goods Shed, Stroud,
-for the test of **24 to 26 November 2026**. [Rig get-in](get-in.html) is the
+for **23 to 27 November 2026**. [Rig get-in](get-in.html) is the
 general procedure; this page is the venue's own numbers, so that the person
 holding the tape measure does not have to work anything out.
 

@@ -444,9 +444,8 @@ Run 9 November 2026, ring preset, no fusion, no registration error:
 | 0.60 m | 2.00, 99.8 % | 2.00, 98.3 % | 2.00, 98.5 % |
 | 1.00 m | 2.00, 100 % | 2.00, 100 % | 2.00, 100 % |
 
-Read the 6-device column against the other two and the whole argument for more
-phones is in one place: **six views split two bodies from 0.30 m, where one or
-two views need 0.50 to 0.60 m.** Below 0.25 m every configuration reports one
+Read the 6-device column against the other two: **six views split two bodies
+from 0.30 m, where one or two views need 0.50 to 0.60 m.** Below 0.25 m every configuration reports one
 performer, and purity sits near 50 per cent. That is what a coin flip looks
 like when half the points of a merged pair get the one surviving id.
 

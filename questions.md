@@ -139,8 +139,7 @@ envelope](td/testing.html#how-close-is-too-close-separation_testpy) has the
 method and the full sweep.*
 
 **Six views split two bodies from 0.30 m, where one or two views need 0.50 to
-0.60 m.** That is the whole argument for more phones in one table: angles, not
-processing, are what separate people.
+0.60 m.** Angles separate people, not processing.
 
 {: .warning }
 > **Two bodies in sustained physical contact cannot be separated**, by this

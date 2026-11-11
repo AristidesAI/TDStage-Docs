@@ -250,8 +250,7 @@ Without it the field-format checks report as needing a rig rather than failing.
 
 ## 2. USB and wired transmission
 
-This is the section most likely to be got wrong, because the intuition is
-wrong.
+The intuition here is wrong, and the wrong intuition is common.
 
 **An attached iPhone is a network interface, not a tunnel.** Plugged into a
 host over the cable, iOS presents a USB Ethernet (NCM) interface on both ends.
