@@ -227,3 +227,13 @@ Two things the plot cannot show:
 > numbers on this page stand, and the narrower rows in the study's sensitivity
 > table do not apply. The logged values that caused the worry were recorded at
 > a 320-pixel width, not 256.
+>
+> **One phone model reads much narrower, and nothing on this page accounts for
+> it.** The client reported 71.3 to 71.9 × 56.6 to 57.1° from their 16 Pro Max
+> takes - in line with the above - and **65.1 × 51.1° from a 12 Pro Max**, from
+> one live reading. That is six degrees narrower horizontally, so a 12 Pro Max
+> standing where the study put a phone sees less than the study gave it, and
+> the 92 per cent on this page is computed from the wider lens. Their figure,
+> not ours: nobody here has read the intrinsics off a 12 Pro Max. If one is in
+> the rig, re-run the coverage study with its own lens before trusting a
+> number on this page for that position.

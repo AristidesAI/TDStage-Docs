@@ -88,7 +88,7 @@ running.** TDStage AR, the app the rig deploys, captures through ARKit, and
 ARKit's scene depth is **256×192 on every LiDAR iPhone**: a 12 Pro, a 16 Pro
 Max and an 18 Pro all send the same grid. The parked AVFoundation app takes the
 first video format that offers depth and the smallest float grid behind it,
-which is **320×240 on every LiDAR iPhone from the 12 Pro on**, 1.56 times the
+which **Apple gives as 320×240 on every LiDAR iPhone from the 12 Pro on**; this project has read it on one iPhone 18 Pro, 1.56 times the
 cells. A
 `stage.depthgrid` setting exists in both and is inert in both. So the left
 column is the deployed rig and the simulator; the right column is the parked

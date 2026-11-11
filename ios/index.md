@@ -18,7 +18,7 @@ has_children: true
 | | TDStage AR, on the rig | TDStage, parked |
 |---|---|---|
 | Capture | ARKit scene depth | AVFoundation raw depth |
-| **Depth grid** | **256×192 on every LiDAR iPhone.** It is ARKit's grid, so a 12 Pro and an 18 Pro send the same one | The largest float depth grid AVFoundation offers, which is 320×240 on every LiDAR iPhone from the 12 Pro on |
+| **Depth grid** | **256×192 on every LiDAR iPhone.** It is ARKit's grid, so a 12 Pro and an 18 Pro send the same one | The largest float depth grid AVFoundation offers. Apple gives that as 320×240 on every LiDAR iPhone from the 12 Pro on; this project has read it on one iPhone 18 Pro, and never on a 12 Pro Max or a 16 Pro Max |
 | Confidence plane | A real per-cell confidence from the sensor | A validity mask: 255 where depth is finite and positive, 0 where it is not |
 | Person matte | ARKit's own, produced in the same frame as the depth, nothing to align | Vision, a separate inference on a separate clock, which can disagree at the silhouette on a fast performer |
 | Capture to send | 62 to 78 ms, measured with two phones on 28 October | 37 ms, measured with one phone the same day. Different phone counts, so the gap is not a clean comparison |

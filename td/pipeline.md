@@ -436,7 +436,7 @@ gigabit link carries:
 
 TDStage AR captures through ARKit, whose scene depth is 256 by 192 on every
 LiDAR iPhone, so the left column is the rig and the right one is the parked
-AVFoundation app on any LiDAR iPhone. Those figures are payload arithmetic from
+AVFoundation app on any LiDAR iPhone, by Apple's figure. Those figures are payload arithmetic from
 the frame size, not measurements, and framing adds about six per cent.
 
 xyz on device is 7.5 times depth-only and does not fit on the link at either

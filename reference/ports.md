@@ -81,7 +81,7 @@ The full argument, with the bandwidth arithmetic behind it, is in
 Check which grid a packet rate is quoted at, because the two differ by half
 again and both appear in this project's notes.
 
-| Eight phones, 30 fps | **256×192, the rig's grid and the simulator's** | 320×240, the parked app on any LiDAR iPhone |
+| Eight phones, 30 fps | **256×192, the rig's grid and the simulator's** | 320×240, the parked app's grid, Apple's figure for any LiDAR iPhone |
 |---|---:|---:|
 | Depth, confidence and colour | **49,000 pkt/s** | 76,000 pkt/s |
 | Depth and confidence | **24,000 pkt/s** | 38,000 pkt/s |
