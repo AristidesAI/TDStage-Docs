@@ -164,7 +164,7 @@ CHECKS = [
      "WebConsole/body_points.py", "MIN_ANGLE_DEG"),
     ("reference/design.md", r"depth-lifted torso centre, within ([\d.]+) m in plan",
      "WebConsole/body_points.py", "MATCH_M"),
-    ("reference/track.md", r"carries a person within ([\d.]+) m of them",
+    ("reference/track.md", r"carries\n> a person within ([\d.]+) m of them",
      "WebConsole/body_points.py", "MATCH_M"),
     ("reference/track.md", r"no phone frame younger than ([\d.]+) s", "WebConsole/body_points.py",
      "MAX_AGE_S"),
