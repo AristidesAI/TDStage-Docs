@@ -173,6 +173,31 @@ well, because there the aim is to stop touching the disk now.
 
 ---
 
+### Takes that stop themselves, and takes that never existed
+
+A take with **zero frames is deleted at Stop**, the file and its sidecar
+together. Press Record and Stop before the stream has produced anything and
+there is nothing to find afterwards, which looks like a failed write and is the
+recorder refusing to keep an empty file.
+
+Recording on a phone that is not streaming fails earlier, with the message the
+start itself gives: **"START refused: Device ID ... never set"**. A phone whose
+id has never been confirmed cannot start, so it cannot record either.
+
+When a take stops on its own the reason is in the status line, in these words:
+
+| What you see | What happened |
+|---|---|
+| `duration cap Ns reached` | The per-take cap in TAKE SETUP |
+| `storage floor reached` | Free space fell to the auto-stop floor |
+| `write failed: ...` | The disk refused a write, with the system's own reason |
+| `cannot open take file: ...` | The file could not be created at all |
+
+Both the cap and the floor are checked on the writer's own queue, once every
+sixty written frames. A stream that has stopped writes nothing, so neither can
+trip while the phone is idle: a take left armed on a dead stream sits there
+rather than closing itself.
+
 ## LAST TAKE
 
 A one-line summary of the newest take, with a button that selects it and
