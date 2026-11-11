@@ -74,13 +74,64 @@ described further down.
 | # | Type | Name | Meaning |
 |---|---|---|---|
 | 1 | `i` | id | The performer this hand belongs to. Always a performer in the same bundle. |
-| 2 | `i` | side | 0 or 1. One message per side per performer, never two. |
-| 3-5 | `f f f` | x, y, z | Position in metres, same frame as the performer. |
-| 6-8 | `f f f` | vx, vy, vz | Velocity in metres per second. |
-| 9 | `f` | confidence | 0 to 1. |
+| 2 | `i` | side | **0 is the performer's left, 1 their right** - anatomical side, not which side of the picture it appeared on. One message per side per performer, never two. |
+| 3-5 | `f f f` | x, y, z | Absolute position in metres, same frame as the performer, not relative to them. Unsmoothed. |
+| 6-8 | `f f f` | vx, vy, vz | Velocity in metres per second, a least-squares slope over the last few samples rather than a frame-to-frame difference. **Exactly zero while the hand is being held** - see below. |
+| 9 | `f` | confidence | 0 to 1. Caps at 0.5 when the wrist's depth had to be taken from further away than the joint, which is most of what separates a confident hand from a guessed one. |
 
-Hands can be turned off, in which case these messages do not appear.
-Absence of hands is not an error and a receiver should not wait for them.
+Hands are emitted only for a performer who is **confirmed, not coasting and
+not clustered**. A performer whose identity has gone provisional has no hands
+in the bundle, by design: a clustered blob would hand you the wrong body's arm.
+
+Hands can also be turned off at the console, in which case these messages do
+not appear at all. Absence of hands is not an error and a receiver should not
+wait for them.
+
+### When a hand stops being seen
+
+A wrist is a small target. It leaves the picture behind a body, behind a prop,
+or at the edge of a phone's view, several times a minute, and comes back. What
+goes on the wire through that is deliberate, because a gesture latch keyed to
+hand speed has to be able to close:
+
+| Time since the last accepted sample | What is sent |
+|---|---|
+| up to 0.15 s | the position, with its measured velocity |
+| 0.15 s to 0.2 s | the **last** position, velocity exactly zero |
+| past 0.2 s | **one closing frame** - last position, velocity zero - then nothing |
+
+After the closing frame the hand is omitted until it is seen again, and then it
+has to earn its way back: three new sightings before it is published, the same
+hysteresis it needed the first time. So a hand that flickers in and out does
+not flicker on the wire.
+
+Two cases skip the hold. If the performer becomes **coasting or clustered**,
+the hand closes immediately rather than waiting out the 0.2 s. And if the
+performer leaves the bundle altogether there is **no closing frame at all** -
+the hand goes with them, and the receiver should treat a performer's departure
+as closing every hand it had.
+
+**Velocity zero means "not measured now", exactly as it does for a
+performer.** A held hand and a hand resting still are the same three zeros. If
+your gesture detection integrates hand velocity, a zero is the signal to stop,
+not a value to carry.
+
+A hand position is **not smoothed by us and is fused across phones**. Each
+phone lifts its wrist pixel through its own depth, so a wrist half-hidden from
+one phone lands on whatever was behind it, the torso or the wall. Where two or
+more phones saw that wrist within 0.12 s of each other, the published position
+is the confidence-weighted mean of those that agree, with any sample more than
+0.15 m from the median of them dropped. With one phone it is that phone's
+reading. A single-frame jump beyond 0.25 m (scaled by the interval at rates
+under 30 Hz) is rejected and the last position kept, but two rejections in a
+row are taken as the truth and the history restarts - so the rejection covers a
+glitch, never a real fast move.
+
+The client's own bus One-Euro-smooths every position it receives, hands
+included, and takes hand velocity raw as its gesture signal. That is why we
+send position unsmoothed and velocity fitted: smoothing twice would add lag,
+and a frame-to-frame velocity at 30 Hz amplifies position noise about forty
+times, which is enough to fire gestures out of a still hand.
 
 ## The coordinate frame
 
@@ -156,6 +207,35 @@ performer, riding their blob (next section); a performer lost on their own
 leaves the bundle at once and their id is held for the three seconds. While coasting its position is carried, not
 measured, and its confidence drops to a flat 0.30. If your downstream smooths
 or extrapolates, this is the state where you should stop doing that.
+
+### Switching the output off and on, and restarting the console
+
+Three things in the bundle are counters, and what they do across a restart is
+part of the contract:
+
+| | `Send /track` off, then on | Console restarted |
+|---|---|---|
+| `frameId` | keeps counting | back to 0 |
+| `timestamp` | keeps running | back to 0 |
+| performer ids | keep counting up | back to 1 |
+
+The row that catches people is the middle column. **Turning the output off and
+on gives every performer on stage a new id.** The id counter carries on, so no
+number is ever reused and nothing you cached collides, but the tracker itself is
+rebuilt, so the same bodies are re-acquired from nothing: five sightings each,
+then new numbers. Nobody keeps their identity across the switch.
+
+A console restart resets all three to their starting values, which means a
+receiver that treats `frameId` as monotonic forever, or `timestamp` as a clock
+it can compare across runs, breaks on a restart rather than on anything going
+wrong. Both are monotonic **within one run of the console** and that is all they
+claim. Watch for `frameId` going backwards and treat it as "a new session
+started", not as a fault.
+
+Worth rehearsing rather than reading. The Stroud running plan already warns
+the content team that `/track` pauses a few seconds across a console restart
+"and ids start again afterwards", and a get-in with a receiver that cannot
+survive that is where it will be found out.
 
 {: .warning }
 `clustered` is the field most likely to be misread. It does not mean "two
