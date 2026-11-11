@@ -62,6 +62,34 @@ CONTRACTS = [
         "source_re": r'"(stage\.[A-Za-z.]+)"',
         "note": "every key either app registers a default for",
     },
+    {
+        # The tox's parameters are the operator's whole surface, and the one
+        # list that is NOT read from code: it comes from tox_params_live.md,
+        # which is regenerated from the running tox's `customPars`. That file
+        # was itself 30 tox versions stale on 2026-11-11 (generated from v63
+        # while the tox was at v93), so the Stage Cut page's nine parameters
+        # were in the tox, on the documentation page, and in no reference list
+        # at all. Checking the page against it keeps both honest: regenerate
+        # the list after adding a parameter and this check names what is not
+        # written down yet.
+        #
+        # Header rows are section labels rather than controls, so they are
+        # skipped on the source side; the page may still name one.
+        #
+        # One direction only. The page legitimately carries names the tox does
+        # not have as parameters: the components of an XYZW tuple
+        # (`Cropminx`), menu values (`icp`, `learned`), and the design
+        # inventory's never-built parameters where the page says so. Enforcing
+        # the other direction would report all of those every run, and a check
+        # that cries wolf gets switched off.
+        "what": "tox parameters",
+        "page": "td/parameters.md",
+        "page_re": r"`([A-Za-z]+)`(?=(?:, `[A-Za-z]+`)* \|)",
+        "sources": [("system", "TD/newtox/tox_params_live.md")],
+        "source_re": r"\n\| `([A-Za-z]+)` \| [^|]*\| (?!Header)",
+        "note": "every non-header parameter in the live tox list",
+        "one_way": True,
+    },
 ]
 
 # The ARKit app is its own repository, beside the system one.
@@ -132,10 +160,11 @@ def main():
                         " re-run)")
             problems.append(f'{c["what"]}: `{v}` is in {where} '
                             f'and not on {page_name}{hint}')
-        for v in sorted(page - union):
+        extras = set() if c.get("one_way") else page - union
+        for v in sorted(extras):
             problems.append(f'{c["what"]}: `{v}` is on {page_name} '
                             f'and in neither app')
-        if not (union - page or page - union):
+        if not (union - page or extras):
             only = {rel: f - set().union(*(g for r, g in read if r != rel))
                     for rel, f in read} if len(read) > 1 else {}
             extra = "; ".join(f"{len(v)} only in {rel.split('/')[0]}"
@@ -165,6 +194,19 @@ def demo():
     assert "imu/lock" in union and "imu/lock" not in set(re.findall(src_re, src))
     page_both = page + "\n| `/tdlidar/ctl/stop` | ... |\n| `/tdlidar/ctl/imu/lock` | ... |"
     assert union - set(re.findall(page_re, page_both)) == set()
+    # the tox-parameter contract: grouped cells, header rows, one direction
+    tox_src = ("\n| `Trimx` | Cloud Offset X (m) | Float | 0.0 |  |"
+               "\n| `Hdrwall` | Backdrop wall | Header | |  |"
+               "\n| `Wallcut` | Backdrop Wall Cut | Toggle | False |  |")
+    tox_rx = r"\n\| `([A-Za-z]+)` \| [^|]*\| (?!Header)"
+    assert set(re.findall(tox_rx, tox_src)) == {"Trimx", "Wallcut"}, "header row not skipped"
+    pg_rx = r"`([A-Za-z]+)`(?=(?:, `[A-Za-z]+`)* \|)"
+    pg = "| `Trimx`, `Trimy`, `Trimz` | Cloud Offset X/Y/Z (m) |\n| `Cropminx` | a tuple component |"
+    names = set(re.findall(pg_rx, pg))
+    assert {"Trimx", "Trimy", "Trimz"} <= names, "grouped cell lost a name"
+    assert set(re.findall(tox_rx, tox_src)) - names == {"Wallcut"}
+    # and the page's own extras are NOT reported, which is why this one is one-way
+    assert "Cropminx" in names - set(re.findall(tox_rx, tox_src))
     print("self-check ok")
 
 
