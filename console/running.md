@@ -431,13 +431,18 @@ but read the next paragraph before expecting balanced to buy you anything else.
 
 **The show machine**: full. Watch the load line under the preset buttons, which
 reports the console's CPU, the keypoint worker's, and the milliseconds each part
-is taking. **If it is overloaded, go straight to lite**: at eight phones
-balanced took the console from 216 to 206 per cent of a core, which is nothing,
-while lite took it to 119. The reason is that the keypoint worker already caps
-itself near 30 requests a second in total - about 3.8 a phone at eight phones -
-so balanced's budget of 60 never binds, and the only thing balanced changes at
-that load is the browser's camera view. Balanced is a middle setting for its
-other effects, not a middle setting for CPU.
+is taking. **If it is overloaded, go straight to lite.** At eight phones,
+switching to balanced moved the console by ten points of one core, 216 to 206,
+in the run that compared them; the soak's own figures put full at 219 per cent
+and lite at 119. Those are two separate runs and the ten points are the
+comparable number: balanced buys nothing worth having at that load, lite halves
+it.
+
+The reason is worth knowing, because it says when balanced will matter. The
+keypoint worker already caps itself near 30 requests a second in total, about
+3.8 a phone at eight phones, so balanced's budget of 60 never binds and the
+only thing it changes at that load is the browser's camera view. Balanced is a
+middle setting for its other effects, not a middle setting for CPU.
 
 **The single biggest cost is a field-stream client**: about 40 to 60 per cent
 of a core at eight phones, around 45 ms of work a tick. If the system on the other end only needs presence rather than
