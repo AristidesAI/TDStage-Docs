@@ -349,8 +349,9 @@ matched to a performer within 0.8 m in plan (the hands' own distance); rays
 closer than 5 degrees apart cannot seed a triangulation; in `hybrid` a joint is
 sent only when an agreeing depth point lies within 0.12 m of it, and its
 position is the triangulated point blended 0.3 toward those lifts; a joint one
-phone gave has its confidence halved; left/right relabelling needs three
-views; a performer with no body for 0.5 s restarts their smoothing, and a joint
+phone gave has its confidence halved and must pass a bone-length and a jump
+check; the receiver filter is `views` of 2 or more; left/right relabelling
+needs three views; a performer with no body for 0.5 s restarts their smoothing, and a joint
 that drops out comes back raw.
 
 Two of its behaviours look like faults and are not:

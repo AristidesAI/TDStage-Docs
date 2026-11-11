@@ -429,9 +429,9 @@ information.
 > show-grade.** The verdict: it lands **off** with no behaviour change; it may
 > be switched on at the 18 November dry run only as a labelled experiment, and
 > only after the client confirms their bus accepts a bundle holding only a body
-> message. Receivers that want cross-checked joints keep confidence above 0.5
-> or views of 2 or more, which on this rig leaves a sparse body rather than a
-> filtered one. Every figure is **simulated**; it has **not run on a
+> message. Receivers that need a joint to be right keep only joints with
+> `views` of 2 or more, which on this rig leaves a sparse body rather than a
+> filtered one: 19 to 40 per cent of the limb joints. Every figure is **simulated**; it has **not run on a
 > multi-phone rig**. Off, it sends nothing and costs one attribute read.
 
 The same reasoning that puts performer separation on the receiver puts body
@@ -490,9 +490,13 @@ is a fixed radius in the code, not a setting, and distinct from the 0.25 m
 gate: 0.25 m decides which views agree, 0.12 m decides whether the joint is
 confirmed at all. The position is the triangulated point blended 30 per cent
 toward the confirming lifts, because the lifts read the skin, 5 to 10 cm short
-of the joint. A joint only one phone gave is sent with its confidence halved,
-so a receiver can keep only cross-checked joints by taking confidence above
-0.5 or views of 2 or more.
+of the joint. A joint only one phone gave is sent with its confidence halved, and
+it is also checked for a plausible bone length (learned per performer from the
+multi-view frames) and for a jump from its last position; a joint that fails is
+withheld as confidence 0. Even so, the filter for a receiver that needs a joint
+to be right is `views` of 2 or more, not the confidence: a halved confidence
+implies one view, but a low confidence does not imply one view, so testing
+confidence throws away cross-checked joints as well.
 
 Three other modes exist for comparison and diagnosis: `combined` reports the
 triangulated position after the same two-sided depth check, dropping failing
@@ -591,16 +595,30 @@ Stroud is planned on and they improved least:
 Why the show rows barely moved: that layout sees most joints from one phone
 (1.2 to 1.4 views on average), and a single-view joint, mirrored or occluded,
 has nothing to cross-check it. Single-view joints are more than 30 cm off 18 to
-19 per cent of the time; multi-view joints about 3 per cent. Two things in the
-table read like regressions and are not: joints reported fell, most visibly from
-99 to 76 per cent at three phones, because an unconfirmable joint now goes out
-as confidence 0 instead of a guess; and a performer standing still got worse
-(hip median 21 to 39 mm) because the position is now the triangulated point
-blended toward the depth lifts, which is better on real keypoints and worse on
-synthetic noise. With time alignment on, a walking performer's hip median fell
+19 per cent of the time; multi-view joints about 3 per cent. One thing in the
+table reads like a regression and is not: joints reported fell, most visibly
+from 99 to 76 per cent at three phones, because an unconfirmable joint now goes
+out as confidence 0 instead of a guess. A second one was real and is gone: in
+this pass a performer standing still got worse (hip median 21 to 39 mm) because
+the position had become the triangulated point blended toward the depth lifts;
+the next pass gave a still performer its own blend and the hip median is back
+to 22 mm with 11 mm of tick-to-tick movement. With time alignment on, a walking performer's hip median fell
 from 93 to 135 mm to 23 to 44 mm; a swinging wrist's 95th percentile only from
 242 to 413 mm to 204 to 372 mm, since a limb's motion relative to the body is
 not aligned.
+
+**A second pass the same night** (integ-c 116b28c) added the bone-length and
+jump checks on single-view joints. On its own run of the 6-phone show layout
+with three people, the share of all limb joints more than 30 cm off went from
+11.8 to 9.1 per cent and the share reported from 82.8 to 76.0 per cent; 38 to
+52 per cent of the newly withheld joints were more than 30 cm out, which is the
+number that justifies withholding them. Those figures are a separate run from
+the table above and are not comparable with its 14.2 per cent; splicing the two
+would invent a trend nobody measured. After that pass, on the show layout, the
+joints that survive `views` of 2 or more are more than 30 cm out 0.4 to 6.2 per
+cent of the time, and the filter keeps 19 to 40 per cent of limb joints; on the
+ring rigs it keeps 58 to 96 per cent at 3 to 8 per cent. The difference is the
+layout, not the software.
 
 **The synthetic `--compare` table that preceded this is not quoted here.** It
 assumed each keypoint is the true joint plus 2 px of Gaussian noise, on which
@@ -610,8 +628,8 @@ comparing the modes against each other.
 
 **Cost, measured on synthetic scenes** (`--bench`, one Mac), per `/track` tick
 with new keypoints every tick: about 0.9 ms at 3 phones and 3 performers,
-1.5 ms at 8 and 3, 3.5 ms at 8 and 8, all **after the frame's bundle has been
-sent**, so switching body points on adds no latency to the performers and
+1.5 ms at 8 and 3 (1.54 ms after the second pass), 3.5 ms at 8 and 8, all
+**after the frame's bundle has been sent**, so switching body points on adds no latency to the performers and
 hands. The depth lift is 0.35 ms per person per phone frame on the observer
 thread. Off: one attribute read per `/track` tick and one per person per
 observer frame, nothing else.
@@ -643,8 +661,9 @@ findings. A fix pass for five of them merged the same evening (integ-c
   three people). Now: left/right relabelling at three or more views, two
   disagreeing views withheld, the pair search ranked by agreeing views, a
   two-sided depth gate, no unconfirmed triangulation sent, and a single-view
-  joint's confidence halved. With two phones at 90 degrees, mirror conflicts
-  are withheld but 5 to 17 of 30 wrists still go out on the wrong side.
+  joint's confidence halved. With two phones at 90 degrees, the triangulated
+  nose resolves about half the mirror conflicts and the rest are withheld;
+  distrust sides on a two-phone rig.
 - **Lag and jitter from unsynchronised phones** (high, relaxed). Views up to
   0.15 s apart were fused as simultaneous and the body trailed its own
   `/track/performer`. Now each view is moved to the tick time along the
@@ -659,6 +678,12 @@ findings. A fix pass for five of them merged the same evening (integ-c
   (a duet in contact) still gets no body at all, by rule.
 - **The gate at other grids** (low, fixed). The 8 px reprojection gate now
   scales with the grid width (10 px at 320).
+- **Single-view joints** (the show layout's problem, mitigated in a second
+  pass). A bone-length plausibility check, learned per performer from
+  multi-view frames, and a jump check withhold the worst of them; 38 to 52 per
+  cent of what they withheld was more than 30 cm out. Two ideas were measured
+  and dropped: a per-performer facing memory (harmful) and a footprint envelope
+  (never fired).
 - **Still open.** The one-bundle-per-body wire shape has never been through
   the client's bus, which is known to drop a hand it cannot match to a
   performer in the same frame; that is on the 17 November agenda and is the
