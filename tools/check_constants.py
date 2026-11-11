@@ -108,6 +108,28 @@ CHECKS = [
      "WebConsole/server.py", "--f1-port"),
     ("console/ui.md", r"A disagreement over (\d+) cm names the phone",
      "WebConsole/calib_check.py", "WARN_M_CM"),
+    # The hand contract, published 2026-11-11. A receiver times a gesture latch
+    # against the hold ladder, so every number in it is pinned: a change in
+    # hands.py that nobody carries to the page would mis-time somebody's show.
+    ("reference/track.md", r"up to ([\d.]+) s \| the position, with its measured",
+     "WebConsole/hands.py", "LIVE_S"),
+    ("reference/track.md", r"waiting out the ([\d.]+) s", "WebConsole/hands.py",
+     "self.hold_s"),
+    ("reference/track.md", r"saw that wrist within ([\d.]+) s of each",
+     "WebConsole/hands.py", "FUSE_AGE_S"),
+    ("reference/track.md", r"more than\n([\d.]+) m from the median of them",
+     "WebConsole/hands.py", "FUSE_M"),
+    ("reference/track.md", r"beyond ([\d.]+) m \(scaled by the interval",
+     "WebConsole/hands.py", "self.outlier_m"),
+    # the detection fusion radius and the settle gate, same day, same reason
+    ("reference/track.md", r"within ([\d.]+) m in plan is folded into it",
+     "WebConsole/track_emit.py", "OBS_FUSE_M"),
+    ("console/settings.md", r"`settleWindow`, (\w+) seconds by default",
+     "WebConsole/track_emit.py", "SETTLE_WINDOW_S"),
+    ("console/settings.md", r"`settleGrowth`, ([\d.]+), is how much",
+     "WebConsole/track_emit.py", "SETTLE_GROWTH"),
+    ("reference/track.md", r"The hold is (\d+) s, or\nlonger",
+     "WebConsole/track_emit.py", "REG_SETTLE_S"),
 ]
 
 
@@ -125,8 +147,9 @@ def source_state(repo: pathlib.Path, rel: str, working_tree=False):
 
 
 def constant(src: str, name: str):
-    """The value of a module constant, a dict entry (`DICT.key`), one element of
-    a tuple constant (`NAME[-1]`), or an argparse default (`--flag`).
+    """The value of a module constant, a dict entry (`DICT.key`), an instance
+    default (`self.attr`), one element of a tuple constant (`NAME[-1]`), or an
+    argparse default (`--flag`).
 
     Ports live in argparse defaults rather than in named constants, and a port
     is exactly the kind of number a reader copies into their own config without
@@ -148,6 +171,15 @@ def constant(src: str, name: str):
             return None
         parts = [p.strip() for p in m.group(1).split(",") if p.strip()]
         return float(parts[int(idx)])
+    if name.startswith("self."):
+        # A default that lives on an instance rather than at module level:
+        # hands.py keeps holdS and outlierM as `self.hold_s = 0.2`, set once in
+        # __init__ and overwritten from the settings. settings.py would be the
+        # other place to read them, and it has two different `holdS` keys in two
+        # groups, so the class's own default is the unambiguous one.
+        attr = name.split(".", 1)[1]
+        m = re.search(rf"^\s*self\.{re.escape(attr)}\s*=\s*([\d.]+)", src, re.M)
+        return float(m.group(1)) if m else None
     if "." in name:
         _, key = name.split(".", 1)
         m = re.search(rf'^\s*"{re.escape(key)}":\s*([\d.]+)', src, re.M)
