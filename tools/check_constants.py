@@ -112,14 +112,6 @@ CHECKS = [
      "WebConsole/calib_check.py", "WARN_M_CM"),
     # The ghost-after-merge reach (#68). A receiver counting heads acts on
     # these, so they are pinned the day the paragraph goes up.
-    ("reference/track.md", r"reach starts at ([\d.]+) m and grows",
-     "WebConsole/track_emit.py", "GATE_M"),
-    ("reference/track.md", r"grows by\n([\d.]+) m for every second of coasting",
-     "WebConsole/track_emit.py", "REACQ_GROW_MPS"),
-    ("reference/track.md", r"to a limit of ([\d.]+) m",
-     "WebConsole/track_emit.py", "REACQ_MAX_M"),
-    ("reference/track.md", r"the ride lasts at most ([a-z]+) seconds",
-     "WebConsole/track_emit.py", "RIDE_MAX_S"),
     # The hand contract, published 2026-11-11. A receiver times a gesture latch
     # against the hold ladder, so every number in it is pinned: a change in
     # hands.py that nobody carries to the page would mis-time somebody's show.
@@ -142,6 +134,12 @@ CHECKS = [
      "WebConsole/track_emit.py", "SETTLE_GROWTH"),
     ("reference/track.md", r"The hold is (\d+) s, or\nlonger",
      "WebConsole/track_emit.py", "REG_SETTLE_S"),
+    # The rider's claim (#68): the radius a receiver's head count depends on,
+    # and the ride window it happens inside.
+    ("reference/track.md", r"claims the nearest detection within ([\d.]+) m of the",
+     "WebConsole/track_emit.py", "CLUSTER_RELEASE_M"),
+    ("reference/track.md", r"a rider still inside its ([a-z]+) seconds",
+     "WebConsole/track_emit.py", "RIDE_MAX_S"),
     # The lying-body threshold: a flat patch of floor was published as a
     # performer until 11 November, so the number a reader would check is the
     # one that stops it happening again.

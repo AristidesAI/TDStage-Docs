@@ -564,45 +564,32 @@ if you read the other fields:
 | confidence | a flat 0.30 |
 | `clustered` | 1 |
 
-**And the ride can outlive the person it stands for.** The offset the swallowed
-id rides at is a guess, and it goes stale. If the rider picks up a fragment of
-the other body for a frame it takes a new offset from it, and the hidden
-performer can then come back out further from where their id is being carried
-than the tracker will reach for them. The reach starts at 0.5 m and grows by
-1 m for every second of coasting, to a limit of 2 m - so it is generous, and it
-is not always enough. When it is not, that performer is published under a
-**new** id after the usual five sightings, and the old id carries on riding as
-a ghost.
+**A rider takes its performer back when they separate.** The offset a
+swallowed id rides at is a guess and it goes stale: a rider that grabs a
+fragment of its host's blob for one frame can end up carrying that id a metre
+from where its performer re-emerges. Until this release that cost the performer
+their id - they were published as a new one, and the old id rode on beside the
+host as a ghost, which in one simulated run put a fourth performer in 319
+bundles for three walkers.
 
-For those seconds the bundle holds **one performer more than there are
-people**. The extra one is recognisable, and it is recognisable by the fields
-this page has already told you to read:
+Now, before any new id is born, **a rider still inside its ten seconds, whose
+host was matched this frame, claims the nearest detection within 0.9 m of the
+host's own detection.** So a performer coming out of a merge keeps the id they
+went in with. A detection already held by a confirmed track is left alone; one
+held only by a tentative track takes the rider instead, and the tentative track
+is dropped.
 
-| Field | The ghost |
-|---|---|
-| velocity | exactly zero on all three axes |
-| confidence | 0.30 |
-| `clustered` | 1 |
-| position | within 0.7 m of a real performer, moving with it at a fixed offset |
+What this does not change: **during** the merge there is still a rider, and it
+still looks like one performer more than there are people - velocity exactly
+zero, confidence 0.30, `clustered` 1, moving with its host at a fixed offset.
+That is the dead reckoning above, and it is intended. What has gone is the
+ghost that used to outlive the split.
 
-It ends on its own: the ride lasts at most ten seconds from when that id
-started coasting, and it leaves the bundle as soon as it is more than 0.7 m
-from every tracked performer. The person it stood for is the new id, and the
-old one is then retired like any id that has been gone three seconds.
-
-So **for a head count, do not count a performer with zero velocity on all
-three axes, confidence 0.30 and `clustered` 1 while another performer is within
-0.7 m.** That is not a new rule - it is this page's existing one, that zero
-velocity means a prediction rather than a measurement, applied to counting.
-
-In simulation this is rare and not negligible: three phones and three walkers
-over sixty seconds gave one episode of about ten seconds and one of a quarter
-second across three runs with the person model rate-capped, and twelve bundles
-in one run of three at the default settings. (The rate cap is a setting that
-arrives with the next release; the default-settings run is today's behaviour,
-and the figure to read if you are on a current build.) A fix is in progress
-([#68](https://github.com/AristidesAI/TDStage/issues/68)): a rider would take
-back a fragment that splits off near its host before a new id can be born.
+So the head-count rule stands and it is still this page's own: **do not count a
+performer whose velocity is zero on all three axes, whose confidence is 0.30
+and whose `clustered` is 1 while another performer is within 0.7 m.** It now
+describes a performer who is genuinely merged with somebody rather than one who
+has been left behind.
 
 So the rule for a receiver is the same one as everywhere else in this
 contract: **take the position, distrust the identity**, and treat zero velocity
