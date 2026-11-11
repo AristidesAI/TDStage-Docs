@@ -140,6 +140,13 @@ CHECKS = [
      "WebConsole/track_emit.py", "SETTLE_GROWTH"),
     ("reference/track.md", r"The hold is (\d+) s, or\nlonger",
      "WebConsole/track_emit.py", "REG_SETTLE_S"),
+    # The lying-body threshold: a flat patch of floor was published as a
+    # performer until 11 November, so the number a reader would check is the
+    # one that stops it happening again.
+    ("reference/track.md", r"stands at least ([\d.]+) m off the floor",
+     "WebConsole/track_emit.py", "LOW_SPAN_MIN"),
+    ("console/running.md", r"must now also stand ([\d.]+) m off the floor",
+     "WebConsole/track_emit.py", "LOW_SPAN_MIN"),
     # Body points, pinned from the day the pages went up. The two radii are the
     # easiest pair on the site to confuse: 0.25 m drops a view that is lying
     # about a joint, 0.12 m decides which depth points become the published

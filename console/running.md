@@ -456,16 +456,22 @@ has to be built for them. See
 > worker would be asked for eight phones at 30 Hz, the budget is the lever -
 > in theory.
 >
-> One run of balanced at three phones showed a fourth performer in 23 per cent
-> of bundles, with three walkers on the stage. It was **seen once, not
-> reproduced** - a repeat of the same mode gave 1 bundle in 1,160, with the
-> console at 76 per cent of a core and `/track` at 28.5 ms p50, and the
-> eight-phone run gave none - and **the cause was not found**. Somebody is
-> still trying to reproduce it. The keypoint budget never engaged on
-> that machine, so the preset has no obvious mechanism for it, which is an
-> argument and not an explanation. If you see a performer who is not there in
-> balanced, that is a known unexplained observation, not a new fault: say so,
-> and keep the run.
+> **The phantom fourth performer is explained and fixed.** One balanced run at
+> three phones had shown a fourth performer for three walkers in 23 per cent of
+> bundles. Chasing it reproduced the fault in all three balanced runs, at 19.7
+> to 23.7 per cent: a phone had reported a patch of floor one centimetre thick,
+> 0.6 m from a walker, as a body lying down, and the walker's own id coasted
+> along beside it. A low body must now also stand 0.12 m off the floor, which a
+> torso does and a floor patch does not, and that fix lands with the rest of
+> this.
+>
+> **Why balanced brought it out far more often than full is still not
+> established.** The likely reason is that the bad view survives more tracker
+> updates when the model runs at 20 frames a second a phone rather than flat
+> out, but nobody has shown that. So the phantom's cause is known and the
+> preset's part in it is not: if you see a performer who is not there under
+> balanced on a build without the fix, that is this, and it is worth keeping
+> the run.
 
 ## Verifying it came up
 

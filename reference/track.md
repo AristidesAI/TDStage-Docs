@@ -525,6 +525,27 @@ floor there is nothing vertical to measure, so the vertical velocity is fed
 zero and decays toward it rather than snapping. A small `vy` just after
 somebody crouches and stands is the average catching up, not a measurement.
 
+**Somebody on the floor is a special case, and it has a threshold.** A
+performer is normally recognised by standing taller than a minimum; a body
+lying down does not, so a low observation is kept as a performer when it has
+enough points behind it **and stands at least 0.12 m off the floor**, measured
+from the 5th to the 95th percentile of its own points. A torso lying down is
+0.2 m thick and clears that. A flat patch of floor is 1 to 6 cm and does not.
+
+That threshold exists because of a specific failure: a phone reported 675
+points one centimetre thick, 0.6 m from a walker, it was accepted as a body
+lying down, and the walker's own id then coasted along beside it - a fourth
+performer for three walkers in about one bundle in five. The patch was the
+floor beyond the walker, kept because that phone's depth band had centred on
+the floor rather than on the body.
+
+{: .warning }
+**No real lying body has been checked against 0.12 m.** The threshold is set
+from what a torso measures and tested against synthetic patches and a synthetic
+body 0.2 m thick. Somebody genuinely flat on the floor - a performer pressed
+into the deck, seen from a shallow angle - is the case to measure on a rig
+before relying on it, and it is on the list for the next stage session.
+
 **While two performers are merged, one of the two ids is dead reckoning.** A
 merge gives the tracker one blob where it wants two. The id that matches the
 blob gets the real density-core position. The other id, the swallowed one,
