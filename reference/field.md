@@ -189,3 +189,13 @@ recording, and the files it writes are what the delivery folder collects as
 - **A field with nobody listening.** Nothing is computed, so the first frame
   after a connect is a cold start, and `/healthz` reports zero clients and
   zero cost while that is so.
+- **Anything measured on a rig.** Every figure behind this page is simulated.
+  The conformance run that reports 14 requirements passing was made on the
+  development Mac against the client's decoder read from a local downloads
+  folder, so a fresh clone cannot reproduce those rows; the same tool on the
+  Windows runner, which has no decoder and no phones, reports 7 passing and 15
+  needing a rig. Density and latency with several phones streaming have not
+  been measured at all
+  ([#29](https://github.com/AristidesAI/TDStage/issues/29)). The byte layouts
+  are solid - they are parity-tested - and what the stream does under load is
+  not yet known.
