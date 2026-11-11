@@ -418,9 +418,16 @@ information.
 > adds one message per performer, `/track/performer/body`, carrying 17 joints as
 > stage points with a confidence each. It is inside the client contract's
 > "skeletons stay shallow" line: points, no bones, no rotations. The message
-> is to be agreed with Default Ltd on 17 November. Its accuracy is **simulated
-> only**, its cost is **measured on synthetic scenes**, and it has **not run on
-> a multi-phone rig**. Off, it sends nothing and costs one attribute read.
+> is to be agreed with Default Ltd on 17 November. **It is not good enough to
+> switch on for a show yet** (#66, 11 November): through the real keypoint
+> model on rendered people the fused limb error is about 7 to 10 cm median
+> with tails of 40 to 70 cm, and a red-team review the same day found two
+> high findings (below). The verdict: it lands **off** with no behaviour
+> change; it may be switched on at the 18 November dry run only as a labelled
+> experiment, and only after the client confirms their bus accepts a bundle
+> holding only a body message; **not for Stroud** until the two high findings
+> are fixed. Its cost is **measured on synthetic scenes**, and it has **not run
+> on a multi-phone rig**. Off, it sends nothing and costs one attribute read.
 
 The same reasoning that puts performer separation on the receiver puts body
 points there. One phone sees a body from one side, in two dimensions, and
@@ -579,6 +586,70 @@ clustered performers get none by rule, and a performer with no phone frame
 younger than 0.15 s carrying a person within 0.8 m of it gets none either. That run predates the
 own-bundle change, which has since been covered by self-tests only. There has
 been no multi-phone run.
+
+#### What the red-team review found (11 November)
+
+A review against the code and the real-model harness, summarised in #66 (the
+full report is kept outside the repository). Two findings are high, and they
+are why the feature is not for Stroud as it stands:
+
+- **Wrong-side and ghost joints.** With every tripod at one height, almost any
+  two views agree inside the 8 px reprojection gate. So a single view in which
+  the keypoint model has swapped left and right (a back or side view does
+  this), if it is slightly more confident, wins the pair search, and `hybrid`
+  emits a triangulated point that no depth confirms. Synthetic, one swapped
+  view: the left wrist more than 15 cm off in 23 of 30 poses at 3 phones
+  (median 503 mm), 28 of 30 with 2 phones at 90 degrees, none at 6 to 8 phones
+  unless three adjacent views swap. On the real-model harness most errors over
+  30 cm are swapped views: 41 of 49 on a 3-phone ring; 137 of 191 at 8 phones
+  with three people, plus 44 from the wrong person. `hybrid` was the best mode
+  in none of these rigs.
+- **Lag and jitter from unsynchronised phones.** Views up to 0.15 s apart are
+  fused as if simultaneous. Walking at 1.5 m/s with a wrist moving at 3 m/s:
+  hip median 98 mm, wrist 95th percentile 270 to 504 mm, wrist tick-to-tick
+  jumps 156 to 500 mm at the 95th percentile, and the body trails its own
+  `/track/performer`. The receiver rule that follows: do not derive a
+  performer's position from a joint while the performer's own position is in
+  the same bundle, because during movement they disagree and the body is the
+  one behind. The scope that makes it useful rather than only prohibitive:
+  until time alignment lands, take where the performer is from
+  `/track/performer` and use the body only for the layout of the limbs relative
+  to it. A gesture keyed to an arm's direction is
+  reasonable; a cue keyed to where that arm is in the room is not.
+
+Three medium findings belong here too. As it behaves today, the fusion runs on
+the `/track` thread before the frame is sent, 0.3 to 2.3 ms on the bench and 12 to 18 ms on a bad
+tick under contention, so switching body points on delays the existing
+performers and hands as well. Views from the wrong person are taken when
+performers are close, and a clustered pair (a duet) gets no body at all. And
+the one-bundle-per-body wire shape has never been through the client's bus,
+which is known to drop a hand it cannot match to a performer in the same
+frame; that is on the 17 November agenda and is the thing most likely to
+change the format.
+
+Two passes worth having when robustness is the question: garbage or NaN
+keypoints, bad cameras and a dead or slow worker raise no exception and put
+nothing non-finite on the wire, with performers and hands continuing; and a
+25-minute soak (one take replayed as two identical phones, depth path only)
+held memory flat, `/track` at 30 Hz, no errors, no restarts, 61,281 body
+messages, none non-finite.
+
+A fix pass for the two high findings and three of the others (swap hypothesis
+and ranking by agreeing views, a two-sided depth gate, no unconfirmed
+triangulation, time alignment as the hands do it, frame sent first) was
+running when this was written, measured before and after on the real-model
+harness. If it lands before the integ-c merge these figures move; if not, the
+page carries them as the published limits.
+
+**Known gaps** (#66): no half-pixel correction between YOLO pixel coordinates
+and cell centres (at most 0.5 px of bias); no time alignment between
+unsynchronised phones: views up to 0.15 s apart are fused as they are, so a
+limb that moved between them reprojects outside the 8 px gate and is dropped
+rather than averaged, and older observations are not views at all; the lift is not yet vectorised; inverted performers are
+expected to be missed by COCO keypoint models as they are by the person model
+(not measured for keypoints), so #62's rotate-and-retry would apply. The toggle is in the generated Tuning panel, not in
+the hand-written Live view, and body points reach neither TD's consensus view
+nor F1.
 
 **Known gaps** (#66): no half-pixel correction between YOLO pixel coordinates
 and cell centres (at most 0.5 px of bias); no time alignment between
