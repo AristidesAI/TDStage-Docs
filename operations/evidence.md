@@ -124,6 +124,18 @@ bodies do.
 >   `/track` latency - is barely touched by which way a walker faces, so those
 >   figures stand as they are.
 >
+> It also matters **which** simulator drew a run, because the project has more
+> than one. The facing bug was in the articulated walkers (`human_sim`, and
+> `human_sim4` which imports them). A figure measured with `merge_sim`'s
+> capsule performers, or by replaying a recorded take, never had it: the
+> maturity comparison behind the segmentation gate and the lying-body spans are
+> both in that second group and stand unchanged.
+>
+> Where a rate was measured on the walkers - how often a phantom performer
+> appeared, what a load test saw - the **mechanism** was usually read frame by
+> frame and does not depend on the angle, so the fix is sound while the rate is
+> provisional. Those rates are being re-measured.
+>
 > The general lesson is the one worth keeping: a simulated figure's error bar
 > includes the simulator. Ask what a run was drawn with before quoting it, the
 > same way you would ask how many phones.
