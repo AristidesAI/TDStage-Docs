@@ -234,18 +234,23 @@ performer.** Views up to 0.15 s apart are fused as though simultaneous. Walking
 at 1.5 m/s with a wrist moving at 3 m/s, the hip lands 98 mm out at the median
 and the wrist 270 to 504 mm at the 95th percentile, with tick-to-tick jumps of
 the same order. **`/track/performer` and the body of the same performer will
-not agree during movement**, and the body is the one that is behind. Do not
-derive a position from a joint when the performer's own position is in the same
-bundle.
+not agree during movement**, and the body is the one that is behind.
+
+So, until time alignment lands: **take where the performer is from
+`/track/performer`, and use the body only for the layout of the limbs relative
+to it.** The shape of a pose survives the lag much better than its position
+does. A gesture keyed to an arm's direction is reasonable; a cue keyed to where
+that arm is in the room is not.
 
 Three more things to design around:
 
 - **A clustered performer gets no body at all**, as they get no hands. A duet
   in contact is two performers with positions and no joints.
-- **Switching it on delays the frame it rides with.** The fusion runs on the
-  same thread that sends `/track`, before the send: 0.3 to 2.3 ms normally,
-  12 to 18 ms on a bad tick under contention. That is latency added to the
-  performers and hands, not only to the body.
+- **Switching it on delays the frame it rides with, as it behaves today.** The
+  fusion runs on the same thread that sends `/track`, and currently it runs
+  before the send: 0.3 to 2.3 ms normally, 12 to 18 ms on a bad tick under
+  contention, and that is latency added to the performers and hands, not only to
+  the body. The fix pass sends the frame first, which removes it.
 - **The wire shape is not confirmed with the client's own bus.** A bundle that
   holds nothing but a body message has never been through it, and that bus is
   known to drop a hand it cannot match to a performer in the same frame. It is
@@ -254,7 +259,15 @@ Three more things to design around:
 
 A fix pass is running for the wrong-side joints, the time alignment and the
 frame ordering. Until it lands the numbers below stand, and so does the
-verdict: **land it off, run it as a labelled experiment at best.**
+verdict: **land it off.**
+
+Switching it on anywhere needs two separate yeses. Default Ltd are being asked
+on **17 November** whether their bus will take a bundle that holds only a body
+message - that question is open until the call, not settled - and the fix pass
+has to measure well on the multi-phone harness. With both, it can run at the
+dry run the next day as a **labelled experiment**. Without either, it stays
+off, and it stays off for Stroud regardless until the two faults above are
+fixed.
 
 #### How the joints are found, and how good they are
 
