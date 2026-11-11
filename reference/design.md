@@ -411,6 +411,185 @@ planned on paper are what make separation possible later; a rig where every
 phone looks from roughly the same side has redundancy but no additional
 information.
 
+### Sparse body points: 17 joints per performer, from several phones, with the depth as referee
+
+{: .note }
+> **Off by default, and proposed rather than agreed.** `tracking.bodyPoints`
+> adds one message per performer, `/track/performer/body`, carrying 17 joints as
+> stage points with a confidence each. It is inside the client contract's
+> "skeletons stay shallow" line: points, no bones, no rotations. The message
+> is to be agreed with Default Ltd on 17 November. Its accuracy is **simulated
+> only**, its cost is **measured on synthetic scenes**, and it has **not run on
+> a multi-phone rig**. Off, it sends nothing and costs one attribute read.
+
+The same reasoning that puts performer separation on the receiver puts body
+points there. One phone sees a body from one side, in two dimensions, and
+cannot tell which of its joints belong to which performer when two overlap.
+Several phones, each already in stage coordinates with its own intrinsics and
+extrinsic in every frame, can.
+
+```mermaid
+flowchart LR
+  A["Each phone's frame:<br/>RGB + depth on one grid,<br/>K and E in the header"] --> B["Keypoint model on the colour:<br/>17 COCO keypoints per person<br/>(u, v, confidence)"]
+  B --> C["Lift each keypoint through<br/>THAT frame's depth<br/>(the wrists' own lift)"]
+  C --> D["Match each phone's person<br/>to a performer<br/>(plan distance 0.8 m)"]
+  D --> E["Per joint, across phones:<br/>triangulate the rays,<br/>8 px reprojection gate"]
+  E --> F["Depth check: a view whose lifted<br/>point sits more than 0.25 m<br/>in front is an occluder, dropped"]
+  F --> G["Position: the depth points<br/>within 0.12 m of the<br/>triangulated joint, weighted median"]
+  G --> H["/track/performer/body<br/>17 x (x y z confidence views)<br/>own bundle, after the frame's"]
+```
+
+**Per phone**, every keypoint with a confidence at or above
+`vision.minJointConf` is lifted through its own frame's depth, with the same
+function the hand tracking uses for the wrists. That gives a 3D point per joint
+per phone, but a poor one on its own: a keypoint model guesses through
+occluders, and a guessed pixel lifts to the depth of whatever is in front.
+
+**Across phones**, each phone's person is assigned to the nearest eligible
+performer in plan within 0.8 m, one person per phone per performer. Then, joint
+by joint, the rays from every phone that reported it are triangulated: a search
+over view pairs picks the pair whose midpoint the most confidence agrees with
+within 8 pixels of reprojection, then a confidence-weighted least-squares
+intersection over every view inside that gate, re-gated and solved once more.
+Two rays closer than 5 degrees apart cannot be the pair that seeds the solve,
+because depth along nearly parallel rays is unconstrained. Two phones at a
+decent angle to each other triangulate perfectly well, which the two-phone row
+of the table below is; two phones looking from almost the same direction do
+not, and neither does a joint only one phone reported. Both of those fall back
+to the depth points.
+
+**The depth is the referee, and then the measurer.** A view whose lifted point
+lies more than 0.25 m in front of the triangulated joint is an occluder: the
+keypoint was placed on something standing between the phone and the performer.
+That view is dropped and the joint re-solved. In the default `hybrid` mode the
+triangulation then mainly chooses which views to trust; the position reported is
+the confidence-weighted median of the surviving views' depth-lifted points
+within 0.12 m of the triangulated joint. That 0.12 m is a fixed radius in the
+code, not a setting, and it is distinct from the 0.25 m occluder gate: 0.25 m
+decides which views are lying, 0.12 m decides which depth points become the
+published position. If none confirms, the depth consensus of the surviving
+views is used when it lies within 0.25 m of the triangulation, otherwise the
+triangulated point itself. At 256 x 192, one pixel of keypoint
+noise is about 2 cm at 4 m, and the LiDAR is better than that, so the
+triangulation referees and the depth measures.
+
+Three other modes exist for comparison and diagnosis: `combined` reports the
+triangulated position after the same occluder check, `triangulate` skips the depth checks, so a triangulated joint comes from the
+rays alone while a joint only one phone sees still gets that phone's
+depth-lifted point, `depth` has the phones vote with no triangulation: the view whose lifted
+point has the most confidence within 0.25 m of it wins, and its group's
+confidence-weighted median is the position.
+
+**What a joint's numbers mean.** `confidence` is the mean keypoint confidence
+of the views used, scaled by their share of the confidence of every view that
+reported the joint: agreement keeps it, rejected views cost it. `views` is the
+number of phones consistent with the joint. A joint no phone supplies is sent
+as `0 0 0 0 0`, never NaN, because a NaN would poison the bus's One Euro
+filter; confidence 0 means ignore the position. Positions are raw unless
+`tracking.bodySmooth` is above zero (the bus smooths positions itself).
+
+**Which performers get one.** Confirmed performers that are neither coasting
+nor clustered, the same rule the hands use: a clustered blob would hand the
+fuser the wrong body's limbs. Each body message rides in its own OSC bundle,
+one per performer, sent right after the frame's bundle. At about 470 bytes a
+body, three of them inside the frame's own bundle would push it past one
+1500-byte packet and fragment it; keeping them separate keeps the bodies from
+pushing the frame's bundle past one packet.
+
+#### Why triangulation plus depth, and not a multi-view network
+
+Two families of method turn several camera views into one 3D body. Learned
+end-to-end multi-view networks (VoxelPose, Faster VoxelPose, MvP, TEMPO,
+MVGFormer) take every view into one network that outputs 3D joints. Geometric
+fusion (mvpose, VoxelKeypointFusion, RapidPoseTriangulation) runs a 2D
+keypoint model per camera and triangulates across the calibrated cameras.
+
+The deciding evidence is a published study of exactly this rig's situation, a
+camera layout the models were never trained on (Bermuth et al.,
+VoxelKeypointFusion, 2024, arXiv 2410.18723; averaged over four unseen
+datasets):
+
+| Method | Correct parts (PCP) on unseen rigs | FPS |
+|---|---|---|
+| MvP (learned) | 1.8 | 3.2 |
+| VoxelPose (learned) | 37.6 | 13.9 |
+| VoxelPose, retrained on synthetic data for the rig | 73.3 | 10.9 |
+| Faster VoxelPose (learned) | 72.1 | 60.9 |
+| TEMPO (learned, temporal) | 59.1 | 29.7 |
+| mvpose (geometric) | 77.6 | 28.1 |
+| VoxelKeypointFusion (geometric) | 85.3 | 27.2 |
+
+Learned models transfer poorly to a new camera layout and need retraining per
+rig. This rig changes with every venue, so per-rig retraining is not an
+option. The same group's RapidPoseTriangulation (arXiv 2503.21692) is the
+fastest of the geometric family, about 0.1 ms per frame for the triangulation
+itself, which is why the fusion here is written to its shape: in numpy, from
+the paper, not copied (the repository shows no licence). Depth is what this
+rig has that those RGB rigs lack, and it is used for the two things RGB-only
+triangulation cannot do: give a joint seen by one phone a position at all, and
+drop a view that is looking at an occluder.
+
+The 2D source is whichever observer already reports keypoints: YOLO pose in
+the worker, or Apple Vision's body pose on a Mac. No new dependency, and
+YOLO's cost was already measured. Turning body points on
+also turns on the YOLO keypoint pass when YOLO is the primary observer and
+`/track` hands are off, at about 10 to 15 ms per YOLO frame (a figure from a
+comment in the code, not re-measured for this feature). RTMPose or RTMW would be the upgrade if YOLO's keypoints on
+256 x 192 colour prove too coarse; they would plug in behind the same
+17-name interface and are not added.
+
+Not taken: the learned volumetric networks (retraining per venue), TEMPO (adds
+latency by design, being temporal), MVGFormer (speed on a show PC not
+published), and any commercial multi-iPhone mocap, which needs its own app on
+the phone and would stop the LiDAR stream.
+
+#### The numbers, and what kind each one is
+
+**Accuracy, simulated** (`python3 WebConsole/body_points.py --compare`: 150
+poses per rig, joints rendered as spheres of 5 cm radius so the lift reads skin, 2 px of
+2D noise, 10 % of views with an occluder in front, 5 % of keypoints 10 to 40 px
+off, phones at 4 m). Median / 95th percentile joint error in mm, and the share
+of joints more than 10 cm off:
+
+| Rig | `hybrid` (default) | `triangulate` only | `depth` only |
+|---|---|---|---|
+| 2 phones, 90 degrees apart | 40 / 148, 8.7 % | 63 / 199, 18 % | 41 / 825, 21 % |
+| 3 phones, ring | 29 / 102, 5.4 % | 54 / 125, 9.8 % | 29 / 238, 9.2 % |
+| 8 phones, ring | 21 / 49, 0.1 % | 32 / 59, 0.1 % | 23 / 58, 0.7 % |
+
+The medians are mostly the lift's skin offset, which no fusion removes. The
+tails are where the modes differ: depth alone has no way to reject an
+occluder, triangulation alone keeps an occluded view in the solve and reports
+the ray intersection rather than the depth.
+None of these figures has been checked against a real body on a real rig.
+
+**Cost, measured on synthetic scenes** (`--bench`, one Mac): fusion 0.38 ms
+per `/track` tick at 3 phones and 3 performers (95th percentile 0.46 ms),
+0.65 ms at 8 phones and 3 performers, one vectorised call per tick. The depth
+lift is 0.35 ms per person per phone frame and runs on the observer thread,
+not the tick. Off: one attribute read per `/track` tick and one per person per observer
+frame, nothing else.
+
+**End to end, one real phone, once:** take T1 replayed into a sandboxed scratch
+console produced 1,625 body messages against 1,762 performer messages, every
+argument well formed (id plus 17 x 5), `views` = 1 throughout (a one-phone take),
+largest bundle 740 bytes (bodies were still inside the frame's bundle in that
+run), no errors. The 137 performer messages with no body were not broken down: coasting and
+clustered performers get none by rule, and a performer with no phone frame
+younger than 0.15 s carrying a person within 0.8 m of it gets none either. That run predates the
+own-bundle change, which has since been covered by self-tests only. There has
+been no multi-phone run.
+
+**Known gaps** (#66): no half-pixel correction between YOLO pixel coordinates
+and cell centres (at most 0.5 px of bias); no time alignment between
+unsynchronised phones: views up to 0.15 s apart are fused as they are, so a
+limb that moved between them reprojects outside the 8 px gate and is dropped
+rather than averaged, and older observations are not views at all; the lift is not yet vectorised; inverted performers are
+expected to be missed by COCO keypoint models as they are by the person model
+(not measured for keypoints), so #62's rotate-and-retry would apply. The toggle is in the generated Tuning panel, not in
+the hand-written Live view, and body points reach neither TD's consensus view
+nor F1.
+
 ## 5. The phones are deliberately dumb
 
 A phone captures depth and sends it. It does not render, clean, cluster,

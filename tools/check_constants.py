@@ -140,6 +140,28 @@ CHECKS = [
      "WebConsole/track_emit.py", "SETTLE_GROWTH"),
     ("reference/track.md", r"The hold is (\d+) s, or\nlonger",
      "WebConsole/track_emit.py", "REG_SETTLE_S"),
+    # Body points, pinned from the day the pages went up. The two radii are the
+    # easiest pair on the site to confuse: 0.25 m drops a view that is lying
+    # about a joint, 0.12 m decides which depth points become the published
+    # position, and only the first is a setting.
+    ("reference/design.md", r"lies more than ([\d.]+) m in front of the triangulated",
+     "WebConsole/body_points.py", "OUTLIER_M"),
+    ("reference/design.md", r"within ([\d.]+) m of the<br/>triangulated joint",
+     "WebConsole/body_points.py", "CONFIRM_M"),
+    ("reference/design.md", r"agrees with\nwithin (\d+) pixels of reprojection",
+     "WebConsole/body_points.py", "REPROJ_PX"),
+    ("reference/design.md", r"rays closer than (\d+) degrees apart cannot be the pair",
+     "WebConsole/body_points.py", "MIN_ANGLE_DEG"),
+    ("reference/design.md", r"performer in plan within ([\d.]+) m",
+     "WebConsole/body_points.py", "MATCH_M"),
+    ("reference/track.md", r"carrying a person within ([\d.]+) m of them",
+     "WebConsole/body_points.py", "MATCH_M"),
+    ("reference/track.md", r"no phone frame younger than\n> ([\d.]+) s", "WebConsole/body_points.py",
+     "MAX_AGE_S"),
+    ("console/settings.md", r"counts ([\d.]+)x in\nevery depth median",
+     "WebConsole/body_points.py", "FAR_W"),
+    ("console/settings.md", r"with no body for ([\d.]+) s restarts their smoothing",
+     "WebConsole/body_points.py", "SMOOTH_RESET_S"),
 ]
 
 

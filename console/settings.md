@@ -316,6 +316,35 @@ them: `detSource`, `maskGate`, `footMax`, `spanMin` and `maxPerformers`, in
 [f1, and the inverted performer](#f1-and-the-inverted-performer). Applying that
 preset changes this group, so read what it does before pressing it.
 
+**Six more have a documented meaning**, because they are new, off by default,
+and self-contained: the body points keys. `bodyPoints` turns on
+`/track/performer/body`, 17 COCO joints per confirmed performer that is neither coasting nor
+clustered, as stage points with a confidence and a view count each, no bones or
+rotations. How a point is made, and the numbers behind it, are on
+[Why it is built this way](../reference/design.html#sparse-body-points-17-joints-per-performer-from-several-phones-with-the-depth-as-referee).
+Turning it on also turns on the YOLO keypoint pass when YOLO is the primary
+observer and `/track` hands are off, at about 10 to 15 ms per YOLO frame (a
+figure from a comment in the code, not re-measured for this feature). The toggle is in the Tuning panel, not in
+the Live view's hand-written controls. The message is proposed to Default Ltd
+for 17 November, not yet agreed.
+
+| Key | Default | Range | Live | What moves |
+|---|---|---|---|---|
+| `bodyPoints` | off | | safe | Emit `/track/performer/body` at all. Off: no message and no work beyond one attribute read per tick and one per person per observer frame |
+| `bodyFusion` | `hybrid` | `hybrid`, `combined`, `triangulate`, `depth` | safe | How the phones' views of one joint become one point. `hybrid`: triangulate across phones to choose the views, then position from their depth-lifted points. `combined`: the triangulated position, with the same depth check. `triangulate`: no depth check (a joint one phone sees still gets its depth-lifted point). `depth`: the phones' depth-lifted points voted, no triangulation. Expert |
+| `bodyOutlierM` | 0.25 m | 0.05 to 1.0 | safe | A phone whose depth-lifted joint is this far in front of the triangulated one is looking at an occluder and is dropped. In `depth` mode, views farther apart than this disagree. Expert |
+| `bodyReprojPx` | 8 px | 1 to 30 | safe | A phone whose keypoint lands farther than this from the triangulated joint, in pixels of its own depth grid, is dropped. Expert |
+| `bodyMaxAge` | 0.15 s | 0.03 to 1.0 | safe | A phone's keypoints older than this are not a view. The phones are not synchronised, so a longer window fuses a moving limb seen at different times. Expert |
+| `bodySmooth` | 0 | 0.0 to 0.95 | safe | EMA weight of the previous position. 0 is raw; the bus smooths positions itself. Expert |
+
+Not settings, but fixed in the code and worth knowing: a phone's person is
+matched to a performer within 0.8 m in plan (the hands' own distance); rays
+closer than 5 degrees apart cannot seed a triangulation; in `hybrid` a depth point
+confirms the triangulated joint when it is within 0.12 m of it; a performer
+with no body for 0.5 s restarts their smoothing, and a joint that drops out
+comes back raw; a lift found only in the wider search ring counts 0.3x in
+every depth median.
+
 Two of its behaviours look like faults and are not:
 
 - **`/track` deliberately publishes zero performers rather than the raw room**
