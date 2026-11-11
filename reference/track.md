@@ -87,6 +87,25 @@ Hands can also be turned off at the console, in which case these messages do
 not appear at all. Absence of hands is not an error and a receiver should not
 wait for them.
 
+{: .warning }
+> **Everything on this page about hands is simulated, and the default
+> configuration on a Mac carries none at all.** Take T1 replayed into a
+> console with the live settings produced **0 hands in 2,328 performer
+> frames**, with the `Hands` switch on. The wrists come from Apple's body pose
+> there, which falls back to about 3 Hz, and the hand tracker needs three
+> samples less than 0.2 s apart, so nothing is ever born. With the segmentation
+> model's keypoint pass switched on, **91 per cent of performer frames carried
+> a hand** and 72 per cent carried two.
+>
+> The keypoint pass turns itself on only where Apple's body pose is absent,
+> which means the Windows show machine. On a Mac it stays the operator's
+> choice, and `python3 Tools/hands_test.py check --fix` is the one step that
+> says whether hands can be carried and switches on what they need.
+>
+> No hand has been measured on a real body by anything: these figures are a
+> replayed take. Build the receiver from this contract, and treat the first
+> rig session as where it is confirmed.
+
 ### When a hand stops being seen
 
 A wrist is a small target. It leaves the picture behind a body, behind a prop,

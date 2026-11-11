@@ -160,6 +160,13 @@ A phone calibrates by looking at a printed marker whose real-world size it has
 been told. It solves for where it is standing from the size the square appears
 to be against the size it was told to expect.
 
+{: .note }
+**Never yet done on a phone.** The solver has unit tests and the page below
+works; no phone has been calibrated against a printed marker end to end
+([#35](https://github.com/AristidesAI/TDStage/issues/35)). Everything on this
+page about what the console sends is true; what a phone does when it receives
+it is built, not verified.
+
 ![Calibration marker 01: the QR code with the white margin around it.](../assets/img/marker-01.webp)
 
 {: .warning }

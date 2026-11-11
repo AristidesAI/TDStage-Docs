@@ -243,6 +243,15 @@ ranged along one side.
 Calibration puts every phone into one shared stage coordinate space by
 showing them printed markers at known positions.
 
+{: .warning }
+**No phone has ever completed a marker calibration against a printed marker.**
+The solver, the console's marker page and the printing all work in the code and
+have unit tests, and the step below has never been executed end to end on
+hardware ([#35](https://github.com/AristidesAI/TDStage/issues/35)). Allow for
+that in the schedule: this is the step most likely to need a second attempt,
+and the alignment fallback below is the way round it if it does. Treat the
+instructions here as what to try, not as a step with a known duration.
+
 ### The marker size trap
 
 **The size in the console must match the size you actually printed**, and the
