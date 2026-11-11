@@ -155,16 +155,18 @@ With `Mergegpu` on, `out_merged` is **empty by design**. The Script CHOP emits
 one empty sample. That is not a fault, and it is the state the saved component
 ships in.
 
-The saved component, `TDStageConductor_v87.tox` - which is also what the
-repository's working copy `TDStageConductor.tox` contains, byte for byte, on
-every branch; the development Mac's own working copy has moved on to v93 and
-[that is not committed](maintenance.html#the-versioning-rule) -
-carries the state the "ships as" sentences on this page rest on:
+The saved component carries the state the "ships as" sentences on this page rest on:
 `Mergegpu` is saved on, `Segmode` is saved `geometric`,
 `Posesource` is not in the saved file at all, so it sits at its default,
 `console`, and `Geoceiling` is saved at 4 m against its 2.4 m default. The
 full list of saved values that differ from their defaults is in
 [What the saved file ships with](parameters.html#what-the-saved-file-ships-with).
+
+Those four were read out of v87. The running hub reported the same four on
+11 November, at v93 - which is a live reading rather than a reading of the
+saved file, so it says the values survived the six versions, not that nobody
+changed them in the session. If a sentence here matters to you, open the
+version you are about to run and read the parameter.
 
 The one exception is a background learn. The learned grid is built by the CPU
 pipeline, so `gpu_exec` force-cooks `merged` for the duration of a learn even

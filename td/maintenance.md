@@ -69,28 +69,22 @@ working copy is re-saved.**
 TD/TDStageConductor.tox         <- the working copy, always the latest
 TD/TDStageConductor_v01.tox     <- history
 ...
-TD/TDStageConductor_v87.tox     <- the highest number IN THE REPOSITORY
-TD/TDStageConductor_v93.tox     <- the highest on the development Mac, untracked
+TD/TDStageConductor_v93.tox     <- the highest number, and the working copy's twin
 ```
 
-{: .warning }
-> **The tox that has the stage cut is not in the repository.** Checked on
-> 11 November 2026: `TDStageConductor_v88` to `v93` exist only in the
-> development checkout, untracked, and the committed working copy
-> `TDStageConductor.tox` is byte-identical to **v87** on every branch -
-> `main`, `sys/integ-c` and the stage-cut branch itself. The working copy on
-> that Mac is byte-identical to v93.
+{: .note }
+> **The binary has to be committed with the Python that drives it.** Until
+> 11 November 2026 it was not: `v88` to `v93` existed only in the development
+> checkout, and every branch - `main`, the integration branch and the stage-cut
+> branch itself - carried a `TDStageConductor.tox` byte-identical to **v87**.
+> The stage cut's Python travelled with its branch and its tox did not, so a
+> clone produced a hub with none of the wall-cut parameters this site
+> documents. Fixed by committing v88 to v93 and the working copy together.
 >
-> So **a clone gets v87**: no backdrop wall cut, no `Fitwall`, no `Wallviz`,
-> whatever the branch. The stage cut's Python lives on a branch and travels;
-> the tox is a binary and has not been committed since v87. Anyone setting up
-> a show machine from git gets a hub without the parameters this site
-> documents.
->
-> Two ways out and both need doing by a person: commit the tox, or copy the
-> file onto the show machine by hand and record which version it is. Until one
-> of them happens, **do not plan a get-in around a parameter that only exists
-> in one checkout.**
+> It is an easy failure to repeat, because nothing about editing a tox feels
+> like editing a tracked file. After a save, check: `git status TD/` should show
+> the working copy modified and the new version untracked, and both should go in
+> the same commit.
 
 List the directory before picking a number:
 
