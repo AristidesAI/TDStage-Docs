@@ -233,7 +233,9 @@ def main():
         want = constant(sources[rel], name)
         if want is None:
             problems.append(f"{page}: constant {name} not found in {rel} "
-                            f"(renamed or removed - re-point this check)")
+                            f"(renamed, removed, or a key that has not landed "
+                            f"yet - re-point this check, or hold it on the "
+                            f"feature's own branch)")
             continue
         m = re.search(pattern, text)
         if not m:
