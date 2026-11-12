@@ -380,19 +380,14 @@ the phones feeding *that* frame, so it also drops while a phone is being
 re-learned after somebody moved it: see [What a placement change does to
 you](#what-a-placement-change-does-to-you).
 
-{: .warning }
-> **On an empty stage, a dead rig does not yet report a device count of 0.**
-> The step that zeroes it runs only while performers are tracked, so if the
-> clouds stop with nobody on stage the last fresh count keeps going out: a
-> receiver watching that count reads "three phones, no performers" from a rig
-> that has been off for an hour. With somebody tracked when it died the count
-> does go to 0, which is why this has not been noticed in a rehearsal.
->
-> Fixed, and riding with `sys/integ-c`. The self-test runs the real emit loop against a store that
-> goes silent and reads the count off the wire, rather than asserting on
-> anything internal. Until it reaches trunk, treat a steady count as "no phone
-> has dropped out", not as "the rig is alive", and read liveness from the
-> capture timestamps or from the console.
+{: .note }
+> **A dead rig on an empty stage used to keep reporting its last device
+> count.** The step that zeroes it ran only while performers were tracked, so
+> if the clouds stopped with nobody on stage the last fresh count went out
+> indefinitely - a receiver watching it read "three phones, no performers" from
+> a rig that had been off for an hour. Fixed on 12 November 2026: the count goes
+> to 0 either way, within about a second. On an older build, treat a steady
+> count as "no phone has dropped out" rather than "the rig is alive".
 
 ## Identity: what an id promises
 

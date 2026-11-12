@@ -164,9 +164,9 @@ with the actual machine, not an hour.
 > closed loopback port, then the next `recvfrom` and a send to a live peer,
 > neither raising.
 >
-> Two honest caveats, both as of 9 November 2026: it **has not yet run on
-> Windows**, since it passes on macOS by construction and the Windows CI job is
-> what will exercise it, and the tox's copy of `clib` is still the old one
+> Two honest caveats: it **has still not run on Windows** - it passes on macOS
+> by construction, and the Windows CI job that would exercise it did not run on
+> the 12 November release either, for billing - and the tox's copy of `clib` is still the old one
 > ([the current drift](../td/maintenance.html#where-it-stands-today)).
 
 YOLO weights (`yolo26n-seg.pt`, `yolo26n-pose.pt`) and the MediaPipe hand model

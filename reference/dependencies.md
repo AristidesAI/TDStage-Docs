@@ -273,8 +273,7 @@ daemon and no tunnelling software anywhere in the path.
 > word `dynamic`, and Windows translates it, to `dynamisch` on a German
 > installation and `dynamique` on a French one.
 >
-> Fixed on the branch `test/xplat-usb`, landing with the batch on 12 November
-> 2026: the type column is no longer read at all, and the two entries that
+> Fixed on 12 November 2026: the type column is no longer read at all, and the two entries that
 > have to be excluded are excluded by what they are instead, the adapter's own
 > broadcast by its `.255` address and `ff-ff-ff-ff-ff-ff` MAC, and an
 > unanswered entry by its all-zero MAC. The cross-platform self-test now drives

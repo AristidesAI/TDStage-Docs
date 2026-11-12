@@ -92,9 +92,8 @@ to cover it.
 ## Stage Cut
 
 {: .note }
-> **New in tox v89, extended in v90 and v93, 2026-11-10, and not on `main`
-> until 12 November.** The
-> branch is `stroud/stage-cut-td`; the running TouchDesigner already has it.
+> **New in tox v89, extended in v90 and v93, and released on 12 November
+> 2026.** The tox in the repository has it, so a fresh clone has it.
 > The parameters below kept their names, so every expression that reads them
 > is unchanged. What moved is the page: `Floorcut` and `Geoceiling` came from
 > Level, the crop box from Point Cloud, and `Wallcut`, `Wallyaw` and

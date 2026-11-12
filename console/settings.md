@@ -225,10 +225,10 @@ tracker publishes at all rather than how well it holds people.
 > thirty seconds of empty stage at each.
 
 {: .warning }
-> **Maturity is being redefined, and the figures above are measured against the
-> old rule.** With `sys/integ-c`, landing 12 November 2026, maturity becomes the
-> learned share of the scenery actually in view, and a view with nothing static
-> to learn counts as mature on its own. The change came out of the stage cut: a
+> **Maturity was redefined on 12 November 2026, and the figures above are
+> measured against the old rule.** Maturity is now the learned share of the
+> scenery actually in view, and a view with nothing static to learn counts as
+> mature on its own. The change came out of the stage cut: a
 > hard cut leaves so little scenery that the old background-over-all-voxels
 > ratio fell to 0.018 and `/track` went silent. Two settle-gate changes ride
 > with it, and the set is **under review**, so treat this section as the
@@ -261,10 +261,11 @@ afterwards.
 The plateau also restarts from nothing after a phone's placement changes,
 which is why the wait after moving a stand is about 35 seconds rather than the
 30 of the hold itself: see [What a placement change does to
-you](../reference/track.html#what-a-placement-change-does-to-you). And one of
-the two settle-gate changes riding with `sys/integ-c` is here: a floor of a
-couple of hundred voxels added to the 5 per cent, so that a stage cut back to
-almost nothing static can still settle. Until that lands this is the behaviour.
+you](../reference/track.html#what-a-placement-change-does-to-you). One of the
+two settle-gate changes released on 12 November is here: a floor of a couple of
+hundred voxels on top of the 5 per cent, so that a stage cut back to almost
+nothing static can still settle. On a build older than that, the 5 per cent is
+the whole test.
 
 The F1 presence channel is a useful cross-check here, because it does not pass
 through this gate. On that same take, presence reported two people in about 70
@@ -329,10 +330,10 @@ Turning it on also turns on the YOLO keypoint pass when YOLO is the primary
 observer and `/track` hands are off, at about 10 to 15 ms per YOLO frame (a
 figure from a comment in the code, not re-measured for this feature). The toggle is in the Tuning panel, not in
 the Live view's hand-written controls. The message is proposed to Default Ltd
-for 17 November, not yet agreed, and as of 11 November the feature is **not
-good enough to switch on for a show** (limb error about 7 to 10 cm median,
-40 to 70 cm tails, through the real keypoint model on rendered people; see the
-design page).
+for 17 November, not yet agreed, and the feature is **not good enough to switch
+on for a show**: about 10 cm of limb error at the median on the show layout,
+0.4 to 0.6 m at the 95th percentile, measured through the real keypoint model
+on rendered people (see the design page).
 
 | Key | Default | Range | Live | What moves |
 |---|---|---|---|---|
@@ -444,10 +445,9 @@ setting. The story is in section 1 below.
 ## f1, and the inverted performer
 
 {: .note }
-> **Both of these are off by default and land 12 November 2026** with
-> `sys/integ-c` ([#62](https://github.com/AristidesAI/TDStage/issues/62)).
-> Every figure is **simulated**. No real inverted body has been through either
-> of them.
+> **Both of these are off by default and were released on 12 November 2026**
+> ([#62](https://github.com/AristidesAI/TDStage/issues/62)). Every figure is
+> **simulated**. No real inverted body has been through either of them.
 
 The person model wants an upright body. The client's own rotation test on
 6 November found about **22 per cent of the upright detection rate at 180
@@ -532,9 +532,8 @@ every setting equalled its value before the apply.
 ### The performance presets
 
 {: .note }
-> **Landing with `sys/integ-c`** (fill in the date from the merge). The client's
-> London test laptop, an RTX 4060 running TouchDesigner beside the console,
-> found the console too heavy. Two presets answer it. What they cost and save,
+> **Released 12 November 2026.** The client's London test laptop, an RTX 4060
+> running TouchDesigner beside the console, found the console too heavy. Two presets answer it. What they cost and save,
 > and which to run where, is on
 > [Running the console](running.html#performance-modes); every figure there was
 > **measured on one Mac with simulated phones**, nothing on Windows, an RTX

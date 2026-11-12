@@ -59,10 +59,10 @@ parameter. Anything below `Floorcut` minus 0.08 m is gone.
 ### Setting the cut by hand: the Stage Cut page
 
 {: .note }
-> **Tox v90, and not on `main` until 12 November 2026.** It is on the branch
-> `stroud/stage-cut-td`, and the TouchDesigner that is running already has it.
-> Every figure and picture below is **simulated**: six synthetic phones, one
-> frozen frame. None of it has run on a rig.
+> **In the released tox since 12 November 2026** (saved as v93, in the
+> repository with the rest of the hub). Every figure and picture below is
+> **simulated**: six synthetic phones, one frozen frame, tested on macOS. None
+> of it has run on a rig.
 
 The three controls above used to live on two different pages. They are now one
 custom page, **Stage Cut**, second after Point Cloud, in three groups. The
@@ -219,10 +219,10 @@ performer, or counted in the maturity ratio.
 ### The console's own cut
 
 {: .note }
-> **Lands 12 November 2026** as `sys/integ-c`, with tox v92 on the other side.
-> Every figure here is **simulated**: a sandboxed scratch console, the merge
-> simulator, six ring phones, a wall at yaw 15 and 4.0 m. None of it has run on
-> a rig.
+> **Released 12 November 2026**, with tox v92 on the other side. Every figure
+> here is **simulated** and tested on macOS: a sandboxed scratch console, the
+> merge simulator, six ring phones, a wall at yaw 15 and 4.0 m. None of it has
+> run on a rig, and the Windows CI did not run on this release.
 
 The console has the same two cuts, in its Live view under **Stage cut**, and
 they are **the same arithmetic as the tox's**. The plan normal is
@@ -387,10 +387,10 @@ phone that was re-aimed.
 > foreground cluster, earns the footprint guard, and never promotes. `/track`
 > then waits for a background that cannot arrive.
 >
-> **Fixed from 12 November 2026** by refusing the guard to any cluster wider
-> than 2.5 m, on the grounds that no group of performers is. Until that lands,
-> the way out is the same as everywhere else on this page: **Stage is empty
-> now**, on an empty stage.
+> **Fixed since 12 November 2026** by refusing the guard to any cluster wider
+> than 2.5 m, on the grounds that no group of performers is. On a build without
+> that, the way out is the same as everywhere else on this page: **Stage is
+> empty now**, on an empty stage.
 >
 > The older self-test did not catch this because it arrives a small late view
 > all at once, which the 6,000 bar handles. The strip case is a separate test,

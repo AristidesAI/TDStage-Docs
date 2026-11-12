@@ -31,7 +31,7 @@ with JSON.
 on its own port, 9001 by default. The tracking output is OSC over UDP on port
 7000, configured through `POST /api/track`.
 
-Routes found in the source: 24 GET, 33 POST.
+Routes found in the source: 27 GET, 36 POST.
 
 | Path | Verb | What it is for |
 |---|---|---|
@@ -57,15 +57,18 @@ Routes found in the source: 24 GET, 33 POST.
 | `/api/hands/diag` | GET | Why hand detection is or is not producing results, as checks rather than counters. This is the per-problem list. Read-only. |
 | `/api/listen` | POST | Change the telemetry listening port. |
 | `/api/live` | GET | Live summary: which ingest paths are receiving and at what rate. |
+| `/api/lock` | GET and POST | The pose lock: GET its state, POST `{"on": true|false}`. While it is on the console refuses every pose write from every client, which is what the padlock in the top bar sets. |
 | `/api/markers` | POST | Marker definitions. |
 | `/api/markers/size` | POST | Set the printed marker size. Must match the markers you actually printed. |
 | `/api/ndi` | POST | Video output settings. |
 | `/api/person` | POST | Person segmentation mode. |
 | `/api/person/debug` | GET | Segmentation internals. |
+| `/api/preset` | GET and POST | GET the presets and which one is applied; POST `{"name": "lite", "action": "apply"}` or `"reverse"`. The performance presets and the cyr preset are both here. |
 | `/api/profile` | GET and POST | A phone's stored settings. The phone fetches this itself at boot. |
 | `/api/profile/` | GET | Same, addressed per device as `/api/profile/<id>`. |
 | `/api/profile/key` | POST | Change one key in a stored profile. |
 | `/api/profile/push` | POST | Push a stored profile to a phone. |
+| `/api/props` | GET and POST | The prop IMUs (#15): GET their state, POST to enable them. Off until the props file says otherwise. |
 | `/api/range` | POST | Working range. |
 | `/api/recover` | POST | Run a recovery step on a phone. |
 | `/api/recovery` | POST | Recovery policy. |

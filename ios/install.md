@@ -119,7 +119,7 @@ archive rather than `Support/testflight.sh`, so its **build stamps are empty**
 and the console's expiry warning cannot fire for it
 ([#56](https://github.com/AristidesAI/TDStage/issues/56)); and its dSYM shows
 it does contain the [#49](https://github.com/AristidesAI/TDStage/issues/49)
-relaunch fix. A stamped build is expected on 12 November.
+relaunch fix. A stamped build was expected on 12 November and has not been confirmed here; check App Store Connect rather than this page for what is uploaded.
 
 {: .warning }
 > **An uploaded build is not a build anybody has.** A build appears in App

@@ -78,6 +78,15 @@ WHAT = {
     "/api/profile": "A phone's stored settings. The phone fetches this itself at boot.",
     "/api/profile/": "Same, addressed per device as `/api/profile/<id>`.",
     "/api/profile/push": "Push a stored profile to a phone.",
+    "/api/lock": "The pose lock: GET its state, POST `{\"on\": true|false}`. "
+                 "While it is on the console refuses every pose write from "
+                 "every client, which is what the padlock in the top bar sets.",
+    "/api/preset": "GET the presets and which one is applied; POST "
+                   "`{\"name\": \"lite\", \"action\": \"apply\"}` or "
+                   "`\"reverse\"`. The performance presets and the cyr preset "
+                   "are both here.",
+    "/api/props": "The prop IMUs (#15): GET their state, POST to enable them. "
+                  "Off until the props file says otherwise.",
     "/api/profile/key": "Change one key in a stored profile.",
     "/api/device": "Change a device's roster entry.",
     "/api/devices": "The device roster.",
