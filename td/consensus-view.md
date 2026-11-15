@@ -187,26 +187,50 @@ previous parser raised 14 `OverflowError`.
 
 ## Building it into the tox
 
-Not yet done. In `/project1/TDStageConductor`:
+**Steps 1 to 5 are done**, in tox v95 (16 November 2026): the module, the
+execute DAT, both Script CHOPs with their callbacks, the table and the
+**Consensus** parameter page, with every switch off. **Steps 6 to 9 are not**,
+which is why switching it on changes nothing on screen - the data arrives and
+nothing is drawn with it.
 
-1. Text DAT `consensus_view`, holding the text of `TD/newtox/consensus_view.py`.
-2. Execute DAT `consensus_exec` with Frame Start and Frame End on.
-3. Text DATs `consensus_callbacks` and `consensus_hands_callbacks`, with Script
-   CHOPs `consensus` and `consensus_hands` using them.
-4. Table DAT `consensus_table`.
-5. The **Consensus** custom page, with the parameters and defaults in the table
-   above.
+In `/project1/TDStageConductor`, for the record and for whoever finishes it:
+
+1. ~~Text DAT `consensus_view`, holding the text of
+   `TD/newtox/consensus_view.py`.~~ Done, v95.
+2. ~~Execute DAT `consensus_exec` with Frame Start and Frame End on.~~ Done.
+3. ~~Text DATs `consensus_callbacks` and `consensus_hands_callbacks`, with
+   Script CHOPs `consensus` and `consensus_hands` using them.~~ Done.
+4. ~~Table DAT `consensus_table`.~~ Done.
+5. ~~The **Consensus** custom page, with the parameters and defaults in the
+   table above.~~ Done.
 6. `geo_consensus`: a Cylinder SOP, radius 1, height 1, standing on y = 0,
    instanced from `consensus`: translate `x y z`, scale `radius height radius`,
    colour `r g b`, active; render flag `parent().par.Consensusshow3d`; a
    Constant MAT at about 0.35 alpha.
 7. `geo_consensus_hands`: a Sphere SOP of radius 0.07, instanced from
    `consensus_hands`: translate, colour, active; same render flag.
-8. Add both to `render_pc`'s Geometry list.
+8. Add both to `render_pc`'s Geometry list, which then reads
+   `geo_pc geo_floor geo_hands geo_consensus geo_consensus_hands`. From v90 the
+   list also has `geo_wall` in it - **keep it**.
 9. Out CHOPs `out_consensus` and `out_consensus_hands` for the content network.
 10. Save as the next numbered tox and the working copy, following
     [Maintenance](maintenance.html): the clean-save sequence, the version
     constant, then `tox_drift.py`.
+
+**How to know it is right.** With `Consensusactive` on and a console sending a
+`/track` copy, translucent cylinders stand on the floor where the performers
+are, each sized by its own radius and height, and small spheres sit at the
+hands. Turn `Consensusshow3d` off and they vanish. If the cylinders are all the
+same size, the F1 presence toggle is off and every performer is being drawn as
+a standing adult - which is the documented fallback, not a fault.
+
+{: .warning }
+**Leave `Consensusf1` off on the show until somebody measures it.** It opens a
+WebSocket to the console from inside TouchDesigner's own process, and what that
+costs while the GPU merge path is running has not been measured at eight
+streams. Off, each performer is drawn at a standing adult's size; on, each takes
+the extent of the floor cluster under it. The second is better and the first is
+free.
 
 After changing any DAT's `.text`, toggle its `active` off and on, or the old
 callbacks keep running.
