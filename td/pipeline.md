@@ -163,7 +163,7 @@ full list of saved values that differ from their defaults is in
 [What the saved file ships with](parameters.html#what-the-saved-file-ships-with).
 
 Those four were read out of v87. The running hub reported the same four on
-11 November, at v93 - which is a live reading rather than a reading of the
+11 November, then at v93 - which is a live reading rather than a reading of the
 saved file, so it says the values survived the six versions, not that nobody
 changed them in the session. If a sentence here matters to you, open the
 version you are about to run and read the parameter.

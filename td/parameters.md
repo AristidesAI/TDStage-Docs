@@ -334,6 +334,44 @@ The `registration` table holds the stored values, one row per device. Rows
 appear automatically as devices come online, so the table is never edited to
 add a phone.
 
+## Consensus
+
+New in tox v95 (16 November 2026). These receive the console's finished person
+tracking and present it inside TouchDesigner as channels - performers and
+hands, with their ids, as something to instance geometry on. **Nothing is
+recomputed here**: TD shows what the client bus receives. Every switch ships
+off, and the display wiring that would make the channels visible has not been
+built, so turning `Consensusactive` on fills channels and changes nothing on
+screen.
+
+| Parameter | Label | Type | Default | When | What it does |
+|---|---|---|---|---|---|
+| `Consensusactive` | Active | Toggle | False | Build | Receive `/track` bundles. Off: the thread does not run |
+| `Consensusport` | Port | Int | 7001 | Build | The port to listen on. The console's launcher sends a copy of every `/track` bundle to 7001 for exactly this, so the client bus on its own port is untouched |
+| `Consensusbind` | Bind | Str | `127.0.0.1` | Build | The address to bind. Loopback, because the copy comes from the console on the same machine |
+| `Consensusmaxage` | Max Age | Float | 1.0 | Build | Seconds before the last frame is treated as stale rather than current |
+| `Consensuszflip` | Z Flip | Toggle | False | Get-in | Negate `z`, for a rig whose depth axis runs the other way. It is the same switch the console has on its output, so **set it in one place or the other, never both** |
+| `Consensusf1` | F1 Presence | Toggle | False | Build | Also read the console's F1 presence stream, which carries each floor cluster's radius and top height. `/track` has no size in it, so this is what gives a performer an extent |
+| `Consensusf1url` | F1 URL | Str | `ws://127.0.0.1:9001/` | Build | Where that stream is |
+| `Consensusshow3d` | Show 3D | Toggle | True | Build | Whether the component draws its own 3D preview |
+| `Consensusstatus` | Status | Str | | - | Read-only: what the receiver is doing |
+
+## Props
+
+New in tox v95, and the only parameters here that talk to hardware nobody has
+yet: the ESP32 prop IMUs
+([#15](https://github.com/AristidesAI/TDStage/issues/15)). A prop sends its
+orientation over UDP; the console and the tox parse it with the same file, so
+they cannot disagree on a byte.
+
+| Parameter | Label | Type | Default | When | What it does |
+|---|---|---|---|---|---|
+| `Propsactive` | Active | Toggle | False | Build | Receive the prop stream |
+| `Propsport` | Port | Int | 9021 | Build | The port to listen on |
+| `Propsdelayms` | Delay ms | Float | -1.0 | Get-in | Hold each reading this long before using it, to line the props up with the depth path's own latency. Negative means no delay |
+| `Propstareyaw` | Tare Yaw | Float | 90.0 | Get-in | The stage yaw a prop's own "zero" points at when it is tared. The device's heading is tared on the prop; this is what that heading means in the stage frame |
+| `Propsstatus` | Status | Str | | - | Read-only: what the receiver is doing |
+
 ## What the saved file ships with
 
 These are the values stored in `TDStageConductor.tox` as of v87 (2026-11-03),

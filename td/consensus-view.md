@@ -11,12 +11,18 @@ inside TouchDesigner, as performers and hands you can instance geometry on,
 without recomputing any of it.
 
 {: .warning }
-> **This is not in the tox yet.** The module, the DAT callbacks and the wiring
-> steps exist and are tested; the operators have not been built into
-> `TDStageConductor.tox`. Every result on this page is **simulated**: recorded
-> bundles, synthetic phones, CI. It has never run inside TouchDesigner against
-> real bodies, and TouchDesigner has never been run on the Windows show machine
-> at all. [How far each part is proven](../reference/status.html) is the list.
+> **It is in the tox now, and nothing draws it yet.** Tox v95 (16 November
+> 2026) carries the module, the operators, the callbacks and a **Consensus**
+> parameter page, with `Consensusactive` off. What has not been done is the
+> display wiring - the geometry instancing that would turn the performer and
+> hand channels into something visible - so switching it on fills the channels
+> and changes nothing on screen. That last step is by hand, in TouchDesigner,
+> and it is not written down as a procedure yet.
+>
+> Every result on this page is **simulated**: recorded bundles, synthetic
+> phones, CI. It has never run inside TouchDesigner against real bodies, and
+> TouchDesigner has never been run on the Windows show machine at all.
+> [How far each part is proven](../reference/status.html) is the list.
 
 ## What it is, and what it is not
 
