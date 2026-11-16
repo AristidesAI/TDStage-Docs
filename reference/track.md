@@ -51,6 +51,21 @@ performer id it has not seen in that frame, and this ordering means it never
 has to. The console enforces it on the way out, as part of a self-check
 described further down.
 
+**A fifth address can appear in this bundle: `/track/prop`.** It carries one
+prop with its own inertial sensor, nine arguments, after all the hands:
+`id` (`i`), then `x y z` in the stage frame, `yaw` in radians, `vx vy vz`, and
+a confidence (`f`). Orientation comes from the prop's own IMU and position from
+whatever the operator bound it to, which is a fixed spot on the stage, a
+performer, or a performer's hand. A record with a non-finite number in it is
+dropped rather than sent.
+
+No bundle on a client bus carries one today. The prop receiver is off until the
+props file beside the console's configuration enables it, and `output.emitProps`
+is **locked** in the schema, so the API refuses to set it and the key keeps its
+`false`. Write the receiver so an unknown fifth address is ignored and this
+costs you nothing when it does arrive. Props and inertial nodes have their own
+reference page.
+
 ### `/track/frame`
 
 | # | Type | Name | Meaning |
