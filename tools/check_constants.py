@@ -112,6 +112,11 @@ CHECKS = [
      "WebConsole/server.py", "--f1-port"),
     ("console/ui.md", r"A disagreement over (\d+) cm names the phone",
      "WebConsole/calib_check.py", "WARN_M_CM"),
+    # The roster entry's two hard limits, on the page a script is written from.
+    ("console/ui.md", r"Clamped to (\d+) degrees either way",
+     "WebConsole/server.py", "TILT_MAX_DEG"),
+    ("console/ui.md", r"Up to (\w+) phones; a card's live telemetry",
+     "WebConsole/server.py", "MAX_DEVICES"),
     # The ghost-after-merge reach (#68). A receiver counting heads acts on
     # these, so they are pinned the day the paragraph goes up.
     # The hand contract, published 2026-11-11. A receiver times a gesture latch

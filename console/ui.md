@@ -267,6 +267,38 @@ Clicking the card opens the side drawer.
 - **Buttons**: Start, Restart (stop, pause, start), Blackout / Wake, Ping,
   Calibrate / Finish.
 
+### A roster entry, field by field
+
+What the console persists per phone, which is also what a `POST /api/edit`
+patch may carry (the venue seed file `console_edit.json` is exactly this, for
+every phone, as one undo step). Up to ten phones; a card's live telemetry is
+not in this list, because the phone owns it and the console only mirrors it.
+
+| Field | Default | What it is |
+|---|---|---|
+| `id` | the slot number | 1 upward. It is the device id on the wire, so it is what every telemetry path and `/ctl` message carries |
+| `name` | `Phone <id>` | Text, for the operator only |
+| `colorIndex` | the slot, modulo 8 | Which of the eight roster colours draws this phone |
+| `host` | empty | Where `/ctl` goes. Empty means use the address telemetry arrived from, which the console learns and keeps as `autoHost` |
+| `ctlPort` | `9010` | The phone's `/ctl` port. Rejected outside 1 to 65535: a saved 99999999 once ended a blackout at that phone, because `sendto` raised before the rest of the rig was reached |
+| `enabled` | true | A disabled phone is dimmed, left out of broadcasts and not counted |
+| `markerId`, `secondaryMarkerId`, `markerSizeMM` | `<id>`, `-1`, `195` | The marker this phone calibrates from, an optional second one, and the printed size in millimetres. 195 mm is what fits A4 at true size |
+| `px`, `py`, `pz` | the default ring | Where the phone stands, in the venue model's frame, metres |
+| `yawDeg` | the default ring | Plan heading. The registration yaw TouchDesigner receives is this plus 90, because a levelled stream faces +Z |
+| `pitchDeg`, `rollDeg` | `-12`, `0` | **The plan aim: a drawing, not a measurement.** They tilt the camera cone in the stage view and reach neither the phone nor the merge |
+| `tiltPitchDeg`, `tiltRollDeg` | `0`, `0` | The tilt **correction** on top of the phone's own gravity levelling, about its camera, applied to that phone's points on every merge path. Clamped to 30 degrees either way; a value that is not a finite number is refused rather than clamped |
+| `fovH`, `fovV` | `71.0`, `56.0` | The camera cone drawn in the stage view. ARKit's 256 by 192 depth grid is 71.0 by 56.3 degrees |
+| `rgbRotate` | `auto` | `auto` reads the colour image's orientation off the extrinsic in the frame header; `0`, `90`, `180` or `270` force it. A phone clamped upside down streams a correct cloud and an upside-down picture, which is what this is for |
+| `autoRecover` | true | The operator's consent for the console to act alone: re-push the profile and restart streaming when a phone comes back. On by default, because nobody is free to press a button at 21:14 |
+
+Types are enforced on the way in, and a patch that fails is refused whole
+rather than applied halfway: a bad entry used to leave the earlier patches
+applied, unsaved and unsent. `px`, `py`, `pz`, `yawDeg` and the two tilt fields
+are the only ones a change to which re-checks the phone's pose for
+TouchDesigner, with yaw compared to 0.06 of a degree and the rest to a
+millimetre. A field-of-view or plan-aim edit never reaches TouchDesigner, and a
+3D-gizmo click with no drag posts an unchanged pose and sends nothing.
+
 ---
 
 ## Stage 3D
