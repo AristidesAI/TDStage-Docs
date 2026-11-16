@@ -78,6 +78,26 @@ not answer, the line says so instead:
 **Those lines are kept on purpose.** A console that stopped answering is the
 evidence; a log that skipped the gap would hide it.
 
+### What one sample holds
+
+`/api/live` answers with these groups, so a log line holds all of them a
+second. What each is worth reading afterwards:
+
+| Group | What is in it |
+|---|---|
+| `store` | The sequence number and one row per device: id, source, point count, frame rate, age. The honest answer to "were the phones actually sending" |
+| `tdp4`, `bridge` | The two ingest paths: running, the port, frames, errors, and `collisions`, the device ids two sources were sending as at once. `bridge.dup` counts frames the other path had already stored |
+| `person` | The person filter: the mode, which backend answered, whether a fresh Apple Vision mask existed, and the consensus voters and their statistics |
+| `obs`, `yolo` | The two person observers' own state. `yolo.restarts` and `yolo.lastRestart` are the two the screen prints as events |
+| `track` | The `/track` emitter: whether output is on, its rate, its latency, the performer count. **Read `track` before anything else in a run**: with output off, its figures freeze |
+| `trackRec` | Whether `/track` was being recorded, which is a different switch from output |
+| `ndi` | Whether NDI is available and whether it was publishing |
+| `sim` | The built-in simulator: running, how many devices, which rig and planes. A run with this running is not a run with phones |
+| `settings`, `presets` | Every setting's value at that second, and each preset's state. This is where the run table reads the maturity fraction, the cut and the wall from, rather than from memory |
+| `load` | What the console cost: its own CPU as a percentage of one core, the keypoint worker's, per-thread figures where the platform gives them, each subsystem's last timing in `parts`, and `mode`, the performance preset (`full` means none) |
+| `rgbRate`, `gc` | Colour arrival rates, and Python's garbage-collector counters for a memory question |
+| `import_error` | Set when a module the console wanted would not import. Empty is the normal answer |
+
 Two fields are worth knowing by name, because they are what a restart argument
 turns on later: `yolo.restarts`, the count so far, and `yolo.lastRestart`, the
 log line from the most recent one. The second carries the console's own reason, so the
