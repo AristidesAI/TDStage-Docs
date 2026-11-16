@@ -350,6 +350,64 @@ pinged, and the transmit, receive, relay, ignored and error counts. It tells
 you whether the hub and the console are talking, which is separate from
 whether phones are arriving.
 
+## The link, message by message
+
+Both directions run all the time. The hub receives on `Consoleport` (9006 by
+default) and answers to the console's own listen port, which it learns from the
+ping, so nothing has to be configured on the tox beyond that port. The
+authoritative list is the header of `TD/newtox/tox_dats/console_link_lib.py`;
+this is the same list with what each message costs you.
+
+### Console to hub
+
+| Message | What it does |
+|---|---|
+| `/tdstage/ping <seq> [replyPort]` | Answered with `/tdstage/td/pong <seq>`. It is also how the hub learns where the console is: the address it came from, and the reply port it carries. |
+| `/tdstage/pose <id> <x> <y> <z> <yaw> <pitch> <roll> <fovH> <fovV>` | Writes that device's row in `registration`: yaw about Y, then translate, which is exactly what the merge applies per device. This is how the console aligns the streams. Arguments 6 and 7 are the plan aim and are **not** read as tilt. |
+| `/tdstage/tilt <id> <pitchDeg> <rollDeg>` | The phone's tilt correction about its own camera, into the same table. Sent beside every pose; `0 0` for a marker-calibrated phone. An older console never sends it, and the row's tilt then stays 0. |
+| `/tdstage/pose/clear <id>` | Zeroes that device's pose **and** its tilt. |
+| `/tdstage/set <Parname> <value>` | Sets one custom parameter of the tox: menu, toggle, int, float or string. Answered with `/tdstage/td/par <name> <value>`, the value read back after the set. |
+| `/tdstage/get <Parname>` | Answered with `/tdstage/td/par <name> <value>`. |
+| `/tdstage/pulse <Parname>` | Pulses one, which is how `Learnbg`, `Autofloor` and `Levelsolve` are fired from outside. Silent: a pulse has no value to report. |
+| `/tdstage/rgbrotate <spec>` | Per-device colour-rotation overrides as `2:180,5:90`. Both ends work out `auto` from the extrinsic in the frame header, so only forced values travel and an empty string clears every override. |
+| `/tdstage/usb` | Accepted and ignored. A config-side verb an older console still sends. |
+
+Three things that bite:
+
+- **`Posesource` decides who owns the registration table.** On `manual` the hub
+  counts every incoming pose and tilt as ignored, because the operator is
+  nudging clouds by hand on the Registration page and a push would undo that
+  under their fingers. The console's push reports success; nothing moves.
+- **A name the tox does not have, a read-only parameter, or a pulse addressed
+  with `set`** all answer `/tdstage/td/par <name> unknown` rather than failing
+  silently. If a script's set looks ignored, read the reply.
+- **Anything else is counted, not logged.** Unknown addresses raise the
+  `ignored` counter in `Consolestatus`, and a handler that throws raises
+  `errors` and keeps the last message. Both are in that string, which is the
+  first place to look when a console action does nothing.
+
+### Hub to console
+
+Sent every `1/Healthhz` seconds, to the port the ping came from.
+
+| Message | Arguments |
+|---|---|
+| `/tdstage/td/health` | `fps` `cookMs` `liveDevices` `points` `wallFps` `cooksPerS`. **-1 means not measurable and must never be shown as a number**: `fps` before its first mark, and `cookMs` and `cooksPerS` whenever `Mergegpu` is on, where the CPU merge stands down. The console turns each of those into a null rather than a zero. `liveDevices` counts the devices whose last frame is inside `Stalesecs`. |
+| `/tdstage/td/status` | `segmode` `levelStatus` `toxVersion` `Udpport` `Mergegpu` `rxSource`. `rxSource` is `bridge` or `socket`, which is how the console knows whether to give up port 9003. The level status is truncated to 60 characters. |
+| `/tdstage/td/rx` | `pkt/s` `frames/s` `stale/s` `dropped/s` `restarts` `slots` `running`, and on a tox from v75 an eighth, `landedPerS`, the frames TouchDesigner itself read out of the bridge file. Per-second deltas, not totals: totals pass 2^31 in a week at eight phones and OSC integers are 32-bit. |
+| `/tdstage/td/pong` | `seq`, the sequence from the ping. |
+| Every phone telemetry datagram | Forwarded to the console unchanged. The phones can send telemetry to one port only and today that port is the tox's, so the hub relays and the console owns telemetry. |
+
+Two readings of those counters are worth knowing before you need them:
+
+- **Packets and stale rising in lockstep while frames stay flat** is the
+  receiver wedge: the socket is being drained and every packet rejected, which
+  looks like a rig problem and is not one.
+- **The bridge assembling frames while `landedPerS` is 0** means
+  TouchDesigner's reader is stuck on a stale file or a layout it cannot parse.
+  The console waits for two ticks before saying so, so one empty window at a
+  restart stays quiet.
+
 ## When nothing arrives
 
 Work down this list.
