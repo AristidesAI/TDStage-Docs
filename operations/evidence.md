@@ -72,9 +72,11 @@ owns as warnings, so a live console is no obstacle. The row fails without the
 YOLO interpreter, so on the Mac run it as
 `(. Tools/show_mac.local; export TDSTAGE_YOLO_PYTHON; python3 Tools/requirements_check.py --write)`.
 
-That writes `Notes/Requirements-Conformance.md` with the date on it. As of
-2026-10-27 it read 14 PASS, 4 BUILT, 0 FAIL, 7 NEEDS-RIG. Re-run it before
-quoting any of those, because they move.
+That writes `Notes/Requirements-Conformance.md` with the date on it. **Do not
+quote a count from this page**: the tally moves with every run and with which
+machine ran it - on the development Mac, with the client's decoder present, it
+has read 14 passing; in Windows CI, with no decoder and no phones, 7 passing
+and 15 needing a rig. Run it and read the file.
 
 The script exits 1 when any row is FAIL and 0 otherwise, which is what lets it
 run as the `requirements conformance` step of the Windows console workflow

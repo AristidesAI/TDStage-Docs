@@ -311,7 +311,7 @@ correct and authoritative.
 
 ## The two machines
 
-On the show machine (Windows, RTX 4090) the tracking side is one PC: the TDP4
+On the show machine (Windows; an RTX 4090 in the Stroud plan, and the laptop the client has for the London test is a 5090) the tracking side is one PC: the TDP4
 bridge, the console, and TouchDesigner with the tox. Phones arrive over PoE
 Ethernet, one cable each. See [Running the console](running.html).
 

@@ -249,4 +249,4 @@ data still marks it online.
 
 The symptom to remember is **points arrive, health does not**. Start the
 console on a different listening port and point the phones at it with the
-console's **Send telemetry here** button.
+console's **Send telemetry here** button, in the Live view's Phone cameras section.

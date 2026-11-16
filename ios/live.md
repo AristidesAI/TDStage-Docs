@@ -206,9 +206,11 @@ raise it as **Transport errors**:
 An error count of zero is still not proof of delivery. A receiver that is
 listening but wedged, or a switch that is dropping, answers nothing at all.
 
-For the first row the fix text names the ports to check: TouchDesigner holds
-9003, and the console falls back to 9013 whenever TD is running, so a phone
-meant for the console alone while TD is up belongs on 9013. The
+For the first row the fix text names the ports to check. On a show machine the
+**bridge** holds 9003 and hands frames to TouchDesigner and the console alike,
+so a phone on 9003 reaches both and nothing has to move. Where TouchDesigner
+binds 9003 itself - the fallback with no bridge running - the console gives the
+port up, and a phone meant for the console alone then belongs on 9013. The
 [ports reference](../reference/ports.html) has the full map.
 
 ---

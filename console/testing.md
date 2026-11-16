@@ -52,7 +52,7 @@ folder. It fakes only the **inputs**: walk tracks, floor clouds, and the text `i
 | `telemetry_host_for` gives a cable phone its own cable's address, and gives a phone on no cable with a typed LAN host the route toward that host | It fell back to the console's LAN address |
 | `GET /api/align/check?wait=1` returns fresh pairs in one call, answers at once from a result under five seconds old, and joins a refresh already running | The first call after a console start returned no pairs and only started a refresh |
 
-**43 checks, passing 9 November 2026.** `--real` runs the two link functions
+**Passing on a development Mac; run it for the check count, which moves.** `--real` runs the two link functions
 against this Mac with nothing faked; it runs `ifconfig`, `arp` and `route get`
 only, and exits 1 when you give it a phone's cable address and it finds no link
 for it.

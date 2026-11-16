@@ -157,7 +157,7 @@ other default on this page: if you need to act on an exact value, read it from
 
 ---
 
-## segmentation (21 keys)
+## segmentation (24 keys)
 
 The motion and auto background engine, `segment.py`. It learns the static scene
 so that what is not background is a performer. This is what the Live view's
@@ -176,7 +176,7 @@ Motion mode shows and what `/track` filters against.
 | `heightMin` | 0.30 m | 0.10 to 1.00 | safe | Displayable cluster height floor. Live view only; `/track` uses `tracking.spanMin` |
 | `heightMax` | 2.40 m | 1.50 to 3.50 | safe | Displayable cluster height ceiling. Live view only |
 | `seedHoldS` | 2.0 s | 0.5 to 5.0 | safe | "Stage is empty now" keeps promoting the observed scene for this long, so a cold engine still gets a seed |
-| `matureFrac` | 0.15 | 0.02 to 0.60 | safe | Background voxels over all voxels above this means mature. **Until mature, all foreground shows and `/track` emits zero performers** |
+| `matureFrac` | 0.15 | 0.02 to 0.60 | safe | The share of the **scenery the phones can see now** that must have been learned before the shape gates come on and `/track` may publish anybody. Until then all foreground shows and `/track` emits nobody. A view with fewer than about two hundred scenery voxels in it - a stage cut back to almost nothing static - counts as mature on its own, because there is no scene to learn. **The console's own tooltip for this key still describes the older rule, background voxels over all voxels; the code changed on 12 November and the hint did not** |
 | `motionBornS` | 3.0 s | 1 to 10 | safe | A voxel born later than this after engine start counts as "walked in" rather than scenery |
 | `guardMotionFrac` | 0.3 | 0.1 to 0.6 | safe | Fraction of motion born voxels a cluster needs before its footprint is protected. Too low and the from boot scene guards itself and never learns |
 | `freezeBg` | off | | safe | Background learned at calibration, with no absorption on stage. Press "Stage is empty now" on the empty stage; after that a performer holding still never fades into the background. Off means keep learning, which absorbs anything still for about 0.6 times the learn time. **Moving a phone while this is on clears the frozen background and `/track` publishes nobody until somebody presses it again.** With it off, only the moved phone drops out, for about 30 s |
@@ -184,7 +184,10 @@ Motion mode shows and what `/track` filters against.
 | `stageX` | 9.0 m | 3 to 15 | safe | Engine inclusion box half width |
 | `stageZlo` | -9.0 m | -15 to -3 | safe | Downstage edge of the kept volume |
 | `stageZhi` | 9.0 m | 3 to 15 | safe | Upstage edge. Points past it, such as the back wall, never enter the engine |
-| `stageYlo` | -0.6 m | -1.0 to 0.0 | safe | Floor margin. Points below never enter the engine |
+| `wallOn` | off | | safe | Cut everything behind a vertical backdrop wall, at any angle, out of the engine, `/track` and the Live view. The console's half of the stage cut: [getting the room out of the cloud](../operations/background.html) has both halves |
+| `wallYaw` | 0.0° | -180 to 180 | safe | Direction of the wall's normal in plan: 0 faces straight upstage, 90 faces +x. Points beyond the wall along it are cut |
+| `wallDist` | 6.0 m | -20 to 20 | safe | How far the wall plane sits from the stage origin along its normal, negative when the origin is behind the wall. Points farther than this are cut |
+| `stageYlo` | -0.6 m | -1.0 to **+0.5** | safe | Floor cut height. Points below it never enter the engine. The range goes **above** zero on purpose: a raised floor, or a floor whose level solve sits low, needs the cut lifted, and the self-test pins the clamp at +0.5 |
 | `stageYhi` | 3.6 m | 2.5 to 6.0 | safe | Ceiling. Rigging and lights above this never enter the engine |
 
 **If `/track` reports nobody**, look at `matureFrac` here and at the settle
@@ -231,8 +234,9 @@ tracker publishes at all rather than how well it holds people.
 > mature on its own. The change came out of the stage cut: a
 > hard cut leaves so little scenery that the old background-over-all-voxels
 > ratio fell to 0.018 and `/track` went silent. Two settle-gate changes ride
-> with it, and the set is **under review**, so treat this section as the
-> behaviour before that lands rather than a value to carry across it.
+> with it. So the measurements in this section are the behaviour **before**
+> 12 November: their shape still tells you what the setting does, and the
+> absolute shares are not what a current build produces.
 
 ### `settleWindow` and `settleGrowth`, the second gate
 
@@ -401,6 +405,7 @@ The rest are signal conditioning on the wrist samples themselves.
 | `maxSpeed` | 6.0 m/s | 0.5 to 20 | safe | Velocity clamp |
 | `outlierM` | 0.25 m | 0.01 to 2.0 | safe | A single frame jump larger than this is rejected and the last position kept |
 | `birthHits`, `holdS`, `matchM` | in change, not documented yet | | safe | Publication and identity thresholds. See the note above |
+| `timeAlign` | `off` | `off`, `extrapolate`, `window` | safe | How one wrist seen by several phones is fused when their latest samples are up to an observation period apart. `off` averages them as they are, which puts a 3 m/s hand 3 to 8 cm behind. `extrapolate` moves each sample to the newest time along the fused hand's own velocity and averages those under 67 ms old, 1 to 4 cm. `window` averages only samples within 40 ms of the newest. Both aligned modes average **fewer** views, so with two phones one phone's depth error can reach the hand whole instead of halved. Simulated |
 
 ## output (12 keys)
 
@@ -422,13 +427,15 @@ camera image keys that `rgb_stream.py` reads from this group. Twelve keys.
 | `ndiHeightNorm` | 3.0 m | 0.5 to 10 | safe | In `height` colour mode, floor to this many metres is white |
 | `ndiLiveS` | 1.0 s | 0.2 to 5.0 | safe | A phone with no frame for this long drops out of the NDI image |
 
-## latency (16 keys)
+## latency (18 keys)
 
 Rates, polls and freshness windows across the ingest and camera view paths.
 
 | Key | Default | Range | Live | What moves |
 |---|---|---|---|---|
 | `segTick` | 0.05 s | 0.02 to 0.5 | safe | Segmentation engine period, and **the dominant server side latency lever**, because `/track` filters the current cloud against the last published set. 0.05 is 20 Hz |
+| `consensusFreeSpeed` | 0 m/s | 0 to 10 | safe | Consensus mode only. The phones are not in step, so one phone's latest frame can be a frame older than another's and a fast forearm moves into space the older frame saw as empty. Above 0, a see-through vote from an older frame is ignored for a point moving faster than this |
+| `labelDilate` | 0 cells | 0 to 4 | safe | Grow each person label by this many depth cells when the label was computed on an older depth frame than the points it is applied to - the model runs at 9 to 15 Hz a phone against depth at 25 to 30. Keeps a moving limb's new cells |
 | `rgbHz` | 30.0 Hz | 1 to 60 | safe | Rate for the flattened camera view rebuilt from the coloured point cloud. The points already carry colour, so this is a projection, not a decode |
 | `rgbStabilise` | on | | safe | Reproject through the **first** camera pose seen for each phone instead of the live one. The phone's pose micro corrects every frame, which makes the picture shimmer even when the room is still. Off follows the live pose |
 | `consensusFree` | on | | safe | Consensus mode only. A phone whose depth shows it saw **through** a voxel to a farther surface votes that voxel empty. Removes flying pixels and mask bleed between a body and the wall. Turn off if real bodies lose limbs, which means the phones are badly aligned |

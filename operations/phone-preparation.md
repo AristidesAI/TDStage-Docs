@@ -137,7 +137,7 @@ correct rather than needing attention.
 
 A phone on a USB cable to a Mac cannot work out the Mac's cable address by
 itself. It learns it from the source address of a `/ctl` packet that arrives
-over the cable, and nowhere else, so press **Send telemetry here** in the
+over the cable, and nowhere else, so press **Send telemetry here** (Live view, Phone cameras) in the
 console, or push a profile, while the cable is in; until then the Live page's
 Link diagnostics warn that the Mac's cable address is unknown. Why the phone
 cannot discover it is on the

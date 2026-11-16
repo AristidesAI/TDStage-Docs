@@ -47,7 +47,9 @@ own checks also fail intermittently, four times in thirteen runs, each passing
 on the next push with nothing changed, and that is undiagnosed. Budget a day
 with the actual machine, not an hour.
 
-1. **Get the repo.** `git clone`, or download the ZIP and unzip. Keep
+1. **Get the repo with `git clone`.** Not the ZIP: the batch files need CRLF
+   line endings for their labels and `goto`, and a download that normalises
+   them leaves scripts that fail in ways that look like something else. Keep
    `TD\newtox` beside `WebConsole`.
 
    {: .warning }
@@ -72,12 +74,18 @@ with the actual machine, not an hour.
    hand-landmark and NDI packages (neither fatal), then an Open3D venv
    (`.venv-o3d`, not fatal), then runs `doctor.py`. With an NVIDIA driver older
    than 580 it stops and says so, because the cu130 wheel finds no CUDA on it.
-   Safe to re run. Override the torch index with
-   `set TORCH_INDEX_URL=https://download.pytorch.org/whl/cu126` (the index it
-   used before 2026-11-03) beforehand, or the Python version with
+   Safe to re run. The Python version can be overridden with
    `set TDSTAGE_PY=3.11`.
+
+   {: .warning }
+   **Do not fall back to the `cu126` index on a 50-series card.** That was the
+   index used before 2026-11-03 and it has no build for Blackwell (sm_120), so
+   on an RTX 5090 it installs a torch that quietly refuses the GPU or drops to
+   the CPU - which looks like a slow machine rather than a wrong wheel. The
+   driver is the thing to fix: `cu130` needs 580 or newer and covers both the
+   4090 and the 5090.
 4. **Run `WebConsole\windows\firewall.bat` once.** It asks for Administrator and
-   adds four inbound rules:
+   adds five inbound rules:
 
    | Rule | Protocol and ports | Scope |
    |---|---|---|
@@ -85,9 +93,10 @@ with the actual machine, not an hour.
    | TDStage TouchDesigner UDP | UDP 9000, 9004 | any |
    | TDStage Console HTTP | TCP 9080 | LocalSubnet and 100.64.0.0/10 |
    | TDStage F1 WebSocket | TCP 9001 | LocalSubnet and 100.64.0.0/10 |
+   | TDStage Props UDP | UDP 9020, 9021 | any |
 
    {: .warning }
-   **A Block rule beats every Allow rule, including these four.** Cancelling
+   **A Block rule beats every Allow rule, including these five.** Cancelling
    Windows' "allow access" prompt makes a per-program **Block** rule, and so
    does any answer when the account is not an administrator. A block on
    `TouchDesigner.exe` or on the show's `python.exe` then overrides the port

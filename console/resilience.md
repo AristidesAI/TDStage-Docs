@@ -231,7 +231,7 @@ renders each `log(..., "warn"|"error", ...)` message with its placeholders
 blanked, and fails if any message has no hint and no `fix=`:
 
 ```
-check_fix_hints: 89 warn/error messages, 0 without a fix
+check_fix_hints: every warn and error message has a fix (98 patterns on 17 November 2026, and the number grows)
 ```
 
 It runs inside the self test step of
@@ -241,7 +241,7 @@ It runs inside the self test step of
 **Nothing in that workflow has run since 2026-10-27.** Every GitHub
 Actions job on the system repository fails within a few seconds on an account
 billing block, so a red run there says nothing about the code. The self-tests
-run by hand instead; all 31 of them passed on a development Mac on 2026-10-28.
+run by hand instead. The suite count moves as suites are added, so read it from the run rather than from here.
 Treat every check in this section as a thing somebody ran, not as a gate that
 is standing guard, and run them yourself before pushing.
 
