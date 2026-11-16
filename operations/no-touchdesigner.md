@@ -163,7 +163,12 @@ is already running on the same configuration file, the script says so and
 changes nothing rather than fighting for the port.
 
 To keep a record of the session, run
-[the session logger](live-log.html) alongside it. On a day with no hub, the
+[the session logger](live-log.html) alongside it, with the console's own
+interpreter and a folder that already exists:
+
+```
+WebConsole\.venv\Scripts\python Tools\live_log.py --out C:\logs\live-wed.jsonl.gz
+``` On a day with no hub, the
 console's own log and that file are the entire evidence trail.
 
 ## See also

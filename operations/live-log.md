@@ -21,7 +21,15 @@ runs, if you type four short marks as they happen.
 
 ## Starting it
 
-Standard-library Python 3, so it runs on the show PC as it is:
+Standard-library Python 3, so it runs on the show PC as it is. On Windows, call
+the console's own interpreter and give it a folder that already exists:
+
+```
+WebConsole\.venv\Scripts\python Tools\live_log.py --out C:\logs\live-wed.jsonl.gz
+```
+
+`--out` does not create the directory, so `C:\logs` has to be there first. On a
+Mac, or anywhere `python` is already the right one:
 
 ```bash
 python Tools/live_log.py
@@ -42,7 +50,8 @@ stops it.
 **On screen it prints events, not samples**, each with the clock time: the
 keypoint worker restarting, with the reason the console gave; the worker's state
 changing; the console going quiet and coming back; `/track` starting and
-stopping. A quiet screen means nothing happened, which is the point.
+stopping, including **`/track output OFF`** and **`Record /track OFF`**, which
+are the two an operator most needs to see the moment they happen. A quiet screen means nothing happened, which is the point.
 
 ## What lands in the file
 
@@ -53,7 +62,12 @@ One JSON object per line, gzipped when the name ends `.gz`:
 ```
 
 `live` is the console's whole `/api/live` answer, so the file holds everything
-that endpoint knows at that second, not a chosen subset. When the console does
+that endpoint knows at that second, not a chosen subset.
+
+It also **reads logs other tools wrote**: UTF-16 with or without a byte-order
+mark, UTF-8 with one, stray cp1252 bytes, and a bare `/api/live` object per
+line. That matters on Windows, where PowerShell's own redirection writes UTF-16
+and `Add-Content` adds a BOM, so a log captured by hand is still readable. When the console does
 not answer, the line says so instead:
 
 ```json
@@ -81,13 +95,20 @@ scoreable. Each is a run name, then the word:
 | Type this | When |
 |---|---|
 | `A seed` | as you press **Stage is empty now** |
+| `A start` | instead of `seed`, for a run you deliberately do not seed |
 | `A in 2` | as two people walk on (the number is how many) |
 | `A out` | as the last one leaves |
 | `A end` | after the 30 seconds of empty stage |
 
 `A` is whatever you call the run - use `A`, `B`, `C` for four runs in a morning.
 All four marks have to be present for a run to score; a run missing one is
-reported as missing it rather than guessed at.
+reported as missing it rather than guessed at. Case does not matter, and **the
+first mark of each kind is the one used** - type a second `in` and the report
+names it as ignored rather than quietly replacing the first.
+
+One thing to know before the day: if you abort a run and re-type its marks under
+the same name, it is scored **from the first attempt's marks**. Give the retry a
+new name.
 
 Two more marks bracket an inverted-body attempt rather than a maturity run:
 
@@ -122,7 +143,10 @@ A table, one row per marked run. What each column answers:
 
 | Column | What it tells you |
 |---|---|
+| Valid | **NO when `/track`'s output was off for any sample in the run.** Its `/track` columns then froze and mean nothing. Read this one first |
 | Maturity fraction, box, floor cut, wall | The settings that run actually used, read out of the samples rather than from memory |
+| Seeded | Whether the run began with **Stage is empty now** (a `seed` mark) or without it (a `start` mark) |
+| Worker restarts | The keypoint worker's restart count at the end of the run |
 | Performance | The engine's tick rate and the keypoint budget. **Runs are comparable only at the same values** |
 | Seed to publishing | Seconds from the seed mark to `/track` first reporting a learned scene. "never" if it did not |
 | Populated s | How long people were on stage |
@@ -134,6 +158,18 @@ A table, one row per marked run. What each column answers:
 
 Empty-stage samples start four seconds after `out`, to let people get past the
 edge of the cut rather than counting them as phantoms.
+
+Two notes the report prints for itself, worth knowing before you plan the runs:
+
+**Seeded runs cannot be compared on maturity fraction.** Pressing Stage is empty
+now makes the learned share 1.0 whatever the fraction is set to, so two seeded
+runs that differ only in that setting score alike by construction. To compare
+fractions, run unseeded - `start` instead of `seed`.
+
+**The false-performer count is sampled once a second**, so it counts seconds
+whose single sample showed a performer. One that lived under a second can fall
+between samples. Every frame is in the `/track` recording or the client's own
+capture if the exact count matters.
 
 ### Everything in one read
 
