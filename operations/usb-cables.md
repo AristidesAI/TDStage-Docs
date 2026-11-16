@@ -77,11 +77,21 @@ step 4 below is that check.
    ```
 
    Re-plugging a phone can change its address and leave that route stale.
-5. **Check the firewall profile.** A new Apple adapter lands in the **Public**
-   profile, where inbound UDP is blocked, so the rules `firewall.bat` adds for
-   the LAN profile do not apply to it. Either set that adapter to Private or
-   re-run `firewall.bat` afterwards, then confirm with `doctor.py`, which lists
-   the USB iPhone links it can see.
+5. **Check what the firewall actually allows on a cable.** A new Apple adapter
+   lands in the **Public** profile, and that is less of a problem than it
+   sounds: all three of `firewall.bat`'s UDP rules are `profile=any`, so phone
+   telemetry, the depth ports and the props ports are allowed on the cable too.
+   What does **not** reach it is the two TCP rules, 9080 for the browser and
+   9001 for the field stream: those are scoped `remoteip=LocalSubnet` plus the
+   Tailscale range, and a cable's 169.254 link-local address is in neither. So
+   a browser or a client machine cannot come in over a phone cable, which is
+   fine, because nothing should.
+   
+   The thing that does block a cable is a per-program **Block** rule, which
+   Windows makes when somebody cancels the "allow access" prompt - and that
+   beats every Allow rule on every profile. Confirm with `doctor.py`: it lists
+   the USB iPhone links it can see and every inbound Block rule for the show's
+   python.exe.
 
 ## What the console does about a cable that moves
 

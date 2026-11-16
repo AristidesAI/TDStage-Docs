@@ -301,7 +301,10 @@ holds, and silently taking TouchDesigner's telemetry port is worse than
 refusing to start the listener.
 
 **`--tdp4-port 0` on the show machine avoids a deadlock; performance has nothing
-to do with it.** TouchDesigner must be able to bind 9003 the instant it launches. A
+to do with it.** In the normal shape the **bridge** owns 9003 and both readers
+take frames from its file, so nothing competes for the port at all. The flag is
+0 anyway because of the fallback shape, where TouchDesigner binds 9003 itself
+and must be able to do it the instant it launches. A
 console that opportunistically grabs the port while TD is down wedges the pair,
 because the console only yields the port once it learns from TD's status message
 that TD wants it, and TD cannot send that message until it has started. With `0`

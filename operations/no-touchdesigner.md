@@ -40,8 +40,10 @@ outside TD and hands whole frames to both readers through a memory-mapped file.
 **Without TouchDesigner you still need it**, for a reason that is easy to miss:
 
 `run.bat` starts the console with `--tdp4-port 0`, which turns off the
-console's own phone-facing listener. That flag exists so TouchDesigner can own
-UDP 9003 the instant it launches. With no TouchDesigner and no bridge, nothing
+console's own phone-facing listener. On a show machine the bridge owns 9003 and
+feeds both readers; the flag is 0 so that the fallback shape also works, where
+TouchDesigner binds 9003 itself and has to be able to do it the instant it
+launches. With no TouchDesigner and no bridge, nothing
 is listening on 9003 and the console has no point data at all - the page comes
 up, the phones appear, and the stage stays empty.
 

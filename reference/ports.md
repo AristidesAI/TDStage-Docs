@@ -226,6 +226,10 @@ does nothing. Only when the bridge is not running does TouchDesigner bind
 | 9006 | UDP | console to TouchDesigner | Poses, health and status |
 | 9080 | TCP | browser to the console | The console's web interface and HTTP API |
 | 7000 | UDP | console to another system | The tracking output, as OSC |
+| 7001 | UDP | console to TouchDesigner | A copy of every `/track` bundle, for the tox's consensus view. Sent while `/track` is on, set by `TDSTAGE_TRACK_COPY`, which the Windows launcher points at 127.0.0.1:7001 |
+| 9020 | UDP | props to the console | The prop IMU stream (TPRP), where the console is the clock master. Off until the props file enables it |
+| 9021 | UDP | props to TouchDesigner | The same stream, either sent direct by the props or relayed by the console, read by the tox's `Propsport` |
+| 9022 | UDP | on the prop itself | The prop's own socket, for what the console sends back to it |
 
 The old relay bound 9003 and sent copies to two real sockets: TouchDesigner's
 on 9004 and the console's on 9013. If a document says TouchDesigner binds
