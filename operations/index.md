@@ -33,6 +33,7 @@ flowchart TD
 |---|---|
 | [Preparing a phone](phone-preparation.html) | Everything that must happen before a phone reaches a venue, and why it cannot wait. |
 | [Rig get-in](get-in.html) | Building the rig in the order that avoids rework. |
+| [Logging a session](live-log.html) | Sample the console once a second, type four marks as the run happens, and get a scored table out of it afterwards. |
 | [The depth-only run](depth-only.html) | One performer, upside down, tracked without the person model. The cyr preset, the three conditions, and how to put the defaults back. |
 | [Phones on USB cables](usb-cables.html) | A phone on USB-C is a network link, not a tunnel. Two cables on one Windows machine, and the routing check that decides whether both work. |
 | [Getting the room out of the cloud](background.html) | The floor, the walls and the truss, and the two separate sets of controls that remove them. |
