@@ -45,8 +45,8 @@ draft.
 ## Connecting
 
 A plain WebSocket upgrade on `/`; no subprotocol, no authentication, binary
-frames only. Two query parameters change what a client receives, and both are
-off unless asked for:
+frames only. Three query parameters change what a client receives, and all
+three are off unless asked for:
 
 | Connect to | You get |
 |---|---|
