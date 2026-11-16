@@ -59,12 +59,17 @@ whatever the operator bound it to, which is a fixed spot on the stage, a
 performer, or a performer's hand. A record with a non-finite number in it is
 dropped rather than sent.
 
-No bundle on a client bus carries one today. The prop receiver is off until the
-props file beside the console's configuration enables it, and `output.emitProps`
-is **locked** in the schema, so the API refuses to set it and the key keeps its
-`false`. Write the receiver so an unknown fifth address is ignored and this
-costs you nothing when it does arrive. Props and inertial nodes have their own
-reference page.
+No bundle on a client bus carries one today, and **one switch** is why: the
+prop receiver is off until the props file beside the console's configuration
+enables it, or `POST /api/props {"enabled": true}` does. There is a second
+setting that looks like a gate and is not. `output.emitProps` is locked in the
+schema, so the API refuses to move it, but nothing reads it: the console sets
+the emitter's prop source unconditionally at start, and a prop reaches the
+bundle as soon as the module is on, with `emitProps` still false. Treat the
+module's own switch as the only gate. Write the receiver so an unknown fifth
+address is ignored and this costs you nothing when it does arrive.
+
+[Props and inertial nodes](props.html) covers the rest of that path.
 
 ### `/track/frame`
 
