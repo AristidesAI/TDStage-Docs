@@ -20,12 +20,11 @@ it is read, which is often what you want to know.
 [How the pipeline is built](pipeline.html) has the stage order, the two merge
 paths side by side, and where each parameter bites.
 
-One caveat on the generated list: `tox_params_live.md` was generated at v63,
-hand-edited through v85, and the working copy has moved on since (v87 at the
-time of writing). The list
-prints a multi-component parameter as its X component alone. The operator or
-shader that **reads** a parameter is the real contract, and that is what the
-tables below were checked against.
+One caveat on the generated list: `tox_params_live.md` is regenerated from the
+running tox, most recently on 16 November 2026 at v95, which is the tox the
+working copy holds today. It prints a multi-component parameter as its X
+component alone. The operator or shader that **reads** a parameter is the real
+contract, and that is what the tables below were checked against.
 
 ## Reading this page
 

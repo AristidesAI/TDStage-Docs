@@ -197,33 +197,53 @@ which is the result to aim for.
 
 ### Where it stands today
 
-Run against the working copy on 9 November 2026:
+Run against the working copy on 17 November 2026, which is byte-identical to
+`TDStageConductor_v95.tox`:
 
 ```
-TD/TDStageConductor.tox: 28 DATs with a repo copy identical, 5 differ,
+TD/TDStageConductor.tox: 41 DATs with a repo copy identical, 0 differ,
                          0 DATs with text and no repo copy
-  DIFFERS  TDStageConductor/clib         vs TD/newtox/tox_dats/clib.py (38 lines)
-  DIFFERS  TDStageConductor/hands_lib    vs TD/newtox/tox_dats/hands_lib.py (80 lines)
-  DIFFERS  TDStageConductor/hlib         vs TD/hlib.py (61 lines)
-  DIFFERS  TDStageConductor/hlib_grid    vs TD/newtox/hlib_grid.py (10 lines)
-  DIFFERS  TDStageConductor/udp_pc_exec  vs TD/newtox/tox_dats/udp_pc_exec.py (10 lines)
+  skipped, TD's unused compute placeholder beside a pixel shader:
+  gpu_temporal_compute
 ```
 
-**So the repository is not the tox's code at the moment, and this is the
-direction that matters: every one of the five is a fix that exists in the
-repository and has not been loaded into the tox.** None of them is a live edit
-that would be lost.
+**So the repository is the tox's code.** The five that differed on 9 November,
+all of them repository fixes waiting to be loaded, went in with the saves up to
+v95: the Windows UDP connection-reset switch in `clib`, the no-proxy hand poll
+and its `Handsstatus` sources in `hands_lib` and `udp_pc_exec`, and the voted
+fused person id in `hlib` and `hlib_grid` ([#51](https://github.com/AristidesAI/TDStage/issues/51)).
+The Windows fix that mattered for the show machine is in the tox the show
+machine runs.
 
-| DAT | The fix waiting in the repository |
-|---|---|
-| `clib` | The Windows UDP connection-reset switch, which never actually ran |
-| `hands_lib`, `udp_pc_exec` | The no-proxy hand poll, `parse_hands`, the sources in `Handsstatus`, a YOLO wrist with no pixel skipped, the bridge file named in the log |
-| `hlib`, `hlib_grid` | A fused person id voted rather than averaged ([#51](https://github.com/AristidesAI/TDStage/issues/51)) |
+The one line that is not a failure: `gpu_temporal_compute` is a placeholder
+TouchDesigner creates beside a pixel shader and nothing runs it, so the check
+names it and moves on.
 
-Loading those five and saving the next numbered tox is what clears it. Until
-then, a result of 5 differ is the expected one and does not mean something has
-gone wrong. But the Windows fix in `clib` is only in the tox once that is
-done, and the show machine is where that one counts.
+### What is inside, and which file is its copy
+
+The 42 text DATs of v95, by what they do. Every one is compared by
+`tox_drift.py`, so this table is also the list of files an edit must be copied
+back to.
+
+| In the tox | Repo copy | What it is |
+|---|---|---|
+| `tdp4_receiver` | `TD/newtox/` | The phone ingest: threaded receive, reassembly, and the bridge reader |
+| `udp_pc_exec`, `pc_par_exec` | `tox_dats/` | The Point Cloud page's execute and parameter-execute DATs: arming the receiver, the `devices` table, the parameters |
+| `hlib`, `hlib_grid` | `TD/`, `TD/newtox/` | The pure-numpy cleanup and fusion, the same files that run offline in the tests |
+| `merge_lib`, `merged_callbacks` | `TD/newtox/`, `tox_dats/` | The CPU merge path and its callbacks |
+| `gpu_exec`, `gpu_atlas_callbacks` | `tox_dats/` | The GPU path's driver and the atlas that feeds it |
+| `gpu_unproject`, `gpu_clean_compute`, `gpu_hyst_compute`, `gpu_hyst_init_compute`, `gpu_fuse_compute`, `gpu_temporal_pixel` | `tox_dats/*.glsl` | The shaders: unproject, cleanup, the hysteresis pair, the fuse, and the static-surface temporal filter |
+| `stage_level`, `level_ops`, `level_par_exec`, `floor_par_exec` | `TD/newtox/`, `tox_dats/` | The floor solve, its operations and the two pages' parameter DATs |
+| `stagecut_par_exec` | `tox_dats/` | The Stage Cut page |
+| `rgb_lib`, `rgb_callbacks`, `rgb_orient` | `tox_dats/`, `TD/newtox/` | The phones' camera images and their rotation |
+| `hands_lib`, `hands_exec`, `hands_callbacks` | `tox_dats/` | The hand markers polled from the console |
+| `consensus_view`, `consensus_exec`, `consensus_callbacks`, `consensus_hands_callbacks` | `TD/newtox/`, `tox_dats/` | The console's `/track` performers and hands drawn in TD. In the tox since v95 with its switch off, and nothing draws them yet |
+| `props_receiver`, `props_exec`, `props_callbacks` | `TD/newtox/`, `tox_dats/` | The prop IMU receiver and its wiring, saved with the switch off |
+| `console_link_lib`, `console_link_exec`, `console_link_callbacks` | `tox_dats/` | The console link, both directions ([the message list](running.html#the-link-message-by-message)) |
+| `osc_in_callbacks` | `tox_dats/` | Phone telemetry in, including the relay to the console |
+| `clib` | `tox_dats/` | The raw UDP sender and the log, used by everything that answers the console |
+| `status_exec`, `autoframe_exec` | `tox_dats/` | The status strings, and the view framing |
+| `reg_manual` | `tox_dats/` | Nudging a cloud by hand on the Registration page, which is what `Posesource` on `manual` protects |
 
 ### Hot-swapping a module DAT in a running tox
 
