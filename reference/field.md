@@ -123,10 +123,19 @@ not raise a body.
 
 Two things to settle before building on it:
 
-- **Presence is always people**, whatever the field carries. If the console's
-  person filter is off, the field holds everything the phones see, but
-  presence is computed from a people-only view, because with the filter off a
-  chair passed the body-shape test as a body on the rig (2026-10-25).
+- **Where presence comes from is a setting**, `f1.presenceSource`, and its
+  default `consensus` is the behaviour above: a people-only view built from a
+  strict multi-view vote of the person model, so the rows are people whatever
+  the field itself carries. A phone with no fresh model answer adds nobody to
+  that vote.
+- **Set to `depth`, presence is the motion engine's foreground with no model
+  vote**, which is what the inverted-performer configuration runs. The
+  client's own 6 November test found the model sees a body at 180 degrees in
+  about 22 per cent of the frames it sees the same body upright, so a
+  performer in a cyr wheel dropped out of presence whatever else was set. The
+  price is that a non-person cluster which passes the gates above is presence
+  too: a chair moved onto the rig passed the body-shape test as a body
+  (2026-10-25). The field bytes are the same either way.
 - **There is no identity.** Rows are not in a stable order and carry no id.
   For who is where, use [the tracking output](track.html); this list is for
   how many and roughly where.
