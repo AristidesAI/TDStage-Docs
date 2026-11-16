@@ -427,7 +427,8 @@ curl -X POST http://localhost:9080/api/preset -d '{"name":"lite","action":"apply
 **A laptop that also runs TouchDesigner**: lite, with
 `TDSTAGE_PRIORITY=below` set before the launcher. That is the London dry-run
 shape, three phones. If the content side needs hands, balanced keeps them -
-but read the next paragraph before expecting balanced to buy you anything else.
+and that is the only reason to pick it, because its model budget does not bind
+at three phones either.
 
 **The show machine**: full. Watch the load line under the preset buttons, which
 reports the console's CPU, the keypoint worker's, and the milliseconds each part
@@ -440,8 +441,9 @@ ninety-seven are not in doubt. `/track` held 30 Hz in every phase.
 
 The reason is worth knowing, because it says when balanced will matter. The
 keypoint worker already caps itself near 30 requests a second in total, about
-3.8 a phone at eight phones, so balanced's budget of 60 never binds and the
-only thing it changes at that load is the browser's camera view. Balanced is a
+3.8 a phone at eight phones and about 10 at three, so balanced's budget of 60 is
+above that ceiling at every phone count anybody has measured and binds at none
+of them. At eight phones the only thing it changes is the browser's camera view. Balanced is a
 middle setting for its other effects, not a middle setting for CPU.
 
 Lite's saving is visible in what stops rather than in a budget: the keypoint

@@ -291,7 +291,19 @@ Vision stays loaded as a hot standby.
 | `yoloRateHz` | 30.0 Hz | 1 to 30 | safe | Per device inference cap for the YOLO worker |
 | `yoloPose` | off | | safe | Second pass for multi person wrists, which is what feeds `/track/performer/hand`. Costs about +10 ms per frame, so leave it on at three phones or fewer and off for a full rig |
 | `yoloDevice` | `auto` | `auto`, `cuda`, `mps`, `cpu` | **restart** | `auto` means cuda if available, else mps, else cpu. Pick `cpu` to keep the GPU entirely for TouchDesigner |
-| `yoloTotalHz` | 0 inf/s (no cap) | 0 to 240 | safe | **Total** YOLO frames per second across all phones, 0 = no total cap, so each phone runs up to `yoloRateHz` and eight phones ask for 240 a second between them. On a machine shared with TouchDesigner this is the knob for the YOLO worker's share of the GPU: each phone then gets about this divided by the phone count, round robin, freshest frame first. Every frame costs the segmentation pass plus keypoints and hand landmarks when those are on. Lower means older person masks on `/track` and F1 presence: a phone at 5 a second labels its points with a mask up to 0.2 s old. The performance presets set it (60 balanced, 30 lite). **On the Mac it was measured on the cap never engaged**, because the worker there serves only about 25 to 30 frames a second anyway; on a faster GPU it is expected to be the lever, and that is **not measured** |
+| `yoloTotalHz` | 0 inf/s (no cap) | 0 to 240 | safe | **Total** YOLO frames per second across all phones, 0 = no total cap, so each phone runs up to `yoloRateHz` and eight phones ask for 240 a second between them. On a machine shared with TouchDesigner this is the knob for the YOLO worker's share of the GPU: each phone then gets about this divided by the phone count, round robin, freshest frame first. Every frame costs the segmentation pass plus keypoints and hand landmarks when those are on. Lower means older person masks on `/track` and F1 presence: a phone at 5 a second labels its points with a mask up to 0.2 s old. The performance presets set it (60 balanced, 30 lite). **On the Mac it was measured on the cap never engaged at any phone count**, because the worker there serves only about 25 to 30 frames a second anyway; on a faster GPU it is expected to be the lever, and that is **not measured** |
+
+{: .warning }
+**A budget above the worker's own ceiling does nothing, and both presets' are.**
+Measured on this Mac the worker serves about **30 requests a second in total**
+whatever is asked of it, which is about 3.8 a phone at eight phones and about
+10 at three. Balanced's budget of 60 is therefore above the ceiling at every
+phone count that has been measured, so it binds at none of them: calling
+balanced a cut in the model's load is wrong on this machine, at three phones as
+much as at eight. Lite's 30 sits at the ceiling and bites because the rest of
+lite does the work. On a faster GPU the budget is expected to be the lever it
+looks like, and that has not been measured.
+
 | `obsTotalHz` | 70.0 inf/s | 5 to 240 | safe | **Total** inferences per second across all phones. Each phone runs at the lesser of its own rate and this divided by the phone count, so two phones get the full rate while eight degrade evenly instead of starving the rest of the console. One inference is about 11 ms on a Mac |
 | `standbyHz` | 3.0 Hz | 0.5 to 30 | safe | Rate for the secondary backend, kept warm so it can answer immediately if the primary goes quiet |
 | `rateHz` | 30.0 Hz | 1 to 60 | safe | Per device inference cap for the person observer, round robin across devices |

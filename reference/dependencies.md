@@ -237,10 +237,18 @@ the tools, then `firewall.bat`, then `doctor.py`, then the YOLO worker over the
 Windows named pipe with the bundled weights, then every pure-Python self-test,
 a console smoke test, the fan-out throughput check, `show.bat` end to end and
 `Tools/requirements_check.py`. The runner has no GPU, so CUDA is never
-exercised, and neither are phones or TouchDesigner. The workflow is configured
-but has not run since 2026-10-27 02:52Z: the account's Actions billing has
-refused every job since then (see `CHANGELOG.md`), so until that clears the
-list is run by hand on a Mac.
+exercised, and neither are phones or TouchDesigner.
+
+{: .warning }
+**"On every push" is how the workflow is configured, not what has happened.**
+Its last run was at `f691304` on 10 November 2026, **96 commits before the
+current main**, and the account's Actions billing has refused jobs since. So
+everything the list covers - the real `install.bat`, the firewall script,
+`doctor.py`, the worker over the named pipe, the self-tests, the console smoke
+test, `show.bat` end to end - has been exercised on a Mac by hand and not on
+Windows for that whole span, including the 12 November release. Read any claim
+that something "passes in Windows CI" as "passed on 10 November, and passes on
+macOS now".
 
 One tool, `Tools/requirements_check.py`, needs a decoder module supplied by the
 integration partner that is deliberately not vendored into this repository.
