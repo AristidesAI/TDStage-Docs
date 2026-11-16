@@ -36,6 +36,7 @@ flowchart TD
 | [A session without TouchDesigner](no-touchdesigner.html) | The console alone: what to start on Windows, what its own pages show, and what the absent hub costs. |
 | [Logging a session](live-log.html) | Sample the console once a second, type four marks as the run happens, and get a scored table out of it afterwards. |
 | [The depth-only run](depth-only.html) | One performer, upside down, tracked without the person model. The cyr preset, the three conditions, and how to put the defaults back. |
+| [A dry run, card by card](dry-run-cards.html) | The 18 November test cards: 75 minutes after placement, four scored maturity runs, a stream check and the inverted body twice, with what to settle before the clock starts. |
 | [Phones on USB cables](usb-cables.html) | A phone on USB-C is a network link, not a tunnel. Two cables on one Windows machine, and the routing check that decides whether both work. |
 | [Getting the room out of the cloud](background.html) | The floor, the walls and the truss, and the two separate sets of controls that remove them. |
 | [Stroud: the plan](stroud.html) | The November venue's own numbers: where each phone and marker goes, and how to set it out with a tape. |
