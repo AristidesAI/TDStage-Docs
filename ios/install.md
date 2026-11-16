@@ -163,14 +163,22 @@ neither stamp, so that phone reports an empty commit as well as the missing
 date described above.
 
 {: .note }
-Two signed builds were exported on 2026-11-03, both stamped that date:
-**TDStage AR 1.1 (4)** was uploaded that evening, so it stops launching on
-2027-02-01 and Rig health starts warning on 2027-01-17. **TDStage 1.0 (2)** is
-exported and signed but not uploaded; its ninety days do not start until
-somebody uploads it. Both archives predate two app fixes committed later the
-same day, the watchdog's 30 s hold on a withheld relaunch and blackout
-surviving a relaunch, so a tester on 1.1 (4) still sees a relaunched phone come
-back lit.
+> **Corrected, and the earlier version of this paragraph was wrong twice.** Two
+> signed exports exist from 2026-11-03, and the stamped one - the
+> `testflight.sh` export, carrying `TDStageBuildDate` - is **not** the archive
+> that was uploaded. What went to TestFlight that evening was an Xcode
+> Organizer archive with empty stamps, which is why the console's expiry
+> warning cannot fire for it, and it stops launching about 2027-02-01.
+>
+> It also does contain the relaunch fix. The uploaded archive's dSYM holds
+> `resumeShow`, the function that makes blackout survive a relaunch, so a
+> tester on 1.1 (4) does **not** see a relaunched phone come back lit. That
+> comes from the symbols rather than from a commit record, because the commit
+> is unstamped: the build cannot be reproduced from git, which is the real cost
+> of having archived it by hand.
+>
+> **TDStage 1.0 (2)** is exported, signed and not uploaded, so its ninety days
+> have not started. It is the parked app in any case.
 
 ---
 

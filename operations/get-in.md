@@ -321,14 +321,21 @@ flowchart TD
   B --> C["Top-down pictures,<br/>correlated at every heading"]
   C --> D{"Graded"}
   D -- "OK" --> E["Polished, then applied"]
-  D -- "WARN" --> F["Applied, with the reason<br/>and what to do"]
+  D -- "WARN" --> F["Refused too, with the reason.<br/>applyWarn writes it anyway"]
   D -- "FAIL" --> G["Refused. The phone is<br/>left where it was"]
 ```
 
 **Every answer is graded, and the grade is the useful part.** OK means the
-solver settled; it does not certify that the pose is right. The console applies
-a WARN with its reason attached, and refuses a FAIL, leaving that phone alone
-rather than moving it somewhere confident and wrong.
+solver settled; it does not certify that the pose is right. **A WARN is refused
+as well as a FAIL**, with its reason attached: the phone is left where it was
+rather than moved somewhere confident and wrong. A phone whose solve was placed
+*through* a WARN phone is refused with it, which is the part that surprises
+people - one bad phone can leave two unmoved.
+
+To write a WARN anyway, re-run the align with `applyWarn`. The console then logs
+it per phone as applied "because the operator asked for it", so the decision is
+in the log rather than in somebody's memory. Check it in the merged cloud and
+against the taped marks before trusting it.
 
 {: .warning }
 **A finished solve is not proof that every phone moved.** A refused phone is
