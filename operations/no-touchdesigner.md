@@ -158,8 +158,12 @@ The console restarts itself if it exits - `run.bat` loops with a three-second
 wait, because the show machine is operated remotely and an exited console with
 nobody in the room is worse than a restarted one. **Close the window to stop
 it**; Ctrl+C in that window will be followed by a restart. If a second console
-is already running on the same configuration file, the script says so and
-changes nothing rather than fighting for the port.
+is already running on the same configuration file, the script retries three
+times five seconds apart and then says `NOT started: another console is already
+running on this config.json` and stops, rather than fighting for the port. So
+that message takes about fifteen seconds to appear: a window that looks stuck
+for ten seconds after a crash is the retry, not a hang. Windows releases the
+lock of a console that died a moment ago, which is what the retries are for.
 
 To keep a record of the session, run
 [the session logger](live-log.html) alongside it, with the console's own

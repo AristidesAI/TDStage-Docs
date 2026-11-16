@@ -55,9 +55,9 @@ WebConsole\.venv\Scripts\python Tools\live_log.py --selftest
 ```
 
 It stands up a fake console on loopback, logs it, and reads the file back
-through every report. It passed 45 of 45 on the dev Mac on 17 November 2026. A
-failure there is the tool or the interpreter, before anything about the rig is
-in question.
+through every report. It passed 55 of 55 on the dev Mac on 17 November 2026, at
+`cd5f2a8`. A failure there is the tool or the interpreter, before anything about
+the rig is in question.
 
 **On screen it prints events, not samples**, each with the clock time: the
 keypoint worker restarting, with the reason the console gave; the worker's state
@@ -65,6 +65,12 @@ changing; the console going quiet and coming back; `/track` starting and
 stopping, including **`/track output OFF`** and **`Record /track OFF`**, which
 are the two an operator most needs to see the moment they happen. A quiet
 screen means nothing happened.
+
+Since 17 November a console restart no longer ends a `/track` recording: the
+console saves the switch and resumes recording **into a new file** at the next
+boot, warning that it has. So `Record /track OFF` on the screen means an
+operator turned it off, not that a restart did, and the frames sent while the
+console was down are in no file at all.
 
 ## What lands in the file
 
@@ -138,9 +144,11 @@ reported as missing it rather than guessed at. Case does not matter, and **the
 first mark of each kind is the one used** - type a second `in` and the report
 names it as ignored rather than quietly replacing the first.
 
-One thing to know before the day: if you abort a run and re-type its marks under
-the same name, it is scored **from the first attempt's marks**. Give the retry a
-new name.
+One thing to know before the day: if you abort a run and type its `seed` or
+`start` again **before its `end`**, the unfinished attempt is dropped and the
+new one is scored, with a line in the report saying so. Once a run has its
+`end`, a later `seed` under the same name is the ignored repeat instead, so a
+genuinely separate run wants a new name.
 
 Two more marks bracket an inverted-body attempt rather than a maturity run:
 

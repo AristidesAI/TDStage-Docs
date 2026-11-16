@@ -31,6 +31,16 @@ with JSON.
 on its own port, 9001 by default. The tracking output is OSC over UDP on port
 7000, configured through `POST /api/track`.
 
+**How a POST can be refused before the route is reached** (17 November 2026):
+
+| Code | When |
+|---|---|
+| 403 | The request carries an `Origin` that is not the `Host` it was sent to. A browser sends `Origin` on every cross-site POST, so any page open on the network can no longer drive this console. `curl`, `urllib` and the `Tools/` scripts send no `Origin` and pass. It is not a login: a non-browser program on the network still passes, and DNS rebinding still would |
+| 413 | A `Content-Length` over 1 MiB, or over 16 MiB for `/api/dev/shot` |
+| 400 | A `Content-Length` that is not a whole number. A `-1` used to make the read wait for the peer to hang up |
+| 408 | The body stalls for 30 seconds. One log line, then the socket closes |
+| 409 | A conflict rather than a bad request: starting the simulator while a real phone has sent frames in the last 5 seconds (`"force": true` to override, and the reply names the phones in `realPhones`), a second alignment solve, an autofix already running |
+
 Routes found in the source: 27 GET, 36 POST.
 
 | Path | Verb | What it is for |

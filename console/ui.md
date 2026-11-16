@@ -244,7 +244,7 @@ Runs synthetic TDP4 phones with no hardware. Ids start at 101.
 | **seconds** | 5 to 3600 per run. |
 | **planes** | `depth`, `depth+conf` or `depth+conf+rgb`. rgb is the only way to exercise the camera tiles and the vision observer without hardware. |
 | **loop** | Relaunch when a run ends. |
-| **Start** / **Stop** | Stop kills every simulator process on this machine, whoever started it. While one runs that this console did not start, the status line adopts it and says so. |
+| **Start** / **Stop** | Stop kills every simulator process on this machine, whoever started it. While one runs that this console did not start, the status line adopts it and says so. **Start is refused while a real phone has sent frames in the last 5 seconds** (17 November), and asks once before starting anyway: synthetic ids from 101 up would otherwise be mixed into the same live stream, `/track` and TouchDesigner, and the mixture looks like a rig with more phones than the room has. |
 
 The line underneath says what is running and where it is sending. If the
 target is not 9003 it warns that TouchDesigner will not see it.
@@ -389,7 +389,7 @@ the bridge while diagnosing one of them.
 | Control | What it does |
 |---|---|
 | **Send /track** with host and port | Starts or stops the `/track` OSC stream of performers and hands to the client's bus. Default `127.0.0.1:7000`. Editing host or port while it runs applies immediately. Stopping asks first, because the client loses performer data. |
-| **Record /track** | Writes every emitted `/track` frame to `logs/track-<stamp>.jsonl` for the evidence pack scorer. |
+| **Record /track** | Writes every emitted `/track` frame to `logs/track-<stamp>.jsonl` for the evidence pack scorer. The switch survives a console restart: the next boot resumes recording into a **new** file and says so at warn level. Nothing else ends it, and there is no size or free-disk limit, so turn it off when the session is over. |
 | **Hands** | Emit `/track/performer/hand` for confident wrists of confirmed, un-clustered performers. |
 | **Flip Z axis** | Negates z and vz on the wire. One click if the depth axis sign turns out reversed against the client's sim. |
 | **conformance** line | Reports whether every emitted bundle satisfies the contract: hands a subset of performers, all values finite, timestamps monotonic. |
