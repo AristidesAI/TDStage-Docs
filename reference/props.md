@@ -170,3 +170,6 @@ list of unknowns; the stream's format has to be agreed first.
 - [Parameters](../td/parameters.html#props) for the Props page the tox has
   carried since v95 (`Propsactive`, `Propsport`, `Propsdelayms`,
   `Propstareyaw`, `Propsstatus`)
+- [Maintenance](../td/maintenance.html) for the tox's DAT table, which names
+  the three props DATs (`props_receiver`, `props_exec`, `props_callbacks`) with
+  the repository file each is checked against
