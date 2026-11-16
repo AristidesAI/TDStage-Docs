@@ -153,6 +153,19 @@ address and by the name and model each phone sends in its hello.
 > destination IP address, not a transport. Everything in this system runs over
 > UDP. The name is a leftover, kept for compatibility.
 
+**What a profile push does not change: where the phone sends.** A push writes
+the stored profile as it is, so `stage.tcpHost` and `stage.oscPort` keep
+whatever the profile holds. Host rewriting used to run on every push, which
+meant a phone an operator had just moved onto the cable was dragged back onto
+Wi-Fi by the next push, mid show, with a stutter each time. Choosing the link
+belongs to the person at the desk. **Send telemetry here** is the one action
+that moves a destination, and it moves telemetry only.
+
+Two more things the push itself enforces: a stored profile from an older build
+loses the retired TCP keys on the way out, because there is no transport to
+choose, and a profile over 60 kB is refused with a log line rather than
+truncated into one datagram.
+
 ### 3. Phone settings that break a show if missed
 
 | Setting | Set to | What happens otherwise |

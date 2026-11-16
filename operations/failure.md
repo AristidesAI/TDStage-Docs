@@ -322,6 +322,18 @@ phone's health to the console's own listener, so it arrives directly and
 survives the next TouchDesigner outage as well. Do not restart the console:
 the telemetry is not reaching it, so restarting it changes nothing.
 
+What the button does, because the failures it has are per phone: each phone
+gets **two** messages, since the phone takes the two keys two different ways.
+The host arrives as a plain `/ctl/set` of `stage.oscHost`, which is why a
+cached profile can never move a phone's link on its own; the port arrives as a
+one-key profile, because `stage.oscPort` is not in the phone's numeric
+whitelist for `/ctl/set`. Each phone is told **this console's address on that
+phone's own link**: the Mac's cable address for a phone on USB, its network
+address otherwise. A phone whose address the console does not know yet gets
+nothing and is named in the reply as `no address`, and if that is true of every
+phone the call fails with `no LAN address for this console` rather than
+reporting a success nobody received.
+
 Status: verified.
 
 ### The person-model worker crashes
