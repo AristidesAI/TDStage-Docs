@@ -90,6 +90,21 @@ CONTRACTS = [
         "note": "every non-header parameter in the live tox list",
         "one_way": True,
     },
+    {
+        # The console's command line. `--props-port` landed with the prop IMU
+        # receiver and was on no page for a week (found 2026-11-17): the flag
+        # table is where an operator looks for a port to move, and a flag that
+        # is only in `--help` on a show machine nobody can reach is not
+        # documented. One direction: the page also explains `--priority` and
+        # environment variables that are not argparse flags.
+        "what": "console flags",
+        "page": "console/running.md",
+        "page_re": r"`(--[a-z0-9-]+)",
+        "sources": [("system", "WebConsole/server.py")],
+        "source_re": r'add_argument\("(--[a-z0-9-]+)"',
+        "note": "every flag server.py accepts",
+        "one_way": True,
+    },
 ]
 
 # The ARKit app is its own repository, beside the system one.
