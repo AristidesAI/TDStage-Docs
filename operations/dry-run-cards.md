@@ -70,8 +70,8 @@ WebConsole\windows\show.bat --listen 9000
 Why that line and not `run.bat`, and why not the "Send telemetry here" button,
 is on [A session without TouchDesigner](no-touchdesigner.html). Run it once:
 a second `show.bat` leaves two stray windows, a minimised one whose title begins
-"TDStage bridge" and a console window saying "NOT started: another console is
-already running". Close both. Open the minimised bridge window from the taskbar
+"TDStage bridge" and, after three retries 5 s apart, a console window saying
+"NOT started: another console is already running". Close both. Open the minimised bridge window from the taskbar
 once; if it never prints "receiving on :9003", close every TDStage window and
 any stray python.exe and start again.
 
@@ -142,8 +142,10 @@ Each run takes about 7 minutes:
    seconds**. A phone joining can blank `/track` for the whole rig for a few
    seconds up to half a minute later. From here on nobody touches a phone or a
    tripod.
-4. Press **Record /track** again. A restart switches it off, and without it the
-   run has no `/track` file from the console's side.
+4. Check that **Record /track** still reads Recording. Since the 17 November
+   landing it resumes by itself after a restart, into a new file; if it shows
+   off, press it, because without it the run has no `/track` file from the
+   console's side.
 5. With the stage empty, type `A seed` in the logger window and press Enter.
    For a seeded run then press **Stage is empty now**; for an unseeded run
    press nothing. Wait until the logger prints "/track publishing (settled)",
@@ -189,8 +191,8 @@ positions the person chooses to do.
 Set-up: start one take per phone from the console's Record button, not Arm
 record, and check that every phone's Record page shows RECORDING before the
 first position; on the current builds a Record pressed while a take runs does
-nothing. Colour on, **Record /track** on (press it again if the console
-restarted), the logger running. The spotter stays out of every phone's view
+nothing. Colour on, **Record /track** on (check it is still on if the console
+restarted; it resumes by itself), the logger running. The spotter stays out of every phone's view
 except while spotting; where a spotter must stand in, say so aloud and
 write the time, in both runs.
 
