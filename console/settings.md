@@ -507,6 +507,9 @@ together:
 `maxPerformers` is 1 because the preset takes the model out of the loop
 entirely.
 
+Running a session with it is on its own page:
+[the depth-only run](../operations/depth-only.html).
+
 {: .warning }
 > **It is for one performer, and the button says so.** With the mask gate off
 > and detection on geometry, it cannot separate two people who touch. This is
