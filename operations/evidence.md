@@ -188,6 +188,13 @@ into a number.
    the button reads `Recording · <rows>` while it writes, and the console log
    says where the file went when it starts and how many frames it holds when
    it stops.
+
+   **It is not a saved setting.** Whether the recorder is running lives in the
+   console's memory, not in its configuration, so a console restart stops it:
+   the file ends where it ended, nothing resumes, and the button comes back
+   off. On a day with a planned restart - a daily one at a multi-day show -
+   start it again afterwards, and expect one file per run of the console rather
+   than one per session.
    Three things about that file, because all three change what a score from it
    means.
 

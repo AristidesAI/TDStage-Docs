@@ -70,6 +70,17 @@ reads no port the phone is sending to. The fix is to move the phone's telemetry,
 with **Send telemetry here** or `POST /api/telemetry/retarget`. This is a mistake
 people make exactly once, under pressure, at the worst moment.
 
+{: .warning }
+**That button changes the phones, not just the routing, and it sticks.** The
+telemetry port cannot be moved by a plain control message, so the console pushes
+a **profile** that writes the new port into each phone. The phones keep sending
+there until somebody moves them back - including after a relaunch, and including
+the day TouchDesigner expects telemetry on its own port again and gets nothing.
+Use it when the console needs the health now; make moving them back part of
+putting the rig away. The alternative, when the console is the only listener
+anyway, is to start the console on the port the phones already use
+(`--listen`), which changes nothing on any phone.
+
 **Control not landing** is nearly always the destination. The console sends
 `/ctl` to the phone's own address, which it learns from telemetry unless someone
 typed one in, and a manual entry wins. A phone whose screen has auto locked goes

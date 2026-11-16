@@ -57,19 +57,62 @@ takes the bridge out of the picture. The bridge is still the better choice if
 TouchDesigner might join later in the day, because then nothing has to be
 restarted.
 
-## Then point the phones' telemetry at it
+## Telemetry: start the console on 9000, do not retarget the phones
 
 `run.bat` starts the console listening for telemetry on **UDP 9001**, because
-on a show machine TouchDesigner owns 9000. The phones, if they were set up for
-a normal show, are sending to 9000 - where nothing is listening today.
+on a show machine TouchDesigner owns 9000. The phones, set up for a normal show,
+send to 9000 - where nothing is listening today.
 
-**Press Send telemetry here** on the console's Dashboard. It retargets every
-phone to the console's own listener. Until you do, the phones stream depth
-perfectly and read as dead: no health, no battery, no thermal state, and
-`Start show`'s verdict names every phone as failed while it is working.
+**Start the console on 9000 instead.** Arguments pass through `show.bat` to
+`run.bat` and on to the server, and the last `--listen` wins:
 
-That trap is not specific to today, but today it is certain rather than
-possible, because there is no TouchDesigner to be listening on 9000 at all.
+```
+WebConsole\windows\show.bat --listen 9000
+```
+
+UDP 9000 is already open in `firewall.bat`, so nothing else has to be changed.
+
+{: .warning }
+> **Do not press Send telemetry here for this.** It does not just redirect the
+> stream: it pushes a **profile** that writes `stage.oscPort` into each phone,
+> because that key cannot be moved with a plain control message. The phones then
+> hold 9001, and from 23 November - when TouchDesigner is licensed again and
+> expects telemetry on 9000 - they are silent to it until somebody retargets
+> them back. One afternoon's convenience, a fortnight's confusion.
+>
+> The one thing to check before `--listen 9000`: if the client's own bus runs on
+> the same laptop it republishes on UDP 9000 too, and the two collide. The
+> console logs a note about this when it starts. If that bus is on the machine,
+> give it `--out-port 9200` or keep the console on 9001 and accept the cost
+> below.
+
+**If telemetry does not reach the console at all**, which is what happens if you
+leave it on 9001 with the phones on 9000, the session still mostly works and
+loses a specific set of things. The console learns each phone's address **only
+from telemetry** - both code paths that set it are telemetry paths - so with
+none arriving it never learns where the phones are:
+
+| Still works | Gone |
+|---|---|
+| Depth frames, the merged cloud, people, `/track`, the field stream | Every `/ctl` command: no Start, Stop, Blackout, Wake, calibrate |
+| The roster, markers, registration, the stage cut | Battery, thermal state, frame rate, the clock sync |
+| Recording and replaying takes on the phone itself | Any health row that comes from the phone's own report |
+
+That is a usable session for testing a receiver and an unusable one for running
+a rig, which is why `--listen 9000` is the answer rather than a workaround.
+
+## Before a model run: the phones must send colour
+
+The person model needs a colour plane, and **the phones do not send one by
+default**. The default plane set is depth and confidence, and the profile the
+console pushes carries the same default unless the phone is already streaming
+colour.
+
+So for anything that depends on the model - the maturity runs, person masks,
+hands, F1 presence from consensus - set the planes to **depth+conf+rgb** on
+every phone first, and check the stream line says so. A model that never sees a
+picture reports nobody, which looks exactly like a model that is working on an
+empty stage.
 
 ## What the console shows you
 

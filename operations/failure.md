@@ -315,7 +315,9 @@ One catch: by default phone health reaches the console
 the phones look dead even though they are streaming, because the point data
 comes by a different route and never stopped.
 
-Operator: press **Send telemetry here** in the console. That moves every
+Operator: press **Send telemetry here** in the console (it writes the new port
+into each phone and they keep it, so moving them back belongs on the pack-down
+list). That moves every
 phone's health to the console's own listener, so it arrives directly and
 survives the next TouchDesigner outage as well. Do not restart the console:
 the telemetry is not reaching it, so restarting it changes nothing.
