@@ -345,8 +345,9 @@ rotations. How a point is made, and the numbers behind it, are on
 Turning it on also turns on the YOLO keypoint pass when YOLO is the primary
 observer and `/track` hands are off, at about 10 to 15 ms per YOLO frame (a
 figure from a comment in the code, not re-measured for this feature). The toggle is in the Tuning panel, not in
-the Live view's hand-written controls. The message is proposed to Default Ltd
-for 17 November, not yet agreed, and the feature is **not good enough to switch
+the Live view's hand-written controls. The message shape is ours to propose and
+Default Ltd's to accept, and the call that settles it is on 17 November, so
+until this page says otherwise the format is a proposal, and the feature is **not good enough to switch
 on for a show**: about 10 cm of limb error at the median on the show layout,
 0.4 to 0.6 m at the 95th percentile, measured through the real keypoint model
 on rendered people (see the design page).
