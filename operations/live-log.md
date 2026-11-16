@@ -89,6 +89,20 @@ scoreable. Each is a run name, then the word:
 All four marks have to be present for a run to score; a run missing one is
 reported as missing it rather than guessed at.
 
+Two more marks bracket an inverted-body attempt rather than a maturity run:
+
+| Type this | When |
+|---|---|
+| `armA start` | as the performer goes up, or as the arm begins |
+| `armA end` | as it finishes |
+
+`armB` and `armC` likewise. Those are read by the intake report below, which
+also finds two of the arms **without** any marks at all: it reads the interval
+the cyr preset was applied over as arm B, and the interval `Rotate and retry`
+was on as arm C. So a session that forgets the marks still gets scored for the
+arms that are visible in the settings, and the marks are what the depth-only
+arm needs, since it is the one nothing in the settings records.
+
 If the marks were written on paper instead, `--marks` takes them as a file of
 `10:12:30 A seed` lines and merges them in.
 
@@ -120,6 +134,19 @@ A table, one row per marked run. What each column answers:
 
 Empty-stage samples start four seconds after `out`, to let people get past the
 edge of the cut rather than counting them as phantoms.
+
+### Everything in one read
+
+```bash
+python Tools/live_log.py --intake live-wed.jsonl.gz
+```
+
+The report to run first after a session, and the one to paste into a write-up.
+It answers, in order: how many samples the log holds and how many of them went
+unanswered, the span it covers; every keypoint-worker restart with the reason
+and every gap where the console went quiet; `/track`'s rate and latency; the
+maturity runs from their marks; and the inverted-body arms, from their marks and
+from the settings. `--marks` works here too, for marks written on paper.
 
 ## What the table is for
 
