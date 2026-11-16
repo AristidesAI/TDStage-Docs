@@ -360,7 +360,11 @@ screen.
 
 New in tox v95, and the only parameters here that talk to hardware nobody has
 yet: the ESP32 prop IMUs
-([#15](https://github.com/AristidesAI/TDStage/issues/15)). A prop sends its
+([#15](https://github.com/AristidesAI/TDStage/issues/15)). **Which inertial
+hardware the show actually uses is not settled.** Default Ltd have their own
+nodes on a different radio, and how the two paths join is being designed rather
+than decided, so read this page as what the tox can receive today and not as the
+plan of record. A prop sends its
 orientation over UDP; the console and the tox parse it with the same file, so
 they cannot disagree on a byte.
 
