@@ -105,6 +105,31 @@ CONTRACTS = [
         "note": "every flag server.py accepts",
         "one_way": True,
     },
+    {
+        # The telemetry namespace, the other half of the /ctl contract: the
+        # console and the tox read these, an operator reads the rows they
+        # feed, and 48 of the 49 were on the page. The one that was not,
+        # /colourshed, says the phone has stopped sending colour (found
+        # 2026-11-17), which is the difference between a phone that is hot and
+        # a phone whose person masks have gone quiet.
+        #
+        # One direction: the page also documents paths the phone does not
+        # send (TD's own status replies) and groups some by prefix.
+        "what": "telemetry paths",
+        "pages": ["ios/ctl.md", "ios/live.md", "ios/arkit.md", "ios/record.md",
+                  "console/ui.md"],
+        # Both spellings a page uses: the full address in the telemetry
+        # tables, and the `/device/pose` short form where a page is talking
+        # about what the tox reads rather than about the phone's own table.
+        "page_re": r"(?:/tdlidar/<id>)?/device/([a-z/]+)",
+        "sources": [
+            ("system", "TDStage/Telemetry/ShowTelemetry.swift"),
+            ("ar", "TDStageARKit/Telemetry/ShowTelemetry.swift"),
+        ],
+        "source_re": r'"\\\(ns\)/([a-z/]+)"',
+        "note": "every path either app's telemetry sends",
+        "one_way": True,
+    },
 ]
 
 # The ARKit app is its own repository, beside the system one.

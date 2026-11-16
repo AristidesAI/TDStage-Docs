@@ -293,6 +293,8 @@ signal. A marker sighting goes out immediately as well.
 | `/tdlidar/<id>/device/footprint` | Resident memory in MB, which is what the system judges |
 | `/tdlidar/<id>/device/pressure` | `level` `factors`. Level: -1 no device observed, 0 nominal, 1 fair, 2 serious, 3 critical, 4 shutdown. Factors is a bitmask: 1 system temperature, 2 peak power, 4 depth-module temperature, 8 camera temperature, 16 battery stress |
 | `/tdlidar/<id>/device/fpsceiling` | The frame rate the thermal ladder allows now |
+| `/tdlidar/<id>/device/colourshed` | 0 or 1. 1 means the ladder has taken the colour plane off this phone's wire before lowering its rate (`stage.thermalColourAt`, 0 and so off by default). Depth keeps its rate; the console's own health row explains what stops while it is 1 |
+| `/tdlidar/<id>/device/conditioning` | The depth conditioning the phone actually applied to its last frame, as the `frameFlags` bit field (bits 1 to 4 on TDStage AR: edge cull, person gate, temporal median, motion guard). It is how the console proves a conditioning setting is on the wire rather than merely requested, without reading the depth grid |
 | `/tdlidar/<id>/device/uptime` | Seconds since launch |
 | `/tdlidar/<id>/device/heartbeat` | A monotonically increasing tick |
 
@@ -370,6 +372,8 @@ try the wire again. See
 | `/tdlidar/<id>/device/mountedge` | Declared sky side: 0 automatic, 1 left edge up, 2 right edge up |
 | `/tdlidar/<id>/device/gravity` | `gx` `gy` `gz`. Camera-frame gravity, low-passed |
 | `/tdlidar/<id>/device/extmode` | `mode` `pitch` `roll`. Mode: 0 identity, 1 gravity-levelled, 2 marker-calibrated. Pitch and roll in degrees from the gravity vector |
+| `/tdlidar/<id>/device/pose` | `tHi` `tLo` `qx qy qz qw` `roll pitch yaw` `gx gy gz` `rotRate` `refFrame` `magAccuracy`, at 10 Hz rather than in the 2 Hz batch. The timestamp is split across two floats because one float32 cannot hold it to the millisecond. `refFrame` 1 means the attitude frame has a heading, so yaw means something. This is the path TouchDesigner keeps for its own `imu` table |
+| `/tdlidar/<id>/device/moved` | `tilt` `locked` `yaw`. Sent only while the phone has a pose: `tilt` degrees and `yaw` degrees away from the locked attitude, with `locked` 1. Unlocked it is `0 0 0`, or `0 0 NaN` when the attitude frame has no heading, so a NaN yaw means unknowable rather than zero |
 
 ## State and configuration
 
