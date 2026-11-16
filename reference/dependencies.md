@@ -392,7 +392,7 @@ key, read by `Support/testflight.sh`: a key id, an issuer id and a path to the
 
 | Item | Value | Verified how |
 |---|---|---|
-| TouchDesigner build | 2025.33230 is the build in use, and the build the working tox was last saved with (2026-11-03). The tox requires the build it was saved with or newer. | Read from the installed application bundle, and from the `.build` record `toeexpand` writes out of `TD/TDStageConductor.tox` at HEAD |
+| TouchDesigner build | 2025.33230 is the build in use here, and the build the working tox was last saved with (2026-11-03). The tox requires the build it was saved with or newer. **Default Ltd run 2025.33230 too**, which they confirmed on 16 November 2026, so the builds match - but nothing of ours has been **checked** on their installation, and TouchDesigner is not licensed on the show laptop until 23 November. The system repository's own setup note still says "2025.32820 or later", which is the older floor and not what either side is running. | Read from the installed application bundle, and from the `.build` record `toeexpand` writes out of `TD/TDStageConductor.tox` at HEAD |
 | Bundled Python | 3.11.15, a Derivative build | Probed from the bundled interpreter |
 | Bundled `numpy` | 2.1.2 | Probed from the bundle |
 | Bundled `cv2` | 4.11.0 | Probed from the bundle |
