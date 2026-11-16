@@ -33,6 +33,7 @@ flowchart TD
 |---|---|
 | [Preparing a phone](phone-preparation.html) | Everything that must happen before a phone reaches a venue, and why it cannot wait. |
 | [Rig get-in](get-in.html) | Building the rig in the order that avoids rework. |
+| [A session without TouchDesigner](no-touchdesigner.html) | The console alone: what to start on Windows, what its own pages show, and what the absent hub costs. |
 | [Logging a session](live-log.html) | Sample the console once a second, type four marks as the run happens, and get a scored table out of it afterwards. |
 | [The depth-only run](depth-only.html) | One performer, upside down, tracked without the person model. The cyr preset, the three conditions, and how to put the defaults back. |
 | [Phones on USB cables](usb-cables.html) | A phone on USB-C is a network link, not a tunnel. Two cables on one Windows machine, and the routing check that decides whether both work. |
