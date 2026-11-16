@@ -413,7 +413,13 @@ Three numbers in that picture are the contract:
 **Five sightings before publication.** A body that appears for four frames is
 never sent. You will not see flicker ids for noise, and in exchange a real
 performer walking on stage appears on the fifth sighting, about 130 ms late
-at a 30 Hz cloud.
+at a 30 Hz cloud. The cloud on the show rig has measured 22.5 Hz, which puts
+the same wait at about 180 ms.
+
+Five was three until 27 October 2026. Raising it took short-lived ids on the
+show rig from 42 to 18 per 15 minutes, and took the wait from about 67 ms to
+133 ms at 30 Hz. Both figures are from the console's own schema, measured on
+the rig that day; neither has been re-measured since.
 
 {: .note }
 **A performer cannot be invented out of scenery any more.** Until this release

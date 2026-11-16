@@ -92,6 +92,8 @@ CHECKS = [
      "WebConsole/settings.py", "_n.f1.rateHz"),
     ("reference/track.md", r"to a host and port you give it \((\d+) by convention\)",
      "WebConsole/track_emit.py", "CONTROL_PORT"),
+    ("reference/track.md", r"\*\*(\w+) sightings before publication\.?\*\*",
+     "WebConsole/track_emit.py", "CONFIRM_HITS"),
 
     # The field stream: a receiver sizes its grid from these.
     ("reference/field.md", r"\*\*Voxels\*\* are (\d+) cm",
