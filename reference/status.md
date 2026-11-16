@@ -18,7 +18,7 @@ it with:
 python3 tools/gen_status.py
 ```
 
-**Status on 2026-11-09: pre-production. Nothing has run on a stage yet.** The most phones
+**Status on 2026-11-17: pre-production. Nothing has run on a stage yet.** The most phones
 placed and aligned together so far is two, in a living room. The three-phone stage test planned
 for 7 Nov did not run. This page says what exists, how far each part is proven, and what is
 still open. Each claim names its evidence. A claim here without evidence is a defect in this
@@ -43,7 +43,7 @@ the TDP4 wire and iOS CI rows) were made against `8d5178a`, from
 | Phone app TDStage (`TDStage/` in this repo) | Out of scope since 6 Nov. Version 1.0 is installed on phone 1 but not used. It listens for /ctl on UDP 9010, the same port as TDStage AR, so force-quit it before a session | day plan header and 0.2; `Notes/AR-Audit-2026-11-06.md` finding 5 | none |
 | TDP4 wire | Spec, phone packer, receiver, simulator. Two real iPhone frames pass the shipped receiver, but they come from the non-AR TDStage 1.0, and no camera frame from TDStage AR is committed as a fixture. `Tools/wiretest` (#50) compiles TDStage AR's shipped streamer source for macOS, unchanged, sends synthetic frames through it over loopback, and checks every datagram's 20-byte packet header, every reassembled frame and every parsed field (frameFlags bits 1-4 included) against the spec and TD's receiver: 23,610 checks, 16 frames, 2,079 datagrams, PASSED on 9 Nov with the streamer as at AR `1420d7d` (the file is unchanged since `f7fc7b4`). Windows CI replays its committed fixture (6,236 checks, 8 frames). A macOS build on loopback, not a phone on a link | `TD/newtox/wire_fixture_test.py` (23 checks; it prints "iPhone18,2, TDStage 1.0"); `Tools/wiretest/run.sh` (needs the `TDStageARKit` checkout) and `check.py`; CHANGELOG 2026-11-09 (#50) | Rig (non-AR app); Simulated (AR streamer) |
 | Bridge | Real phones through it since 26 Oct. The packet rate of 12 colour phones (114.5k pkt/s) with 0 lost, on loopback only. No real 2.5 GbE card tested (#42) | `Tools/link_test.py`; PROGRESS 2026-11-03 | Rig, Simulated at 8-12 phones |
-| TD GPU merge (`Mergegpu`; the tox is v87 today) | The show path. 60 fps at 8, 12 and 16 simulated streams on the dev Mac, measured on tox v69 on 26 Oct: depth+conf sims with no colour, through the old fan-out and the bridge, person model idle, no content. Not re-run on v87 or with colour. Atlas write about 1.7 ms of a 16.7 ms frame (8 colour phones' shape, synthetic, 3 Nov). TD cloud age with 3 real phones not measured (#11) | #11 comments 26 Oct 04:12Z, 27 Oct and 3 Nov | Simulated |
+| TD GPU merge (`Mergegpu`; the tox is v95 today) | The show path. 60 fps at 8, 12 and 16 simulated streams on the dev Mac, measured on tox v69 on 26 Oct: depth+conf sims with no colour, through the old fan-out and the bridge, person model idle, no content. Not re-run on v87 or with colour. Atlas write about 1.7 ms of a 16.7 ms frame (8 colour phones' shape, synthetic, 3 Nov). TD cloud age with 3 real phones not measured (#11) | #11 comments 26 Oct 04:12Z, 27 Oct and 3 Nov | Simulated |
 | TD CPU merge (fallback) | The fused person id is a rounded mean of track ids (#51, fix in progress) | `TD/newtox/hlib_grid.py:1175` | Simulated |
 | Alignment | Two phones agreed to a 12.4 mm median gap on 28 Oct. That was before the floor-cell refinement (`dfbeb4c`) and has not been re-measured. Never tested at stage distances (#1, #24) | CHANGELOG 2026-10-28, corrected 2026-11-03 | Living room |
 | Marker calibration | Never run end to end on a phone (#35) | `Tools/marker_pdf.py` (`8934b43`) | Designed |
@@ -60,7 +60,7 @@ the TDP4 wire and iOS CI rows) were made against `8d5178a`, from
 | iOS CI | TDStage AR: green at AR `master` `1420d7d` (GitHub run 42550139732, 9 Nov 02:17Z): 119 tests, 0 failures, iOS 26.5 simulator. `1420d7d` adds only the CI workflow change and one test file to `f7fc7b4`, the commit the phones run. The red runs at `f7fc7b4` (run 42220967993: 16 failing tests) came from the workflow picking an iOS 26.2 simulator, where the test host aborts. TDStage (the non-AR app, out of scope since 6 Nov): still red, last run 41583482978 at `f74f74c` (3 Nov), not re-run. #48 is open | #48; run 42550139732 (a push to AR `master` at `1420d7d`); CHANGELOG 2026-11-09 (TDStage AR CI). That entry was written before the push and says `1420d7d` was not pushed and not run on GitHub. It was pushed to AR `master` later on 9 Nov and ran green (CHANGELOG 2026-11-09, "README and Notes: the bridge outage") | Simulated (CI runner) |
 | Distribution | TestFlight TDStage AR 1.1 (4), uploaded 3 Nov 08:35Z from an Xcode Organizer archive with empty build stamps. Its dSYM shows it contains the #49 fix's code (`83fb5ca`). Stops launching about 1 Feb 2027. The console's expiry warning cannot fire for it | archive record and dSYM (TASK-BOARD, Distribution state); `WebConsole/server.py:1954-1960` | none |
 
-*Generated from the system repository's README (committed b6f43f2). 20 components.*
+*Generated from the system repository's README (committed cd3922c). 20 components.*
 
 ## Reading a level
 

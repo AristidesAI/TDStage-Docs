@@ -37,13 +37,13 @@ without TouchDesigner]
 `show.bat` starts two things: the TDP4 bridge, then the console. On a show
 machine that is for TouchDesigner's benefit - the bridge receives the phones
 outside TD and hands whole frames to both readers through a memory-mapped file.
-**Without TouchDesigner you still need it**, for a reason that is easy to miss:
+**Without TouchDesigner you still need it.**
 
 `run.bat` starts the console with `--tdp4-port 0`, which turns off the
 console's own phone-facing listener. On a show machine the bridge owns 9003 and
 feeds both readers; the flag is 0 so that the fallback shape also works, where
 TouchDesigner binds 9003 itself and has to be able to do it the instant it
-launches. With no TouchDesigner and no bridge, nothing
+launches. So with no TouchDesigner and no bridge, nothing
 is listening on 9003 and the console has no point data at all - the page comes
 up, the phones appear, and the stage stays empty.
 
@@ -80,7 +80,7 @@ UDP 9000 is already open in `firewall.bat`, so nothing else has to be changed.
 > because that key cannot be moved with a plain control message. The phones then
 > hold 9001, and from 23 November - when TouchDesigner is licensed again and
 > expects telemetry on 9000 - they are silent to it until somebody retargets
-> them back. One afternoon's convenience, a fortnight's confusion.
+> them back.
 >
 > The one thing to check before `--listen 9000`: if the client's own bus runs on
 > the same laptop it republishes on UDP 9000 too, and the two collide. The
@@ -100,8 +100,8 @@ none arriving it never learns where the phones are:
 | The roster, markers, registration, the stage cut | Battery, thermal state, frame rate, the clock sync |
 | Recording and replaying takes on the phone itself | Any health row that comes from the phone's own report |
 
-That is a usable session for testing a receiver and an unusable one for running
-a rig, which is why `--listen 9000` is the answer rather than a workaround.
+You can test a receiver that way. You cannot run a rig that way, which is why
+`--listen 9000` is the answer and not a workaround.
 
 ## Before a model run: the phones must send colour
 
@@ -130,8 +130,8 @@ Everything that does not come from the tox:
 | The load line: console CPU, keypoint worker CPU, the parts' milliseconds | Under the preset buttons in People only |
 
 The stage view in the browser is **the console's own picture**, not a window
-into TouchDesigner. It is the one to watch over a remote desktop, because it is
-the only one there is today.
+into TouchDesigner. Watch it over the remote desktop; today it is the only
+picture of the cloud there is.
 
 ## What is missing, and what that costs
 
@@ -143,10 +143,9 @@ the only one there is today.
 | The consensus view in TD | The console still sends a copy of every `/track` bundle to 7001 for it; with no TD listening those datagrams go nowhere, which is harmless |
 | TD's own telemetry and health rows | The console's Rig health covers the phones; nothing covers the hub, because there is no hub |
 
-**What is not missing: the client outputs.** `/track` and the field stream are
-the console's, not the tox's. A content machine can be fed, and a receiver can
-be tested end to end, with no TouchDesigner anywhere on the network. That is the
-whole reason a day like this is worth running.
+The client outputs are not missing. `/track` and the field stream are the
+console's, so a content machine can be fed and a receiver tested end to end with
+no TouchDesigner anywhere on the network. That is what a day like this is for.
 
 ## Before you start, and while it runs
 
@@ -168,8 +167,10 @@ interpreter and a folder that already exists:
 
 ```
 WebConsole\.venv\Scripts\python Tools\live_log.py --out C:\logs\live-wed.jsonl.gz
-``` On a day with no hub, the
-console's own log and that file are the entire evidence trail.
+```
+
+On a day with no hub, the console's own log and that file are the entire
+evidence trail.
 
 ## See also
 

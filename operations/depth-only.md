@@ -35,9 +35,8 @@ the right size, in the stage volume, moving.
 {: .warning }
 **It is for one performer.** With the mask gate off and detection on geometry,
 two people who touch cannot be separated at all - there is nothing to tell them
-apart with. The preset sets `maxPerformers` to 1 to make that explicit rather
-than hopeful. This is a configuration for one body in a wheel, not a better
-general setting.
+apart with. The preset sets `maxPerformers` to 1 for that reason. Use it for one
+body in a wheel and for nothing else.
 
 ## Applying it
 
@@ -62,7 +61,7 @@ Seven settings move and nothing else does:
 | `tracking.maskGate` | off | Points are no longer intersected with a person mask before merging |
 | `tracking.footMax` | 2.4 m | A cyr wheel side-on is about 2 m across, so the footprint gate has to open or the whole wheel is rejected as too wide for a person |
 | `tracking.spanMin` | 0.3 m | A body in a wheel can present a short vertical extent |
-| `tracking.maxPerformers` | 1 | One body on stage, said out loud |
+| `tracking.maxPerformers` | 1 | One body on stage |
 | `f1.presenceSource` | `depth` | The field stream's presence comes from depth too, rather than from a model answer that will not arrive |
 
 ## Three conditions, and they are not optional
@@ -70,8 +69,8 @@ Seven settings move and nothing else does:
 **Press Stage is empty now first, on an empty stage.** Geometric detection is
 motion against a learned background. If the background was learned with the
 performer or the wheel standing in the volume, that shape is scenery for the
-rest of the session and the performer inside it is invisible. This is the step
-most likely to be skipped and the one that costs the run.
+rest of the session and the performer inside it is invisible. Skipping this step
+costs the run.
 
 **One performer.** See the warning above. If a second person walks on to adjust
 something, expect one performer, the wrong one, or a merge - all three are the

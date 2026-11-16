@@ -51,7 +51,8 @@ stops it.
 keypoint worker restarting, with the reason the console gave; the worker's state
 changing; the console going quiet and coming back; `/track` starting and
 stopping, including **`/track output OFF`** and **`Record /track OFF`**, which
-are the two an operator most needs to see the moment they happen. A quiet screen means nothing happened, which is the point.
+are the two an operator most needs to see the moment they happen. A quiet
+screen means nothing happened.
 
 ## What lands in the file
 
@@ -74,15 +75,14 @@ not answer, the line says so instead:
 {"t": "...", "ts": ..., "ms": ..., "error": "timed out"}
 ```
 
-**Those lines are kept on purpose.** A console that stopped answering is
-evidence, and a log that silently skipped the gap would hide the only thing
-worth knowing about it.
+**Those lines are kept on purpose.** A console that stopped answering is the
+evidence; a log that skipped the gap would hide it.
 
 Two fields are worth knowing by name, because they are what a restart argument
 turns on later: `yolo.restarts`, the count so far, and `yolo.lastRestart`, the
-log line from the most recent one. The console's own reason for a restart is in
-the second, which is the difference between "the worker restarted" and "the
-worker restarted because nothing answered inside the limit".
+log line from the most recent one. The second carries the console's own reason, so the
+report says "the worker restarted because nothing answered inside the limit"
+rather than only that it restarted.
 
 ## Typing marks as it runs
 
