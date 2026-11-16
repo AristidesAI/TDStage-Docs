@@ -47,6 +47,18 @@ python Tools/live_log.py --url http://192.168.1.20:9080 --out C:\logs\live-wed.j
 `--every` changes the sample interval from its default of one second. Ctrl+C
 stops it.
 
+To check the logger itself on a machine with no console running, which is the
+cheap thing to do the morning before a session:
+
+```
+WebConsole\.venv\Scripts\python Tools\live_log.py --selftest
+```
+
+It stands up a fake console on loopback, logs it, and reads the file back
+through every report. It passed 45 of 45 on the dev Mac on 17 November 2026. A
+failure there is the tool or the interpreter, before anything about the rig is
+in question.
+
 **On screen it prints events, not samples**, each with the clock time: the
 keypoint worker restarting, with the reason the console gave; the worker's state
 changing; the console going quiet and coming back; `/track` starting and
