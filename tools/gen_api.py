@@ -77,7 +77,11 @@ WHAT = {
     "/api/track/trace": "Per-frame trace of the tracking output, for offline analysis.",
     "/api/person": "Person segmentation mode.",
     "/api/person/debug": "Segmentation internals.",
-    "/api/ctl": "Send a control message to one phone or all of them.",
+    "/api/ctl": ("Send a control message to one phone or all of them. Body: `address` (a `/tdlidar/ctl/...` path), "
+                 "`target` (a phone id, or `\"all\"`), `args` as `[type, value]` pairs with type `\"i\"`, `\"f\"` or `\"s\"`, "
+                 "for example `{\"address\": \"/tdlidar/ctl/blackout\", \"args\": [[\"i\", 0]], \"target\": 2}`. "
+                 "A bare value such as `[0]` is refused with a 400; before 17 November 2026 it was dropped silently "
+                 "and the verb went out with no argument, which a phone reads as ON for `/blackout`."),
     "/api/profile": "A phone's stored settings. The phone fetches this itself at boot.",
     "/api/profile/": "Same, addressed per device as `/api/profile/<id>`.",
     "/api/profile/push": "Push a stored profile to a phone.",
