@@ -78,6 +78,8 @@ UserDefaults.
 | `stage.preferWired` | `true` | `set` number, profile | Require wired Ethernet for outgoing connections whenever a wired interface is up. The requirement is provisional: see below |
 | `stage.hostCable` | `""` | no | The last complete cable address the phone learned. Powers the **Cable** choice in the LIVE page's Link picker |
 | `stage.hostWifi` | `""` | no | The last complete network address. Powers the **Wi-Fi** choice |
+| `stage.link` | `"auto"` | `set` text | Which link the show traffic must use: `auto`, `ethernet`, `cable` or `wifi`. Anything else is refused. Writing it, from the Link picker or `/ctl/set`, rebuilds the depth and telemetry connections. Reported on `/device/settings`, and deliberately not in the profile schema, for the same reason as the hosts |
+| `stage.hostEthernet` | `""` | `set` text | The last complete show-machine address learned on an Ethernet adapter's subnet. Powers the **Ethernet** choice in the Link picker. Blank or a valid IPv4 address only. Reported on `/device/settings`, not in the profile schema |
 | `stage.markerExtrinsic` | empty | verb | The last marker calibration solve, as 16 floats. Written by a calibration (`/ctl/calibrate`) and cleared by `/ctl/calibclear` |
 
 {: .warning }
@@ -143,7 +145,12 @@ Link selection has an explicit Link picker on the LIVE page beside this
 preference (`stage.link`: automatic, Ethernet, cable, Wi-Fi), also reachable by
 `/ctl/set stage.link <mode>` and absent from the profile schema; this
 preference is consulted only under automatic. The five-second escape applies
-to every pinned link. The authority is `TDStage/Net/WiredLink.swift`.
+to every pinned link. The link choice and the connection parameters are
+`TDStage/Net/WiredLink.swift`; the five seconds and the verdict are
+`wiredGraceS` in `TDStage/Net/PointCloudUDPStreamer.swift`. Telemetry does not
+wait them out: `TDStage/Net/OSCClient.swift` rebuilds on any route as soon as
+the pinned link stops routing, because telemetry is how the console sees the
+phone at all.
 
 ---
 
@@ -166,10 +173,15 @@ because a take is one file with one geometry in its header.
 
 So reading it as a statement about the wire is the mistake this key invites.
 What the phone sends depends on which app it runs. **TDStage AR, the app the
-rig deploys, sends 256×192 on every LiDAR iPhone**, because that is ARKit's
-scene-depth grid and it does not vary by model. This app, the AVFoundation one,
-takes the first video format that offers depth and the smallest float depth
-grid inside it, which **Apple gives as 320×240 on every LiDAR iPhone from the 12 Pro on**; this project has read it on one iPhone 18 Pro.
+rig deploys, sends 256×192 in its default ARKit capture path** (`stage.capture`
+= `arkit`), because that is ARKit's scene-depth grid. Its own AVFoundation path
+sends the grid described next, and the rig has received both from TDStage AR
+phones. This app, the AVFoundation one, takes the first video format that
+offers depth and the smallest float depth grid inside it, which **Apple's WWDC22
+session 110429 gives as up to 320×240 for streaming LiDAR depth**; this project
+has read 320×240 on one phone, an iPhone 18 Pro, and on no other model. The
+client's 12 Pro Max and 16 Pro Max have only ever run the ARKit app, so whether
+they would give 320×240 here is untested.
 Either way, read the
 grid on the LIVE page's stream line or in the frame header rather than from
 this key. The bandwidth and disk figures on
@@ -202,6 +214,8 @@ The first four apply live, with no capture restart.
 | `stage.showActive` | `false` | verb | Auto-resume streaming on launch. START and `/ctl/start` set it, STOP and `/ctl/stop` clear it. A profile's own `autoStart` field is what a console pushes instead |
 | `stage.thermalLadder` | `true` | `set` number, profile | Let the frame-rate ceiling drop when the phone is hot. Off holds the configured rate |
 | `stage.thermalSeriousFPS` | `30` | `set` number (5 to 60) | The ladder's `serious` rung, in absolute fps |
+| `stage.thermalColourAt` | `0` | `set` number (0 to 2) | The thermal state from which the colour plane is left off the wire: 0 never, 1 from fair, 2 from serious. Depth keeps its rate, and colour returns when the ladder recovers, after its 45 s hold. The ladder reads it on its next 2 Hz tick. Default 0 since 28 October 2026, after both rig phones lost colour at serious under the old default of 2 |
+| `stage.blackout` | `false` | no | Whether the screen was blacked out when the app last ran, so auto-resume can restore it. State, not a control, and not reported on `/device/settings` |
 
 The ladder only ever lowers the rate, on top of the operator's choice, without
 overwriting it. The phone returns to the chosen rate by itself once it has
