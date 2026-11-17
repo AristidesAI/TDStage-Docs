@@ -38,15 +38,24 @@ an NVIDIA GPU, YOLO runs on CUDA as it does on the show PC; without one,
 `install.bat` fits the CPU build of torch and the rate has not been measured on
 Windows.
 
-**The Mac is a degraded standby.** TouchDesigner's GPU merge held 60 fps at 8,
-12 and 16 simulated streams on it, but YOLO drops to 10 to 15 Hz per phone.
-It starts the same processes through `Tools/show_mac.sh`.
+**The development Mac is a degraded standby, and it is in Sydney rather than on
+site.** For Stroud the standby is a second Windows PC that is not settled yet:
+the running plan asks whether the backup machine in the venue's own plan can be
+prepared with a TouchDesigner licence. On the Mac, TouchDesigner's GPU merge
+held 60 fps at 8, 12 and 16 simulated streams (tox v69, depth and confidence
+only, no colour; simulated, and not recorded as re-run on any later tox), and
+the keypoint worker is expected to drop to 10 to 15 Hz per phone (designed from
+the every-second-frame hand-off, not measured). It starts the same processes
+through `Tools/show_mac.sh`.
 
 {: .warning }
-> **The standby needs a TouchDesigner licence of its own.** A Non-Commercial
-> licence caps images at 1280 × 1280, and the depth atlas is **1351 rows at
-> seven phones and 1544 at eight**. A standby with the free licence does not
-> fall back gracefully; it cannot carry the rig at all.
+> **The standby needs a TouchDesigner licence of its own above six phones.** A
+> Non-Commercial licence caps images at 1280 by 1280. The depth atlas is
+> **1158 rows at six ARKit phones**, which fits, **1351 at seven and 1544 at
+> eight**, which do not. So a standby on the free licence can carry Stroud's six
+> phones and cannot carry seven or more: there is no graceful fallback, it simply
+> stops. Designed, from Derivative's documented limit; neither machine's licence
+> is recorded in the repository.
 
 Prepare it once, at home, with internet. Keep it off the show network until it
 is needed, holding the show PC's static address ready rather than live, and
@@ -68,7 +77,7 @@ live console, and it is read-only against the checkout it reads.
 | `repos/<repo>.bundle` | Every branch and tag of both repositories; clones with no network |
 | `repos/<repo>.uncommitted.patch` | The working tree against HEAD, binaries included: a modified tox, a `.toe` |
 | `repos/<repo>.untracked.tgz` | Files git neither tracks nor ignores. A nested clone is kept; linked worktrees are left out and listed |
-| `console/config.json`, `config-backups/`, `profiles/` | The roster, markers, settings and targets; the console's own last 50 saves; each phone's stored profile |
+| `console/config.json`, `*.props.json`, `config-backups/`, `profiles/` | The roster, markers, settings and targets; the prop names, bindings and tare overrides saved beside the config; the console's own last 50 saves; each phone's stored profile |
 | `td/*.tox` | The working tox and the newest numbered one |
 | `td/learned/*.npz` | TouchDesigner's learned background and floor |
 | `restore_state.sh` | The restore below, copied into every snapshot |
@@ -95,7 +104,7 @@ a git checkout, or one holding `WebConsole/`, is refused.
   bundle on the branch the MANIFEST names and checked against its commit, with
   its origin set to GitHub rather than to the snapshot. Then the uncommitted
   patch, **then** the untracked files in that order, then the console's
-  `config.json`, `backups/` and `profiles/`, the tox files, and
+  `config.json`, its `*.props.json`, `backups/` and `profiles/`, the tox files, and
   TouchDesigner's learned state, creating its folder if it has never run.
 - **`TDStage` already there: a refresh**, allowed only for a checkout this
   script made, and refused for the checkout the snapshot came from or while a
@@ -120,7 +129,10 @@ repositories, **44 checks, all passing on 10 November 2026**. Two of them are
 the race a real snapshot can lose: a commit landing just before the bundle is
 written, and one landing just after. In both the backup has to exit 0, the
 MANIFEST's commit has to be the bundle's own, and the snapshot has to restore
-every file. The Windows CI job runs it.
+every file. The Windows CI job lists it, and it passed there on the trunk on
+9 November 2026 and on every green branch run through 10 November. **No Windows
+run has completed since**: the runner has refused every job on a billing block,
+so nothing that landed after 10 November has been tested on Windows.
 
 This is the check to run after touching either script, because the failure it
 guards against is one nobody sees until the day the snapshot is needed.
@@ -130,16 +142,26 @@ guards against is one nobody sees until the day the snapshot is needed.
 1. **Take the show PC off the network.** Pull its cable or switch it off. It
    must not still hold the show address.
 2. **Plug the standby into the show switch.**
-3. **Start the stack**: `WebConsole\windows\show.bat`, or `Tools/show_mac.sh`.
+3. **Start the stack** as soon as the show PC fails, with the standby's cable
+   still out: `WebConsole\windows\show.bat`, or `Tools/show_mac.sh`. For Stroud
+   the standby stays on and signed in with its show `.toe` already open, so this
+   step and the next are done before anyone decides to switch; the cables move
+   only once the show PC has been down for two minutes or has failed twice.
 4. **Open TouchDesigner from the same account and session** as the launcher,
    and load the tox, setting `Udpport` 9004, `Udpactive` on, Console Link
-   Active on and the GPU merge path on. The saved tox has `Udpactive` and the
-   console link **off**, and the next step needs that link.
+   Active on and the GPU merge path on. The saved tox (v88 and later, v95 today)
+   has `Udpactive` **off** and Console Link Active **on**, so switch `Udpactive`
+   on and check the link; the Consensus and Props switches are saved off and
+   stay off.
 5. **Check the link.** On link-up the console sends the poses of the phones
    that were checked when the snapshot was taken. Unchecked phones stay
    unchecked and their poses are held, and the Dashboard names them in a
-   warning. Press **Push poses** if that warning is there, or if the
-   registration does not match the roster.
+   warning. If the show console was locked, the standby starts locked, because
+   the pose lock is saved in the configuration the restore carries, and it
+   refuses the push with HTTP 423 until somebody clicks the top-bar padlock
+   once. Then press **Push poses now** in the Dashboard's TouchDesigner link
+   panel if that warning is there, or if the registration does not match the
+   roster, and lock it again afterwards.
 6. **The phones need no change.** They keep sending to the same address.
    Telemetry reaches the console through TouchDesigner, so it appears once
    TouchDesigner is up.
@@ -149,7 +171,10 @@ guards against is one nobody sees until the day the snapshot is needed.
    and TEMP, or Power and Windows Update.
 
 {: .warning }
-> **Never over Remote Desktop.** On Windows, drive the standby at the machine,
+> **Never over Windows Remote Desktop (RDP).** Chrome Remote Desktop, which
+> shares the console session, is the tool proposed for these machines and is set
+> up on the client's laptop; it is not recorded as set up or tested on a show PC
+> or a standby. On Windows, drive the standby at the machine,
 > or from a tool that shares its console session. An RDP session can have its
 > own `TEMP` folder, which is where the bridge's memory-mapped file lives, so
 > the bridge and TouchDesigner stop sharing one. It also takes over the
