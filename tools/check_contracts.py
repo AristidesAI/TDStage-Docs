@@ -23,6 +23,9 @@ import pathlib
 import re
 import subprocess
 import sys
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+from trunk import trunk_ref  # read trunk, not a checkout that lags it
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -143,7 +146,7 @@ def ar_repo(repo: pathlib.Path) -> pathlib.Path:
 def source_state(repo: pathlib.Path, rel: str, working_tree=False):
     if working_tree:
         return (repo / rel).read_text(encoding="utf-8")
-    return subprocess.run(["git", "-C", str(repo), "show", f"HEAD:{rel}"],
+    return subprocess.run(["git", "-C", str(repo), "show", f"{trunk_ref(repo)}:{rel}"],
                           capture_output=True, text=True, check=True).stdout
 
 

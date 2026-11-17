@@ -22,6 +22,9 @@ Usage: python3 tools/check_tox_version.py
 import pathlib
 import re
 import sys
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+from trunk import trunk_ref  # read trunk, not a checkout that lags it
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TD = ROOT.parent / "TDStage" / "TD"
@@ -41,7 +44,7 @@ def versions_on_disk(td=TD, working_tree=False):
         import subprocess
         try:
             out = subprocess.run(["git", "-C", str(td.parent), "ls-tree", "-r",
-                                  "HEAD", "--name-only"],
+                                  trunk_ref(td.parent), "--name-only"],
                                  capture_output=True, text=True, check=True).stdout
             got = sorted(int(m.group(1)) for line in out.splitlines()
                          if (m := re.search(r"TDStageConductor_v0*(\d+)\.tox$", line)))

@@ -19,6 +19,9 @@ import argparse
 import pathlib
 import re
 import sys
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+from trunk import trunk_ref  # read trunk, not a checkout that lags it
 
 
 WORKING_TREE = False          # --working-tree flips this
@@ -42,9 +45,9 @@ def source_state(repo: pathlib.Path, rel: str):
     if WORKING_TREE:
         return (repo / rel).read_text(encoding="utf-8"), "working tree (--working-tree)"
     try:
-        out = subprocess.run(["git", "-C", str(repo), "show", f"HEAD:{rel}"],
+        out = subprocess.run(["git", "-C", str(repo), "show", f"{trunk_ref(repo)}:{rel}"],
                              capture_output=True, text=True, check=True).stdout
-        sha = subprocess.run(["git", "-C", str(repo), "rev-parse", "--short", "HEAD"],
+        sha = subprocess.run(["git", "-C", str(repo), "rev-parse", "--short", trunk_ref(repo)],
                              capture_output=True, text=True, check=True).stdout.strip()
         return out, f"committed {sha}"
     except Exception as e:

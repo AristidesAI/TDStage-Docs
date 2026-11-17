@@ -28,6 +28,9 @@ import pathlib
 import re
 import subprocess
 import sys
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+from trunk import trunk_ref  # read trunk, not a checkout that lags it
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -192,7 +195,7 @@ def source_state(repo: pathlib.Path, rel: str, working_tree=False):
     if working_tree:
         path = repo / rel
         return path.read_text(encoding="utf-8") if path.exists() else None
-    r = subprocess.run(["git", "-C", str(repo), "show", f"HEAD:{rel}"],
+    r = subprocess.run(["git", "-C", str(repo), "show", f"{trunk_ref(repo)}:{rel}"],
                        capture_output=True, text=True)
     # A page may pin a constant in a file that is not on trunk yet: the pins for
     # a feature land in the same commit as the page describing it, and the
