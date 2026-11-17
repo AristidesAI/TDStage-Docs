@@ -809,6 +809,44 @@ Say it plainly and early, to anyone deciding what the system will do. It is a
 property of the physics, not a defect in the implementation, and it does not
 improve with budget.
 
+## 7. Two fixes that four code reviews liked and a measurement killed
+
+Worth recording because the review was not what decided it. Both changes below
+had passed four rounds of code review, and both were dropped on 17 November
+2026 after a side-by-side run put them against two copies of the trunk at once,
+on one simulated stream through one bridge.
+
+**The held-phone filter** kept a joining phone's mask observations out of
+`/track` for the 30 seconds its view is held. The reasoning was sound: a phone
+whose background is not learned yet should not be allowed to vote on who is a
+performer. In every run of the phone-joining scenario it dropped a walker for
+about 2 seconds and swapped two ids at a crossing 0.45 m apart, and removing
+that one change restored the trunk's behaviour.
+
+**The two-result birth rule** required two distinct model results before a
+model-found performer was published, to stop a single stray detection becoming
+a body. It cost about a third of the coverage of a walker that one phone rarely
+saw, and no measured benefit appeared anywhere in the runs.
+
+Three things make this worth keeping on the page rather than in a commit
+message:
+
+- **The harness compared against the trunk twice.** Two copies of the same
+  trunk code ran in the same session, so the difference between those two is
+  the run's own noise, and a candidate had to beat that spread rather than
+  merely look different. Both of these did not.
+- **Four reviews read the code and could not see the behaviour.** Neither
+  change is wrong as code. The filter does hold what it says it holds; the
+  birth rule does require what it says. What they cost only appears when a
+  walker crosses another at 0.45 m, or when a phone sees somebody on a third of
+  its frames.
+- **It is cheaper to find this before the bus than after.** A dropped walker
+  for two seconds and a pair of swapped ids are exactly what the client's
+  content would have shown an audience.
+
+Both figures are simulated: one synthetic stream, 20 runs over 7 scenarios, on
+a Mac. Nothing here has been run on a stage.
+
 ## What this all costs, measured
 
 These figures show whether the decisions paid off. Every one is from
