@@ -115,6 +115,8 @@ CHECKS = [
     # The roster entry's two hard limits, on the page a script is written from.
     ("console/ui.md", r"Clamped to (\d+) degrees either way",
      "WebConsole/server.py", "TILT_MAX_DEG"),
+    ("console/ui.md", r"a real phone has sent frames in the last (\d+) seconds",
+     "WebConsole/server.py", "SIM_REAL_PHONE_S"),
     ("console/ui.md", r"Up to (\w+) phones; a card's live telemetry",
      "WebConsole/server.py", "MAX_DEVICES"),
     # The ghost-after-merge reach (#68). A receiver counting heads acts on

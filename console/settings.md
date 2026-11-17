@@ -422,7 +422,7 @@ camera image keys that `rgb_stream.py` reads from this group. Twelve keys.
 |---|---|---|---|---|
 | `zFlip` | off | | safe | Negate z and vz on the wire. One click if the depth axis sign turns out reversed against the client's sim |
 | `emitRate` | 30.0 Hz | 1 to 60 | safe | `/track` bundle rate. The contract's native rate is 30 Hz |
-| `emitProps` | off | | safe | **LOCKED, off, and read by nothing.** It records a decision rather than enforcing one: the client has not defined props, prop yaw is undefined, and their bus shares one smoothing filter across all props. What actually keeps `/track/prop` off a bus is the props module's own switch, since the console sets the emitter's prop source whatever this says |
+| `emitProps` | off | | safe | **LOCKED, off, and read by nothing.** It records a decision rather than enforcing one: the client has not defined props, prop yaw is undefined, and their bus shares one smoothing filter across all props. What actually keeps `/track/prop` off a bus is the props module's own switch, since the console sets the emitter's prop source whatever this says. Making it a real gate is left for a reviewed change rather than done in passing |
 | `jpegQuality` | 75 | 10 to 95 | safe | JPEG quality of the per phone camera images and the MJPEG stream (`/api/rgb`). `?q=` on a request overrides it once |
 | `rgbMaxAge` | 2.0 s | 0.2 to 30 | safe | A camera image older than this answers 204, meaning the phone stopped sending. `?maxAge=` on a request overrides it once |
 | `ndiWidth` | 960 px | 320 to 3840 | **restart** | Baked into the sender, so changing it rebuilds it and receivers reconnect |
