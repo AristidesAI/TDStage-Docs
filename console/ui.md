@@ -389,7 +389,7 @@ the bridge while diagnosing one of them.
 | Control | What it does |
 |---|---|
 | **Send /track** with host and port | Starts or stops the `/track` OSC stream of performers and hands to the client's bus. Default `127.0.0.1:7000`. Editing host or port while it runs applies immediately. Stopping asks first, because the client loses performer data. |
-| **Record /track** | Writes every emitted `/track` frame to `logs/track-<stamp>.jsonl` for the evidence pack scorer. The switch survives a console restart: the next boot resumes recording into a **new** file and says so at warn level. Nothing else ends it, and there is no size or free-disk limit, so turn it off when the session is over. |
+| **Record /track** | Writes every emitted `/track` frame to `logs/track-<stamp>.jsonl` for the evidence pack scorer. The switch survives a console restart: the next boot resumes recording into a **new** file and says so at warn level. Nothing else ends it, and there is no size or free-disk limit, so turn it off when the session is over. Two lines in the log mean it will not come back on its own: `config.json was not saved` (the switch could not be recorded, so the next start ignores it) and `Record /track NOT resumed` (it tried and the folder or disk refused). Both name the error, and both want the button pressed again once it is fixed. |
 | **Hands** | Emit `/track/performer/hand` for confident wrists of confirmed, un-clustered performers. |
 | **Flip Z axis** | Negates z and vz on the wire. One click if the depth axis sign turns out reversed against the client's sim. |
 | **conformance** line | Reports whether every emitted bundle satisfies the contract: hands a subset of performers, all values finite, timestamps monotonic. |
