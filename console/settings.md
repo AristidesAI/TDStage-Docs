@@ -530,7 +530,11 @@ together:
 
 `footMax` opens to 2.4 m because the wheel side-on is about 2 m across, and
 `maxPerformers` is 1 because the preset takes the model out of the loop
-entirely.
+entirely. What the cap costs if a second body is in view anyway was measured in
+simulation on 17 November: the single id switched between two walkers **about
+90 times in 150 seconds**, 87 to 97 across runs [simulated]. A fix is in review
+and is **not** on `main`, so the instruction for a session today is to keep one
+person and nothing else body-sized in the stage area.
 
 Running a session with it is on its own page:
 [the depth-only run](../operations/depth-only.html).

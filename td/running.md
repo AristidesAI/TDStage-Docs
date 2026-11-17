@@ -19,26 +19,39 @@ numbered snapshots, so the file in the repository is the working hub.
 ## Open the tox
 
 1. Open TouchDesigner.
-2. Drop `TD/TDStageConductor.tox` into a project, or open a project that
-   already contains it.
+2. Open the working project, `TDStage working1.22.toe`. Since 17 November 2026
+   its `TDStageConductor` has **external tox** enabled and pointed at
+   `TD/TDStageConductor.tox`, so each opening loads the working copy rather
+   than a component frozen inside the file. The project before it had been
+   carrying tox v84 since the v94 and v95 updates were loaded live and never
+   saved, which is exactly the trap external tox removes. For a fresh project,
+   drop `TD/TDStageConductor.tox` in instead.
 3. The component's node viewer shows `out_preview`, the rendered 3D view of
    the cloud. That is the picture you watch while aiming phones.
 
 `TD/` also holds numbered snapshots, `TDStageConductor_v01.tox` through to the
 current highest number. These are history. Always work from
 `TDStageConductor.tox`, which is re-saved alongside each new snapshot. On
-2026-11-03 the working copy was byte-identical to `TDStageConductor_v87.tox`,
-checked by checksum; v87 is the clean save that removed the Sydney bench
-registration rows from the file, so a fresh show machine no longer starts with
-three phones placed where they stood in a living room.
+17 November 2026 the working copy was byte-identical to
+`TDStageConductor_v95.tox`, checked by checksum. The clean save that removed
+the bench registration rows from the file is in every version from v87 on, so a
+fresh show machine does not start with three phones placed where they stood in
+a living room.
 
-{: .warning }
-> **The saved tox is behind the repository in five of its scripts.** `clib`,
-> `hands_lib`, `hlib`, `hlib_grid` and `udp_pc_exec` each carry an older copy
-> than `TD/newtox/`, so loading the tox as it stands runs without the fixes
-> waiting in those files, the Windows UDP connection-reset switch among them.
-> [Where it stands today](maintenance.html#where-it-stands-today) names which
-> fix is waiting in each, and the loading sequence is on the same page.
+{: .note }
+> **The saved tox and the repository now agree.** The five scripts that were
+> behind on 9 November (`clib`, `hands_lib`, `hlib`, `hlib_grid` and
+> `udp_pc_exec`, the Windows UDP connection-reset switch among them) went in
+> with the saves up to v95: the drift check reads 41 DATs identical, 0
+> differing. [Where it stands today](maintenance.html#where-it-stands-today)
+> is the current reading and how to take it again.
+
+**Where the stage cut lives.** Inside `TDStageConductor`, on its own **Stage
+Cut** page, which is the second tab of the component's parameters. It holds the
+floor cut, the crop box, the backdrop wall and the ceiling. Checked on
+17 November with three simulated phones through the bridge: 69,162 points with
+the floor kept, 18,890 with `Floorcut` at 0.06, and 7,455 with `Wallcut` on at
+3.5 m [simulated].
 
 ## The topology
 

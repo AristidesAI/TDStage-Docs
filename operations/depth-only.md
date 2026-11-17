@@ -35,8 +35,13 @@ the right size, in the stage volume, moving.
 {: .warning }
 **It is for one performer.** With the mask gate off and detection on geometry,
 two people who touch cannot be separated at all - there is nothing to tell them
-apart with. The preset sets `maxPerformers` to 1 for that reason. Use it for one
-body in a wheel and for nothing else.
+apart with. The preset sets `maxPerformers` to 1 for that reason, and there is
+now a measured figure for what happens if a second body is in view anyway: in
+side-by-side simulated runs on 17 November, with the cap at 1 and two walkers on
+stage, the single id switched between the two bodies **about 90 times in 150
+seconds** (87 to 97 across runs) [simulated]. So the instruction is not
+cautious: keep one person and nothing else body-sized in the stage area while
+this preset is on. Use it for one body in a wheel and for nothing else.
 
 ## Applying it
 

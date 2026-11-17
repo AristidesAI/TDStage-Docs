@@ -101,6 +101,13 @@ Archive) reports no date and never warns.
 | **1.1 (4)** | 2026-11-03 08:35Z | about **2027-02-01** | Nobody yet. Submitted to the testers' group for beta review on 10 November |
 | **1.2 (5)**, Debug | not uploaded | n/a | The rig's own phones, installed directly with `devicectl` on 2026-11-07 |
 
+**What 1.2 has and the testers' build does not** (as of 17 November, app trunk
+`9203a3b`): the recording-minutes figure from the measured compression ratios
+rather than a flat 2x, and the port fix of #75, which clamps a bad port, rebuilds
+the socket on a heal and ignores stale send completions. A tester on 1.1 (4)
+runs without both. 1.2 is **not uploaded**, so getting either onto the client's
+phones means an upload first.
+
 **Apple's 90 days run per build, from that build's upload**, so each one has
 its own clock and a newer build does not extend an older one.
 

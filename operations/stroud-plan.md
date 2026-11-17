@@ -852,15 +852,20 @@ only the operator.
     joining a learned scene, returning after more than about 36 s, or being re-placed promotes
     its whole view at once 16 to 32 s later; `/track` then carries no performers for about 5 s
     and every id changes [measured offline against the real engine on a fake clock, not on a
-    rig; #71 open]. Pressing **Stage is empty now** on the empty stage has the same settling
+    rig; #71 open]. Side-by-side runs on 17 November put a number on the whole session's cost:
+    on the code this plan describes, `/track` sat settled but sent no performer for **5 to 12
+    seconds in every run** of the phone-joining scenario [simulated]. The fix passed those runs
+    and lands **after** the 18 November session, so plan the wait, not the fix. Pressing **Stage is empty now** on the empty stage has the same settling
     effect at once and is the quicker way out of it.
 19. **Leave Max performers at 0 unless the act has a fixed cast.** The setting exists for the
     opposite case: with a cap, the least confident performers above it are dropped, because
     flooding the client's bus with phantom ids is worse than reporting none, and geometry
     clustering with no working person model has reported 19 bodies on a 6-body scene. The cost
-    of setting it is that the dropped track is re-chosen every frame, so which body loses its id
-    can change from frame to frame; that follows from the code and has not been seen on a run.
-    Everything else in that panel stays as the plan set it.
+    of setting it is now measured: with the cap at 1 and two walkers in view, the single id
+    switched between the two bodies **about 90 times in 150 seconds**, 87 to 97 across runs
+    [simulated, 17 November]. So if the cyr act sets the cap, keep one person and nothing else
+    body-sized in the stage area for its whole length. Everything else in that panel stays as
+    the plan set it.
 20. **Stage is empty now learns the room immediately, whatever the maturity fraction is set
     to.** So it is the button for a scene change, and it is also the button that makes a maturity
     comparison meaningless: a run seeded with it cannot be compared with one that was not.
