@@ -99,14 +99,17 @@ Archive) reports no date and never warns.
 |---|---|---|---|
 | **1.0 (3)** | 2026-10-27 | about **2027-01-25** | The testers' phones. This is what is installed at the client today |
 | **1.1 (4)** | 2026-11-03 08:35Z | about **2027-02-01** | Nobody yet. Submitted to the testers' group for beta review on 10 November |
-| **1.2 (build number set at upload)**, Debug | not uploaded | n/a | The rig's own phones, installed directly with `devicectl` on 2026-11-07. The project's build number is still 4 today, the same as the uploaded 1.1 (4); `testflight.sh` bumps it as it uploads, so the number this build will carry is not known until then |
+| **1.2 (5)**, Debug | not uploaded | n/a | The rig's own phones, installed directly with `devicectl` on 2026-11-07, which read 1.2 / 5 on each of them. That 5 was set on the build command line, not in the project: the project's build number is still 4 today, the same as the uploaded 1.1 (4) |
 
 **What 1.2 has and the testers' build does not** (as of 17 November, app trunk
 `9203a3b`): the recording-minutes figure from the measured compression ratios
 rather than a flat 2x, and the port fix of #75, which clamps a bad port, rebuilds
 the socket on a heal and ignores stale send completions. A tester on 1.1 (4)
-runs without both. 1.2 is **not uploaded**, so getting either onto the client's
-phones means an upload first, and it takes its build number at that moment.
+runs without both. Nothing with these fixes is **on TestFlight**, so getting
+either onto the client's phones means an upload first. Do not promise a build
+number for it: `testflight.sh` bumps the project's number as it uploads, and the
+project still says 4, so the number only exists once the upload has run. Call it
+**1.2 (build number set at upload)** until then.
 
 **Apple's 90 days run per build, from that build's upload**, so each one has
 its own clock and a newer build does not extend an older one.
