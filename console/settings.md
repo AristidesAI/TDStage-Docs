@@ -348,9 +348,14 @@ figure from a comment in the code, not re-measured for this feature). The toggle
 the Live view's hand-written controls. The message shape is ours to propose and
 Default Ltd's to accept, and the call that settles it is on 17 November, so
 until this page says otherwise the format is a proposal, and the feature is **not good enough to switch
-on for a show**: about 10 cm of limb error at the median on the show layout,
-0.4 to 0.6 m at the 95th percentile, measured through the real keypoint model
-on rendered people (see the design page).
+on for a show**: about 9 cm of limb error at the median on the show layout and
+43 cm at the 95th percentile, with 8 per cent of the joints it sends more than
+30 cm out. The per-layout table, and why the layout rather than the software is
+the difference, are on [the tracking output](../reference/track.html#trackperformerbody).
+All of it is simulation: rendered people through the real keypoint model, never
+a rig. **The accuracy tables inside `body_points.py` are stale** - the 17
+November change did not re-run them - so quote the measured table, not the
+code's comments.
 
 | Key | Default | Range | Live | What moves |
 |---|---|---|---|---|
