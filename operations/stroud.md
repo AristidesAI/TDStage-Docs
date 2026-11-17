@@ -7,7 +7,7 @@ nav_order: 5
 # Stroud: the plan
 
 Where every phone, marker and tape line goes at Brunel's Goods Shed, Stroud,
-for **23 to 27 November 2026**. [Rig get-in](get-in.html) is the
+for **24 to 26 November 2026**. [Rig get-in](get-in.html) is the
 general procedure; this page is the venue's own numbers, so that the person
 holding the tape measure does not have to work anything out.
 
@@ -42,8 +42,9 @@ this page is the position the show sees.
 
 ## Which plan, and why
 
-Two shapes were modelled. **Six phones in side rows** is the one agreed with
-Mathias on 3 November, and it is the one these tables describe.
+Two shapes were modelled. **Six phones in side rows** is the one settled with
+Mathias on the call of 27 October and confirmed in his email of 28 October, and
+it is the one these tables describe.
 
 | Shape | Phones | Seen by ≥ 1 phone | Floor ≥ 1 | Two views at torso height |
 |---|---|---|---|---|
@@ -55,15 +56,18 @@ Mathias on 3 November, and it is the one these tables describe.
 The front-and-back shape is the one the show-rig simulations use, and it suits
 a shallow stage. Stroud's area is 8 m deep, which is deeper than that shape
 reaches: about 40 % of the volume goes unseen, and it is unseen at the two
-**ends** rather than in the middle: 8 % of the metre in front of the front
-row, and 1 to 27 % of the 2 m by the screen. Side rows put every phone within
-reach of the centre instead.
+**ends** rather than in the middle: only 8 % of the metre in front of the front
+row is seen, and only 1 to 27 % of the 2 m by the screen. Side rows put every
+phone within reach of the centre instead.
 
-In the console these are the four **Stroud plan** buttons on the Rig page.
-This plan is **Side rows · 6**; **Side rows · 3** is the reduced version for
-three phones. The two **Front + back** buttons load the other shape. Loading a
-plan overwrites every phone's planned pose and the marker positions, and one
-undo reverts it.
+In the console these are the four **Stroud plan** buttons in the side panel of
+the Stage 3D page. This plan is **Side rows · 6**; **Side rows · 3** is the
+reduced version for three phones. The two **Front + back** buttons load the
+other shape. Loading a plan overwrites the planned pose of each phone the plan
+names (phones it does not name keep theirs, and the log says which), sets the
+plan's marker positions, and puts the plan's marker size (280 mm for A3) in the
+roster but **not yet on the phones** - that needs Markers, Apply to all phones.
+One undo reverts it.
 
 {: .note }
 > **What 92 % does and does not promise.** It is the share of the volume at
@@ -102,8 +106,13 @@ that a position is right, and both must agree within 3 cm.
 
 ## Where the phones go, at three
 
-The three phones in hand are two iPhone 18 Pro and one 17 Pro Max. Any phone
-can take any position.
+The study's three-phone case was the three phones in hand in Sydney, two
+iPhone 18 Pro and one 17 Pro Max, modelled with a 70 degree lens on each. At
+Stroud the three phones in hand are Default Ltd's 12 Pro Max, 16 Pro Max and
+17 Pro, with the rest ordered once the count is confirmed. The 12 Pro Max read
+a 65.1 degree lens in the client's one live reading, so whichever position it
+takes sees less than this table gives it; the note at the end of the page has
+what that costs.
 
 ![The same coverage model at three phones, P1 to P3 with markers M1 to M5: most of the playing area is seen by one phone or by none.](../assets/img/stroud-coverage-3-phones.webp)
 
@@ -150,12 +159,16 @@ requirement. Keep M1 anyway; it is the tape datum and a far check for
 everyone.
 
 {: .warning }
-> **Tell the console the printed size.** These are A3, which is A4 scaled by
-> 1.41. The solver takes the marker's real edge length from the console, so a
-> marker printed at one size and declared at another moves every phone placed
-> from it by exactly that ratio: a clean, plausible, completely wrong rig.
-> Measure a printed marker's edge and enter it on the Markers page before
-> calibrating anything.
+> **Tell the console the printed size.** These print at 280 mm on an A3 sheet
+> and 195 mm on A4. The solver takes the marker's real edge length from the
+> console, so a marker printed at one size and declared at another moves every
+> phone placed from it by exactly that ratio: a clean, plausible, completely
+> wrong rig. The size the console wants is the printed side **measured between
+> the crop marks** - the whole image with its white margin, not the black
+> square, which is 89 % of it. Measuring the black square enters a figure 11 %
+> short, which is the error this warning is about. Measure a printed sheet,
+> enter it on the Markers page and Apply to all phones before calibrating
+> anything.
 
 ## Setting it out with a tape
 
@@ -206,7 +219,7 @@ Read it before anyone plans around a number here.
 | Projector 2 at (0, 1.8, 3.6) | **Assumed** from "just behind the gauze". |
 | Usable body range 4.5 m | The brief's figure. The sensor is rated to 5 m. **The far end has not been measured on a person.** |
 | The gauze and the rear screen as opaque to LiDAR | Deliberately conservative: a scrim returns spurious depth, so it is modelled as a wall. |
-| iPhone 18 Pro LiDAR | Assumed the same as the other phones. **Unverified.** |
+| Per-model LiDAR | The study assumed one sensor for every model. One iPhone 18 Pro take is measured (take replay, 10 Nov, `Tools/model_check.py`: 2 to 3 mm of depth noise from 1.5 to 4.5 m, all high confidence to 4.5 m). The phones going to Stroud, a 12 Pro Max, a 16 Pro Max and a 17 Pro, are **unmeasured**, and teardown reports say the LiDAR hardware changed with the 15 Pro. One 10 s take per model is asked for. |
 
 Two things the plot cannot show:
 
@@ -241,21 +254,25 @@ Two things the plot cannot show:
 lens. Simulated, this plan's six positions over the 6 by 8 m area, share of the
 volume unseen by any phone and share seen by two or more:
 
-| Lens, at 5.0 m mounting height | Unseen | Two or more views |
+| Lens, at a 5.0 m body range (the rated figure) | Unseen | Two or more views |
 |---|---|---|
 | All six at 71° | 4 % | 58 % |
 | Three of six at 65.1° | 6 % | 54 % |
 | All six at 65.1° | 9 % | 52 % |
 
-| Lens, at 4.5 m | Unseen | Two or more views |
+| Lens, at a 4.5 m body range (the brief's figure) | Unseen | Two or more views |
 |---|---|---|
 | All six at 71° | 4 % | 45 % |
 | Three of six at 65.1° | 6 % | 40 % |
 | All six at 65.1° | 9 % | 36 % |
 
-So a 12 Pro Max costs a few points of two-view share per phone rather than a
-redesign, and height costs more than lens does: dropping from 5.0 m to 4.5 m
-takes more two-view coverage than swapping every phone to the narrower lens.
+So a 12 Pro Max costs about one point of two-view share per phone rather than
+a redesign, and its larger effect is on what nobody sees at all: unseen volume
+goes from 4 % to 9 % when every phone is the narrower lens. Range costs more
+than lens does: a 4.5 m body range instead of the rated 5.0 m takes more
+two-view coverage than swapping every phone to the narrower lens. The body
+range has not been measured on a person, so which of the two tables applies is
+not yet known.
 **These are not the 92 and 46 per cent above**, which come from a different
 tool and a different definition - read each table against its own column
 headings and do not mix them.
