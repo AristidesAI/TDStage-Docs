@@ -19,7 +19,7 @@ coordinates, cleans and fuses that cloud, and produces the visual output.
 | [Outputs](outputs.html) | The five Out operators, what each carries, and what must never ride NDI or OSC |
 | [Testing without hardware](testing.html) | Synthetic phones, recorded takes, the receive-side bench and the self-tests |
 | [Maintenance](maintenance.html) | The save-and-verify loop, the drift check, and where learned state lives |
-| [Consensus view](consensus-view.html) | The console's own person tracking, received in TouchDesigner from a copy of every `/track` bundle (UDP 7001) and kept as CHOP data. In the tox since v95 (16 November) on its own Consensus page, Active off by default. **Drawing it is not wired yet**: the v95 tox has no consensus geometry and no consensus Out operator. |
+| [Consensus view](consensus-view.html) | The console's own person tracking, received in TouchDesigner from a copy of every `/track` bundle (UDP 7001) and kept as CHOP data. In the tox since v95 (16 November) on its own Consensus page, Active off by default. Drawn since v96 (17 November): a cylinder per performer and a sphere per hand in the preview render, while `Consensusshow3d` is on, tested only from a recorded `/track` file (simulated). No consensus Out operator, on purpose: content reads the two CHOPs with a Select CHOP. |
 
 If you are trying to get a rig arriving, start with
 [Running the hub](running.html). If you are integrating other work with the

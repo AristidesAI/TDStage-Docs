@@ -62,8 +62,10 @@ socket, reassembles whole frames, and publishes them once. TouchDesigner and
 the console are two readers of that same published frame. Neither reads the
 other's point data. TouchDesigner makes the picture; the console makes the
 tracking output. Since tox v95 (16 November) TouchDesigner can also take a copy
-of the console's tracking output to draw beside its own cloud; that receiver
-ships switched off and nothing draws it yet.
+of the console's tracking output, and since v96 (17 November) it draws that
+copy in its preview, beside its own cloud. The receiver ships switched off, and
+the drawing has been tested only by replaying a recorded file, which is
+simulation.
 
 That fork is why the failure behaviour is simple. **Neither side is in the
 other's path for point data.** TouchDesigner crashing does not stop the

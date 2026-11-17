@@ -20,6 +20,14 @@ plan.
 
 The component's node viewer is `out_preview`.
 
+{: .note }
+> The [consensus view](consensus-view.html)'s two Script CHOPs, `consensus` and
+> `consensus_hands`, have no Out operator, on purpose: TouchDesigner orders a
+> component's outputs by operator type, so two more CHOP outputs would move the
+> `out_pop`, `out_rgb` and `out_preview` connectors and break every network
+> already wired to them. Read them by path with a Select CHOP:
+> `TDStageConductor/consensus` and `TDStageConductor/consensus_hands`.
+
 ```mermaid
 flowchart LR
   GPU["GPU merge chain<br/>gpu_del"]
@@ -206,7 +214,7 @@ camera sees.
 
 ## `out_preview`: the rendered view
 
-`render_pc` is a Render TOP at 1280 by 720. It renders three geometry
+`render_pc` is a Render TOP at 1280 by 720. It renders six geometry
 components through `cam1`:
 
 | Component | What it draws |
@@ -214,6 +222,9 @@ components through `cam1`:
 | `geo_pc` | The point cloud, as point sprites. Material `mat_points`, size from `Pointsize` (3 by default, 8 in the saved working copy), sprite texture `dot_tex`. |
 | `geo_floor` | The floor plane, when `Floorviz` is on (off by default, on in the saved working copy). It is drawn at height `Floorcut`, the ground cutoff, not at zero. |
 | `geo_hands` | Hand markers, when `Handsshow3d` is on. Spheres of radius `Handssize`, 0.06 m by default. |
+| `geo_wall` | The backdrop wall plane, when `Wallviz` is on (off by default): a grid at `Walldist` along `Wallyaw`, from the ground cutoff to the ceiling. Display only. In the list since v90. |
+| `geo_consensus` | The console's performers, when `Consensusshow3d` is on and the [consensus view](consensus-view.html) is receiving: a translucent cylinder per performer, sized by its radius and height. Since v96. |
+| `geo_consensus_hands` | The console's hands, on the same switch: a sphere of radius 0.07 m per hand. Since v96. |
 
 This is an operator view, not a show output. It exists so a person can see
 whether the rig is working. `Autoframe`, on by default, keeps the camera on the

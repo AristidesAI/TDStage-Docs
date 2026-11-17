@@ -69,7 +69,7 @@ working copy is re-saved.**
 TD/TDStageConductor.tox         <- the working copy, always the latest
 TD/TDStageConductor_v01.tox     <- history
 ...
-TD/TDStageConductor_v95.tox     <- the highest number, and the working copy's twin
+TD/TDStageConductor_v96.tox     <- the highest number, and the working copy's twin
 ```
 
 {: .note }
@@ -106,10 +106,11 @@ A Script operator saves its last output into the tox. Component storage saves
 too. So a save taken while streaming bakes a live point cloud and a live device
 list into the file.
 
-The symptom is file size. A clean working copy is around 145 KB (146,758 bytes
-at v87; it was 130 KB at v66 and grows slowly as the component does). One that
-baked `pcstate` reached 1 MB; one that baked the merged Script CHOP's cloud
-reached 340 KB.
+The symptom is file size. A clean working copy is around 220 KB (222,166 bytes
+at v96, 146,758 at v87 and 130 KB at v66; it grows as the component does, and
+grew most at v95, when the consensus view and the prop receiver went in). One
+that baked `pcstate` reached 1 MB; one that baked the merged Script CHOP's
+cloud reached 340 KB.
 
 The size is the lesser problem. A baked `pcstate` comes back on the next load
 with timestamps from the previous session. `absTime` restarts at zero, so those
@@ -197,8 +198,8 @@ which is the result to aim for.
 
 ### Where it stands today
 
-Run against the working copy on 17 November 2026, which is byte-identical to
-`TDStageConductor_v95.tox`:
+Run against the working copy on 17 November 2026, after the v96 save, which is
+byte-identical to `TDStageConductor_v96.tox`:
 
 ```
 TD/TDStageConductor.tox: 41 DATs with a repo copy identical, 0 differ,
@@ -221,7 +222,7 @@ names it and moves on.
 
 ### What is inside, and which file is its copy
 
-The 42 text DATs of v95, by what they do. Every one is compared by
+The 42 text DATs of v96, the same 42 as v95, by what they do. Every one is compared by
 `tox_drift.py`, so this table is also the list of files an edit must be copied
 back to.
 
@@ -237,7 +238,7 @@ back to.
 | `stagecut_par_exec` | `tox_dats/` | The Stage Cut page |
 | `rgb_lib`, `rgb_callbacks`, `rgb_orient` | `tox_dats/`, `TD/newtox/` | The phones' camera images and their rotation |
 | `hands_lib`, `hands_exec`, `hands_callbacks` | `tox_dats/` | The hand markers polled from the console |
-| `consensus_view`, `consensus_exec`, `consensus_callbacks`, `consensus_hands_callbacks` | `TD/newtox/`, `tox_dats/` | The console's `/track` performers and hands drawn in TD. In the tox since v95 with its switch off, and nothing draws them yet |
+| `consensus_view`, `consensus_exec`, `consensus_callbacks`, `consensus_hands_callbacks` | `TD/newtox/`, `tox_dats/` | The console's `/track` performers and hands drawn in TD. In the tox since v95 with its switch off; drawn since v96 by `geo_consensus` and `geo_consensus_hands`, which are geometry, not DATs |
 | `props_receiver`, `props_exec`, `props_callbacks` | `TD/newtox/`, `tox_dats/` | The prop IMU receiver and its wiring, saved with the switch off |
 | `console_link_lib`, `console_link_exec`, `console_link_callbacks` | `tox_dats/` | The console link, both directions ([the message list](running.html#the-link-message-by-message)) |
 | `osc_in_callbacks` | `tox_dats/` | Phone telemetry in, including the relay to the console |

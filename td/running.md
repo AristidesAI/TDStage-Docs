@@ -32,8 +32,8 @@ numbered snapshots, so the file in the repository is the working hub.
 `TD/` also holds numbered snapshots, `TDStageConductor_v01.tox` through to the
 current highest number. These are history. Always work from
 `TDStageConductor.tox`, which is re-saved alongside each new snapshot. On
-17 November 2026 the working copy was byte-identical to
-`TDStageConductor_v95.tox`, checked by checksum. The clean save that removed
+17 November 2026, after the v96 save, the working copy was byte-identical to
+`TDStageConductor_v96.tox`, checked by checksum. The clean save that removed
 the bench registration rows from the file is in every version from v87 on, so a
 fresh show machine does not start with three phones placed where they stood in
 a living room.
@@ -42,8 +42,8 @@ a living room.
 > **The saved tox and the repository now agree.** The five scripts that were
 > behind on 9 November (`clib`, `hands_lib`, `hlib`, `hlib_grid` and
 > `udp_pc_exec`, the Windows UDP connection-reset switch among them) went in
-> with the saves up to v95: the drift check reads 41 DATs identical, 0
-> differing. [Where it stands today](maintenance.html#where-it-stands-today)
+> with the saves up to v95, and the drift check on the v96 working copy reads
+> 41 DATs identical, 0 differing. [Where it stands today](maintenance.html#where-it-stands-today)
 > is the current reading and how to take it again.
 
 **Where the stage cut lives.** Inside `TDStageConductor`, on its own **Stage

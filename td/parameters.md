@@ -21,10 +21,12 @@ it is read, which is often what you want to know.
 paths side by side, and where each parameter bites.
 
 One caveat on the generated list: `tox_params_live.md` is regenerated from the
-running tox, most recently on 16 November 2026 at v95, which is the tox the
-working copy holds today. It prints a multi-component parameter as its X
-component alone. The operator or shader that **reads** a parameter is the real
-contract, and that is what the tables below were checked against.
+running tox, most recently on 16 November 2026 at v95. The working copy holds
+v96 today (17 November); its parameter definitions are identical to v95's in
+the saved files, so the list holds for it. It prints a multi-component
+parameter as its X component alone. The operator or shader that **reads** a
+parameter is the real contract, and that is what the tables below were checked
+against.
 
 ## Reading this page
 
@@ -274,7 +276,7 @@ calibration markers and the client-facing outputs; the hub carries the cloud.
 
 | Parameter | Label | Type | Default | When | What it does |
 |---|---|---|---|---|---|
-| `Consoleactive` | Console Link Active | Toggle | True | Get-in | Enables the link. Saved working copy: off, since v87 was saved with both links paused. Turn it on after loading. |
+| `Consoleactive` | Console Link Active | Toggle | True | Get-in | Enables the link. Saved working copy: on, its default, as in every save from v88; v87 was saved with it off. |
 | `Consoleport` | Console Link Port (rx) | Int | 9006 | Get-in | The port the hub receives on, from the console. |
 | `Consolehost` | Console Host (blank = learn from ping) | Str | blank | Get-in | Leave blank and the hub learns the console's address from its ping. |
 | `Consolereply` | Console Listen Port (tx) | Int | 9001 | Get-in | The port the hub sends to, unless the console's ping carries a reply port, which wins. |
@@ -339,9 +341,10 @@ New in tox v95 (16 November 2026). These receive the console's finished person
 tracking and present it inside TouchDesigner as channels - performers and
 hands, with their ids, as something to instance geometry on. **Nothing is
 recomputed here**: TD shows what the client bus receives. Every switch ships
-off, and the display wiring that would make the channels visible has not been
-built, so turning `Consensusactive` on fills channels and changes nothing on
-screen.
+off. From v96 (17 November) the channels are also drawn in the preview render,
+a cylinder per performer and a sphere per hand, while `Consensusshow3d` is on;
+that drawing has been tested only from a recorded `/track` file (simulated).
+[Consensus view](consensus-view.html) has the detail.
 
 | Parameter | Label | Type | Default | When | What it does |
 |---|---|---|---|---|---|
@@ -377,16 +380,17 @@ they cannot disagree on a byte.
 
 ## What the saved file ships with
 
-These are the values stored in `TDStageConductor.tox` as of v87 (2026-11-03),
-where they differ from the parameter default, plus a few that once did. A later
-save may differ; read the file rather than trusting this table.
+These are the values stored in `TDStageConductor.tox` as of v96 (2026-11-17),
+read from the saved file with TouchDesigner's `toeexpand`, where they differ
+from the parameter default, plus a few that once did. A later save may differ;
+read the file rather than trusting this table.
 
 | Parameter | Saved value |
 |---|---|
 | `Udpactive` | off |
 | `Udpport` | 9004 |
 | `Mergegpu` | on |
-| `Consoleactive` | off |
+| `Consoleactive` | on, its default (v87 saved it off) |
 | `Segmode` | geometric |
 | `Stalesecs` | 0.28 |
 | `Floorcut` | 0.06 |
@@ -408,10 +412,10 @@ save may differ; read the file rather than trusting this table.
 | `Trimy` | 0 |
 | `Handsrate` | 30 |
 | `Regdevice` | 1 |
-| `Regyaw` | -180 |
-| `Regtx` | 3.05 |
-| `Regty` | 1.015 |
-| `Regtz` | 3.52 |
+| `Regyaw` | 0 |
+| `Regtx` | 0 |
+| `Regty` | 0 |
+| `Regtz` | 0 |
 
 `Cropmin` and `Cropmax` together are the live stage box: about six metres
 either side in X and five either side in Z, three metres down and three up.
@@ -419,11 +423,12 @@ The GPU crop reads the X and Z figures directly; the CPU crop and the cleanup
 grid's origin read the Y figures.
 
 The `Align` knobs are the pose of whichever device `Regdevice` selects. Every
-row of the `registration` table is zero as saved (rows 1, 2, 3 and 50), but the
-knobs themselves are not: v87 saved them at yaw -180, tx 3.05, ty 1.015,
-tz 3.52 for device 1, a bench residue. They do not reach the table on load,
-because `reg_manual` puts the selected device's stored row onto the knobs on
-its first tick and only an edit made after that writes back.
+row of the `registration` table is zero as saved (rows 1, 2, 3 and 50), and
+from v96 so are the knobs. v87 to v95 saved the knobs at yaw -180, tx 3.05,
+ty 1.015, tz 3.52 for device 1, a bench residue. Knob values in the file do not
+reach the table on load, because `reg_manual` puts the selected device's stored
+row onto the knobs on its first tick and only an edit made after that writes
+back.
 
 That state is recent, and the reason it changed matters because the same thing
 can happen again on any bench. Up to v79 the saved component carried a real

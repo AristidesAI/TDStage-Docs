@@ -11,14 +11,16 @@ inside TouchDesigner, as performers and hands you can instance geometry on,
 without recomputing any of it.
 
 {: .warning }
-> **It is in the tox now, and nothing draws it yet.** Tox v95 (16 November
-> 2026) carries the module, the operators, the callbacks and a **Consensus**
-> parameter page, with `Consensusactive` off. What has not been done is the
-> display wiring - the geometry instancing that would turn the performer and
-> hand channels into something visible - so switching it on fills the channels
-> and changes nothing on screen. That last step is by hand, in TouchDesigner,
-> and it is not written down as a procedure yet.
+> **It is in the tox and it is drawn, and all it has ever drawn is a recorded
+> file.** Tox v95 (16 November 2026) added the module, the operators, the
+> callbacks and a **Consensus** parameter page. Tox v96 (17 November 2026)
+> draws it in the preview render (`render_pc`, seen on `out_preview`): a
+> translucent cylinder per performer and a small sphere per hand, while
+> `Consensusshow3d` is on. Both versions are saved with `Consensusactive` off,
+> so nothing arrives and nothing is drawn until somebody switches it on.
 >
+> The drawing was checked in TouchDesigner by replaying a recorded `/track`
+> file into the receiver: no phone, no live console, not the client's machine.
 > Every result on this page is **simulated**: recorded bundles, synthetic
 > phones, CI. It has never run inside TouchDesigner against real bodies, and
 > TouchDesigner has never been run on the Windows show machine at all.
@@ -187,13 +189,14 @@ previous parser raised 14 `OverflowError`.
 
 ## Building it into the tox
 
-**Steps 1 to 5 are done**, in tox v95 (16 November 2026): the module, the
+**Steps 1 to 5 went in with tox v95 (16 November 2026)**: the module, the
 execute DAT, both Script CHOPs with their callbacks, the table and the
-**Consensus** parameter page, with every switch off. **Steps 6 to 9 are not**,
-which is why switching it on changes nothing on screen - the data arrives and
-nothing is drawn with it.
+**Consensus** parameter page, with every switch off. **Steps 6 to 8 and 10 went
+in with tox v96 (17 November 2026)**, which is what draws it. **Step 9 was left
+out on purpose.** v96 has the same parameters as v95 and saves every switch as
+v95 did.
 
-In `/project1/TDStageConductor`, for the record and for whoever finishes it:
+In `/project1/TDStageConductor`, for the record:
 
 1. ~~Text DAT `consensus_view`, holding the text of
    `TD/newtox/consensus_view.py`.~~ Done, v95.
@@ -203,19 +206,27 @@ In `/project1/TDStageConductor`, for the record and for whoever finishes it:
 4. ~~Table DAT `consensus_table`.~~ Done.
 5. ~~The **Consensus** custom page, with the parameters and defaults in the
    table above.~~ Done.
-6. `geo_consensus`: a Cylinder SOP, radius 1, height 1, standing on y = 0,
+6. ~~`geo_consensus`: a Tube SOP, radius 1, height 1, standing on y = 0,
    instanced from `consensus`: translate `x y z`, scale `radius height radius`,
-   colour `r g b`, active; render flag `parent().par.Consensusshow3d`; a
-   Constant MAT at about 0.35 alpha.
-7. `geo_consensus_hands`: a Sphere SOP of radius 0.07, instanced from
-   `consensus_hands`: translate, colour, active; same render flag.
-8. Add both to `render_pc`'s Geometry list, which then reads
-   `geo_pc geo_floor geo_hands geo_consensus geo_consensus_hands`. From v90 the
-   list also has `geo_wall` in it - **keep it**.
+   colour `r g b`, active; render flag `parent().par.Consensusshow3d`; Constant
+   MAT `mat_consensus` at 0.35 alpha with blending on.~~ Done, v96.
+7. ~~`geo_consensus_hands`: a Sphere SOP of radius 0.07, instanced from
+   `consensus_hands`: translate, colour, active; same render flag; Constant MAT
+   `mat_consensus_hands`.~~ Done, v96.
+8. ~~Add both to `render_pc`'s Geometry list, keeping the `geo_wall` that v90
+   put there.~~ Done, v96: the list reads
+   `geo_pc geo_floor geo_hands geo_wall geo_consensus geo_consensus_hands`.
 9. Out CHOPs `out_consensus` and `out_consensus_hands` for the content network.
-10. Save as the next numbered tox and the working copy, following
+   **Not done, on purpose.** TouchDesigner orders a component's outputs by
+   operator type, so two new CHOP outputs would move the existing POP and TOP
+   outputs (connectors 2 to 4) and break the wiring of every `.toe` that uses
+   this tox, the client's included. A content network reads
+   `TDStageConductor/consensus` and `TDStageConductor/consensus_hands` with a
+   Select CHOP instead.
+10. ~~Save as the next numbered tox and the working copy, following
     [Maintenance](maintenance.html): the clean-save sequence, the version
-    constant, then `tox_drift.py`.
+    constant, then `tox_drift.py`.~~ Done, v96: `tox_clean_check.py` 21 of 21
+    PASS, `tox_drift.py` 41 DATs identical, 0 differ, 0 in the tox only.
 
 **How to know it is right.** With `Consensusactive` on and a console sending a
 `/track` copy, translucent cylinders stand on the floor where the performers
@@ -223,6 +234,15 @@ are, each sized by its own radius and height, and small spheres sit at the
 hands. Turn `Consensusshow3d` off and they vanish. If the cylinders are all the
 same size, the F1 presence toggle is off and every performer is being drawn as
 a standing adult - which is the documented fallback, not a fault.
+
+**What the v96 check saw** [simulated]. The recorded file
+`TD/newtox/testdata/track-sim-hands.jsonl.gz`, replayed into port 7001 with the
+`--replay ... --loop` command above and `Consensusactive` on:
+`Consensusstatus` read 31.1 Hz, 4 performers (2 of them clustered) and 2 hands;
+four cylinders stood on the floor in their performers' colours; `geo_consensus`
+stopped rendering with `Consensusshow3d` off. All four cylinders were the same
+size, 0.25 m radius and 1.70 m tall, because F1 presence was off. Nothing in
+that check came from a phone or a live console.
 
 {: .warning }
 **Leave `Consensusf1` off on the show until somebody measures it.** It opens a

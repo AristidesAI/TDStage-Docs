@@ -60,7 +60,7 @@ parameter. Anything below `Floorcut` minus 0.08 m is gone.
 
 {: .note }
 > **In the released tox since 12 November 2026** (saved at v93, and the
-> current tox is v95, in the repository with the rest of the hub). Every figure and picture below is
+> current tox is v96, in the repository with the rest of the hub). Every figure and picture below is
 > **simulated**: six synthetic phones, one frozen frame, tested on macOS. None
 > of it has run on a rig.
 

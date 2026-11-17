@@ -149,7 +149,7 @@ guards against is one nobody sees until the day the snapshot is needed.
    only once the show PC has been down for two minutes or has failed twice.
 4. **Open TouchDesigner from the same account and session** as the launcher,
    and load the tox, setting `Udpport` 9004, `Udpactive` on, Console Link
-   Active on and the GPU merge path on. The saved tox (v88 and later, v95 today)
+   Active on and the GPU merge path on. The saved tox (v88 and later, v96 today)
    has `Udpactive` **off** and Console Link Active **on**, so switch `Udpactive`
    on and check the link; the Consensus and Props switches are saved off and
    stay off.
