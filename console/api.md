@@ -53,7 +53,7 @@ Routes found in the source: 27 GET, 36 POST.
 | `/api/autofix` | POST | Run the automatic fixer against a device. |
 | `/api/cloud` | GET | The point cloud, as binary, long-polled. Query: `seq`, `max`, `labels=1`, `fmt=i16`. Off the local network this is capped to 5 Hz and 20,000 points. |
 | `/api/count` | POST | Set how many devices the roster holds. |
-| `/api/ctl` | POST | Send a control message to one phone or all of them. |
+| `/api/ctl` | POST | Send a control message to one phone or all of them. Body: `address` (a `/tdlidar/ctl/...` path), `target` (a phone id, or `"all"`), `args` as `[type, value]` pairs with type `"i"`, `"f"` or `"s"`, for example `{"address": "/tdlidar/ctl/blackout", "args": [["i", 0]], "target": 2}`. A bare value such as `[0]` is refused with a 400; before 17 November 2026 it was dropped silently and the verb went out with no argument, which a phone reads as ON for `/blackout`. |
 | `/api/dev/shot` | POST | Development screenshot helper. |
 | `/api/device` | POST | Change a device's roster entry. |
 | `/api/diag/age` | GET | Frame ages per device. |
