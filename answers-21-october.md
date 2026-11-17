@@ -1,11 +1,11 @@
 ---
-title: Your three questions of 21 October
+title: Your three questions of 23 October
 nav_order: 8
 ---
 
-# Your three questions of 21 October
+# Your three questions of 23 October
 
-Mathias, your email of 21 October with the F1 0.4 draft asked us three
+Mathias, your email of 23 October with the F1 0.4 draft asked us three
 questions. Our answers:
 
 1. The console emits sparse occupancy on the 0.4 WebSocket, and the phones'
@@ -110,12 +110,20 @@ Y up, in metres.
 ## 3. Sensors on an overhead frame
 
 **Range.** From 4 to 4.5 m up, a phone sees the floor near the end of its
-range. We assume a 5 m ceiling for the phone's LiDAR and plan on 4.5 m of
-usable range. We have measured neither on a person nor on a floor at that
-distance.
+range. We take Apple's 5 m as the LiDAR's ceiling, the console's placement
+helper plans on 5 m of usable range, and our coverage model reports both 4.5 m
+and 5 m (*simulated*). One take from one of our own phones showed 2 to 3 mm of
+temporal depth noise from 1.5 to 4.5 m (*take replay*), but it kept only
+high-confidence cells, so it says nothing about where confidence falls off with
+distance. We have measured neither a person nor a floor at that distance.
 
 **Viewpoint.** A phone looking straight down stacks limbs onto bodies. Angled
-views from several sides let our fusion separate two performers standing close.
+views from several sides are how we plan to tell two close performers apart. In
+our show-rig simulation a second view removed the roughly 10 per cent of the
+time a performer was hidden from a single phone while somebody stood within
+1.5 m of them (*simulated*); labels still swapped at every crossing, and two
+performers who touch merge into one mass and split again afterwards. Nothing
+has shown separation on a stage yet.
 
 **Moving poses.** A marker-calibrated phone solves its pose once and keeps it,
 so a swaying frame would move the cloud with it. An uncalibrated phone
@@ -141,7 +149,7 @@ downward view, so an overhead mount changes the layout.
 
 | Item | Fact | Source |
 |---|---|---|
-| 0.4 producer | Port 9001, 15 Hz. SMSF `<4sBBBBIdHHf3fI`, SMSP `<4sBBBBIdHHH2x`, SMSS `<4sBBBBIdHH` + 56 B rows. Cell 0.05 m, box origin (-6, 0, -4) m. Flags `?points=1`, `?presence=1`. | [f1_field.py](https://github.com/AristidesAI/TDStage/blob/main/WebConsole/f1_field.py) |
+| 0.4 producer | Port 9001, 15 Hz. SMSF `<4sBBBBIdHHf3fI`, SMSP `<4sBBBBIdHHH2x`, SMSS `<4sBBBBIdHH` + 56 B rows. Cell 0.05 m, box origin (-6, 0, -4) m. Flags: `?points=1` adds our TDMP points; `?presence=1` makes the client presence-only (SMSP alone, no SMSF, SMSS or TDMP); `?describe=1` adds our SMSD sensor-description proposal, which your decoder does not know. | [f1_field.py](https://github.com/AristidesAI/TDStage/blob/main/WebConsole/f1_field.py) |
 | `t` and `window` | `t` = newest capture time merged, on the Mac's clock (arrival time for a phone with no offset yet). `window` = span of capture times + 1000/30 ms. | [f1_field.py](https://github.com/AristidesAI/TDStage/blob/main/WebConsole/f1_field.py) |
 | SMSS rows | Source 0, fixed. `residual_mm` = RMS scatter of the marker solve's repeated fixes, NaN if uncalibrated. Sigmas NaN. | [f1_field.py](https://github.com/AristidesAI/TDStage/blob/main/WebConsole/f1_field.py) |
 | Clock offset | `/tdlidar/ctl/ping seq hostTime`; offset = device time - (send + receive)/2, best of 20. | [server.py](https://github.com/AristidesAI/TDStage/blob/main/WebConsole/server.py) |

@@ -34,7 +34,7 @@ on these pages depends on being able to open one.
 
 ```mermaid
 flowchart TD
-  PH["iPhone Pros on tripods<br/>raw LiDAR depth grid"]
+  PH["iPhone Pros on tripods<br/>LiDAR depth grid,<br/>conditioned on the phone"]
   BR[["Receiving bridge<br/>binds UDP :9003"]]
   TD["TouchDesigner hub<br/>unproject, merge,<br/>clean, fuse"]
   CON["Web console<br/>roster, calibration,<br/>health, segmentation"]
@@ -60,8 +60,10 @@ health path that can point either way.
 **The depth path forks at the bridge.** The bridge owns the phone-facing
 socket, reassembles whole frames, and publishes them once. TouchDesigner and
 the console are two readers of that same published frame. Neither reads the
-other's output. TouchDesigner makes the picture; the console makes the
-tracking output.
+other's point data. TouchDesigner makes the picture; the console makes the
+tracking output. Since tox v95 (16 November) TouchDesigner can also take a copy
+of the console's tracking output to draw beside its own cloud; that receiver
+ships switched off and nothing draws it yet.
 
 That fork is why the failure behaviour is simple. **Neither side is in the
 other's path for point data.** TouchDesigner crashing does not stop the
@@ -75,11 +77,16 @@ TouchDesigner owns, and TouchDesigner relays it to the console. The console
 also has a listener of its own, and the console can tell the phones to send
 there instead.
 
-**While TouchDesigner is down, the console loses health only if the phones
-are still pointed at 9000.**
-Points keep arriving the whole time, from the bridge, so the rig reads as
-alive but with no battery, no temperature and no frame rate. The fix is to
-retarget telemetry. Nothing needs a restart. See
+**While TouchDesigner is down and the phones are still pointed at 9000, the
+console loses more than health.** It learns a phone's address only from
+telemetry, so for any phone whose address nobody has typed on its device page
+it has no control path, no clock sync, no battery and no thermal state
+([issue 74](https://github.com/AristidesAI/TDStage/issues/74), open). Points
+keep arriving the whole time, from the bridge, so frames, performers and the
+tracking output keep working and the rig reads as alive. The fix is to retarget
+telemetry, which reaches only the phones whose address the console already
+knows, from earlier telemetry or a host typed on the device page, and reports
+how many phones took it. Nothing needs a restart. See
 [When something fails](operations/failure.html).
 
 **The control path** is the console telling a phone to start, stop or
@@ -89,7 +96,7 @@ calibrate. It is the only path that needs a person.
 
 | Part | What it does | What it deliberately does not do |
 |---|---|---|
-| iOS app | Captures raw LiDAR depth and streams it as a grid. | No rendering, no cleanup, no tracking, no decisions. |
+| iOS app | Captures LiDAR depth through ARKit, runs a per-frame conditioning pass on the phone (range gate, edge cull against edge bleed, temporal median, deadband; the person matte is off by default) and streams the grid. A thermal ladder can lower its own frame rate when the phone runs hot. | No rendering, no tracking, no merging. Cleanup of the merged cloud stays in TouchDesigner. |
 | Receiving bridge | Owns the phone-facing socket, reassembles frames, publishes them once for two readers. | No processing. It does not look at the data. |
 | TouchDesigner hub | Regenerates points from the depth grids on the GPU, merges every phone into one cloud, cleans, fuses, drives the visuals. | Does not manage phones and does not produce the tracking output. |
 | Web console | Device roster, calibration, health, and the tracking outputs to other systems. | Never feeds TouchDesigner's cloud with point data; it does send TouchDesigner the phone poses over the TD link. It is a second reader, not a relay. |
@@ -125,12 +132,12 @@ someone is deciding what the system can do.
 
 | Label | Meaning |
 |---|---|
-| **Measured, real phone** | Taken from hardware. The phone count is stated, because it changes the answer. |
-| **Measured, simulation** | Taken from synthetic streams. Proves the code path, not the physics. |
-| **Built, not verified** | The code exists and runs. No rig evidence yet. |
-| **Not yet verified** | Needs hardware we have not had. |
+| **Measured, real phone** | Taken from hardware. The phone count is stated, because it changes the answer. On the status page: **Rig**, or **Living room** where the figure depends on the room. |
+| **Measured, simulation** | Taken from synthetic streams, replayed takes or CI runners. Proves the code path, not the physics. On the status page: **Simulated**. |
+| **Built, not verified** | The code and its self-tests exist. Never run on the thing it is for. On the status page: **Designed**. |
+| **Not yet verified** | Needs hardware we have not had. On the status page: **Designed**. |
 
-A "built" item is not a working item. Do not quote one as proven.
+A "built" or "designed" item is not a working item. Do not quote one as proven.
 
 **Today the real-phone evidence is two phones in one room** (TDStage AR on
 iPhone 18 Pro, 28 October 2026, read on the dev Mac). Every figure on this
